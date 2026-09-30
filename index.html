@@ -22,16 +22,23 @@
       <span>BusPass</span>
     </a>
 
-    <div style="display: flex; align-items: center; gap: 1.75rem;">
-      <a href="index.html" style="color: #4F46E5; font-weight: 700; text-decoration: none; font-size: 0.92rem;">Home</a>
-      <a href="#features" style="color: #475569; font-weight: 600; text-decoration: none; font-size: 0.92rem;">Features</a>
-      <a href="login.html" style="color: #475569; font-weight: 600; text-decoration: none; font-size: 0.92rem;">For Students</a>
-      <a href="vendor-login.html" style="color: #475569; font-weight: 600; text-decoration: none; font-size: 0.92rem;">For Vendors</a>
-      <a href="conductor-login.html" style="color: #475569; font-weight: 600; text-decoration: none; font-size: 0.92rem;">For Conductors</a>
-      <a href="#how-it-works" style="color: #475569; font-weight: 600; text-decoration: none; font-size: 0.92rem;">Contact</a>
+    <button class="landing-menu-toggle" id="landing-menu-toggle" aria-label="Toggle navigation">
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="landing-nav-links" id="landing-nav-links">
+      <a href="index.html" class="active">Home</a>
+      <a href="#features">Features</a>
+      <a href="login.html">For Students</a>
+      <a href="vendor-login.html">For Vendors</a>
+      <a href="conductor-login.html">For Conductors</a>
+      <a href="#how-it-works">Contact</a>
+      <div class="landing-mobile-cta">
+        <a href="register.html" class="btn btn-primary btn-block">Get Started</a>
+      </div>
     </div>
 
-    <div>
+    <div class="landing-desktop-cta">
       <a href="register.html" class="btn btn-primary" style="padding: 0.65rem 1.4rem; border-radius: 10px; font-weight: 700;">Get Started</a>
     </div>
   </nav>
@@ -270,5 +277,30 @@
     </div>
   </footer>
 
+  <script>
+    const navToggle = document.getElementById('landing-menu-toggle');
+    const navLinks = document.getElementById('landing-nav-links');
+    if (navToggle && navLinks) {
+      navToggle.addEventListener('click', () => {
+        navLinks.classList.toggle('show');
+        const icon = navToggle.querySelector('i');
+        if (icon) {
+          icon.classList.toggle('fa-bars');
+          icon.classList.toggle('fa-times');
+        }
+      });
+
+      navLinks.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+          navLinks.classList.remove('show');
+          const icon = navToggle.querySelector('i');
+          if (icon) {
+            icon.classList.add('fa-bars');
+            icon.classList.remove('fa-times');
+          }
+        });
+      });
+    }
+  </script>
 </body>
 </html>
