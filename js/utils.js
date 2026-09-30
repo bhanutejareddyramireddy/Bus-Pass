@@ -95,11 +95,89 @@ function generatePassQRCode(elementId, qrDataString, width = 180, height = 180) 
 // Prepare secure QR payload string (JSON)
 function createPassQRPayload(passData) {
   return JSON.stringify({
-    passId: passData.passId || passData.id,
+    passId: passData.passId || passData.id || '',
     studentId: passData.studentId || '',
+    organizationId: passData.organizationId || '',
     routeId: passData.routeId || '',
+    busId: passData.busId || '',
+    busNumber: passData.busNumber || '',
     validUntil: passData.validUntil || ''
   });
+}
+
+/**
+ * Safely parse QR string payload from Student Bus Pass
+ * Handles JSON payload, plain text pass ID, URL-encoded string, or QR URL
+ * @param {string|object} qrInput - The decoded text from the QR scanner
+ * @returns {object|null} - Parsed payload with passId, studentId, routeId, etc.
+ */
+function parsePassQRPayload(qrInput) {
+  if (!qrInput) return null;
+  if (typeof qrInput === 'object') return qrInput;
+
+  const raw = String(qrInput).trim();
+  if (!raw) return null;
+
+  // 1. Try JSON parse directly
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      const passId = parsed.passId || parsed.id || parsed.docId || parsed.passNumber;
+      if (passId) {
+        return {
+          passId: String(passId).trim(),
+          studentId: parsed.studentId || '',
+          organizationId: parsed.organizationId || '',
+          routeId: parsed.routeId || '',
+          validUntil: parsed.validUntil || '',
+          ...parsed
+        };
+      }
+    }
+  } catch (e) {
+    // Not standard JSON
+  }
+
+  // 2. Try URI decoding in case scanner received URL-encoded text
+  try {
+    const decoded = decodeURIComponent(raw);
+    if (decoded !== raw) {
+      try {
+        const parsed = JSON.parse(decoded);
+        if (parsed && typeof parsed === 'object') {
+          const passId = parsed.passId || parsed.id || parsed.passNumber;
+          if (passId) {
+            return {
+              passId: String(passId).trim(),
+              studentId: parsed.studentId || '',
+              organizationId: parsed.organizationId || '',
+              routeId: parsed.routeId || '',
+              validUntil: parsed.validUntil || '',
+              ...parsed
+            };
+          }
+        }
+      } catch (innerE) {}
+    }
+  } catch (e) {}
+
+  // 3. Try URL with query parameters (e.g., https://...?passId=XYZ or ?id=XYZ)
+  try {
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      const url = new URL(raw);
+      const idParam = url.searchParams.get('passId') || url.searchParams.get('id') || url.searchParams.get('pass');
+      if (idParam) {
+        return { passId: idParam.trim() };
+      }
+    }
+  } catch (e) {}
+
+  // 4. Raw passId or passNumber string (alphanumeric ID without JSON syntax)
+  if (raw.length >= 3 && !raw.includes('\n') && !raw.includes('{')) {
+    return { passId: raw };
+  }
+
+  return null;
 }
 
 // Send In-App Notification to User

@@ -487,6 +487,45 @@
       }, 3500);
     }
 
+    // In case of any script load timing, ensure parsePassQRPayload is always available
+    if (typeof parsePassQRPayload !== 'function') {
+      window.parsePassQRPayload = function(qrInput) {
+        if (!qrInput) return null;
+        if (typeof qrInput === 'object') return qrInput;
+        const raw = String(qrInput).trim();
+        if (!raw) return null;
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed && (parsed.passId || parsed.id || parsed.docId || parsed.passNumber)) {
+            return {
+              passId: String(parsed.passId || parsed.id || parsed.docId || parsed.passNumber).trim(),
+              ...parsed
+            };
+          }
+        } catch(e) {}
+        try {
+          const decoded = decodeURIComponent(raw);
+          if (decoded !== raw) {
+            const parsed = JSON.parse(decoded);
+            if (parsed && (parsed.passId || parsed.id)) {
+              return { passId: String(parsed.passId || parsed.id).trim(), ...parsed };
+            }
+          }
+        } catch(e) {}
+        try {
+          if (raw.startsWith('http://') || raw.startsWith('https://')) {
+            const url = new URL(raw);
+            const idParam = url.searchParams.get('passId') || url.searchParams.get('id') || url.searchParams.get('pass');
+            if (idParam) return { passId: idParam.trim() };
+          }
+        } catch(e) {}
+        if (raw.length >= 3 && !raw.includes('\n') && !raw.includes('{')) {
+          return { passId: raw };
+        }
+        return null;
+      };
+    }
+
     async function validateStudentPass(qrString) {
       const resultBox = document.getElementById('scan-result-wrapper');
       resultBox.style.display = 'block';
@@ -506,14 +545,49 @@
           return;
         }
 
-        const passDocSnap = await db.collection('passes').doc(payload.passId).get();
-        if (!passDocSnap.exists) {
+        let passDocSnap = null;
+        let pass = null;
+
+        // 1. Direct document ID lookup
+        try {
+          const directSnap = await db.collection('passes').doc(payload.passId).get();
+          if (directSnap.exists) {
+            passDocSnap = directSnap;
+            pass = directSnap.data();
+          }
+        } catch(e) {}
+
+        // 2. Fallback: Lookup by passNumber field
+        if (!pass) {
+          try {
+            const numSnap = await db.collection('passes').where('passNumber', '==', payload.passId).limit(1).get();
+            if (!numSnap.empty) {
+              passDocSnap = numSnap.docs[0];
+              pass = passDocSnap.data();
+            }
+          } catch(e) {}
+        }
+
+        // 3. Fallback: Lookup active pass by studentId
+        if (!pass && payload.studentId) {
+          try {
+            const stdSnap = await db.collection('passes')
+              .where('studentId', '==', payload.studentId)
+              .where('status', '==', 'Active')
+              .limit(1)
+              .get();
+            if (!stdSnap.empty) {
+              passDocSnap = stdSnap.docs[0];
+              pass = passDocSnap.data();
+            }
+          } catch(e) {}
+        }
+
+        if (!pass || !passDocSnap) {
           showScanResult(false, "Pass Not Found", "No pass record exists for this QR code in database.");
           await logBoardingRecord(payload.passId, 'Unknown', 'Unknown', 'Denied', 'Pass not found');
           return;
         }
-
-        const pass = passDocSnap.data();
 
         if (pass.status !== 'Active') {
           showScanResult(false, `Pass is ${pass.status}`, "This pass is not marked active in database.", pass);
