@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Renew Bus Pass | BusPass Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop"></div>
+
+    <!-- Student Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fas fa-bus-alt" style="color: var(--accent);"></i>
+          <span>STUDENT<strong>PASS</strong></span>
+        </div>
+        <button class="sidebar-close-btn">&times;</button>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="sidebar-section-title">Commuter Menu</div>
+        <ul class="sidebar-menu">
+          <li><a href="student-dashboard.html" class="sidebar-link" data-nav="student-dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a></li>
+          <li><a href="apply-pass.html" class="sidebar-link" data-nav="apply-pass"><i class="fas fa-id-card"></i><span>Apply for Pass</span></a></li>
+          <li><a href="my-applications.html" class="sidebar-link" data-nav="my-applications"><i class="fas fa-file-invoice"></i><span>My Applications</span></a></li>
+          <li><a href="my-bus-pass.html" class="sidebar-link" data-nav="my-bus-pass"><i class="fas fa-qrcode"></i><span>My Bus Pass</span></a></li>
+          <li><a href="renew-pass.html" class="sidebar-link active" data-nav="renew-pass"><i class="fas fa-redo"></i><span>Renew Pass</span></a></li>
+          <li><a href="live-bus.html" class="sidebar-link" data-nav="live-bus"><i class="fas fa-satellite-dish"></i><span>Live Bus</span></a></li>
+          <li>
+            <a href="notifications.html" class="sidebar-link" data-nav="notifications">
+              <i class="fas fa-bell"></i>
+              <span>Notifications</span>
+              <span class="sidebar-badge" id="student-notif-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li><a href="profile.html" class="sidebar-link" data-nav="profile"><i class="fas fa-user"></i><span>Profile</span></a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar" style="background: var(--accent);">S</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebar-student-name">Student Commuter</div>
+            <div class="sidebar-user-role">Student</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="logoutUser()" title="Logout">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <!-- Master Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle-btn"><i class="fas fa-bars"></i></button>
+          <div class="page-title-group">
+            <h1>Pass Renewal Portal</h1>
+            <div class="page-breadcrumb">
+              <i class="fas fa-home"></i> <span>Student Portal</span> / <span>Renew Pass</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <a href="my-bus-pass.html" class="btn btn-secondary btn-sm" title="View Current Pass">
+            <i class="fas fa-qrcode"></i> Current Pass
+          </a>
+
+          <a href="notifications.html" class="topbar-action-btn" title="Notifications">
+            <i class="fas fa-bell"></i>
+            <span class="topbar-badge-dot" id="topbar-notif-dot" style="display: none;"></span>
+          </a>
+
+          <div class="topbar-user-pill" onclick="window.location.href='profile.html'">
+            <div class="avatar" style="background: var(--accent);">S</div>
+            <span class="topbar-user-name" id="topbar-student-name">Student</span>
+            <i class="fas fa-chevron-right" style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.35rem;"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-body">
+
+        <!-- Page Header Row -->
+        <div class="page-header-row" style="max-width: 780px; margin: 0 auto 1.5rem;">
+          <div>
+            <h2 class="page-header-title">Renew Expired or Expiring Bus Pass</h2>
+            <p class="page-header-desc">Renew seamlessly with your existing route and boarding stop details.</p>
+          </div>
+          <div class="page-header-actions">
+            <a href="my-applications.html" class="btn btn-secondary btn-sm">
+              <i class="fas fa-history"></i> Renewal History
+            </a>
+          </div>
+        </div>
+
+        <div class="card" style="max-width: 780px; margin: 0 auto;">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title"><i class="fas fa-redo text-primary"></i> Fast Pass Renewal</h3>
+              <p class="card-subtitle">Verify your current transit details, choose duration, and submit renewal payment.</p>
+            </div>
+          </div>
+
+          <div id="renewal-state-container">
+            <div class="state-container">
+              <div class="spinner"></div>
+              <p style="margin-top: 1rem; color: var(--text-muted);">Checking your transit records...</p>
+            </div>
+          </div>
+
+          <form id="renewal-form" style="display: none;">
+            <input type="hidden" id="prev-pass-id">
+            <input type="hidden" id="prev-org-id">
+            <input type="hidden" id="prev-route-id">
+            <input type="hidden" id="prev-stop">
+
+            <!-- Pre-filled Current Route Details Callout -->
+            <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
+              <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--primary); margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-route"></i> Current Registered Transit Details
+              </h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; font-size: 0.88rem;">
+                <div>
+                  <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Organization</div>
+                  <strong id="renew-org-name" style="color: var(--text-primary);">-</strong>
+                </div>
+                <div>
+                  <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Transit Route</div>
+                  <strong id="renew-route-name" style="color: var(--text-primary);">-</strong>
+                </div>
+                <div>
+                  <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Boarding Stop</div>
+                  <strong id="renew-stop-name" style="color: var(--text-primary);">-</strong>
+                </div>
+                <div>
+                  <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Previous Pass #</div>
+                  <strong id="renew-prev-pass-no" style="font-family: monospace; color: var(--primary);">-</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="renew-pass-type">Select Renewal Pass Duration <span class="required">*</span></label>
+              <select id="renew-pass-type" class="form-control" required onchange="calculateRenewalFee()">
+                <option value="Full Year">Full Academic Year (12 Months)</option>
+                <option value="Semester">Semester Pass (6 Months)</option>
+              </select>
+            </div>
+
+            <!-- Fee and Payment Details Callout -->
+            <div style="background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%); border: 1px solid #C7D2FE; border-radius: var(--radius-md); padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+              <div>
+                <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--primary-dark); font-weight: 700; letter-spacing: 0.05em;">Renewal Fare Payable</span>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.15rem;">Standard official rate for your registered boarding stop</div>
+              </div>
+              <div style="font-size: 2rem; font-weight: 800; color: var(--primary); font-family: 'Inter', sans-serif;" id="renew-fee-display">₹0</div>
+            </div>
+
+            <!-- Payment QR Section -->
+            <div style="display: grid; grid-template-columns: 190px 1fr; gap: 1.5rem; background: #F8FAFC; padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 1.5rem; align-items: center;">
+              <div style="background: #ffffff; padding: 0.85rem; border-radius: var(--radius-md); text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+                <div id="renew-payment-qr" style="width: 150px; height: 150px; margin: 0 auto; display: flex; align-items: center; justify-content: center;"></div>
+                <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700; margin-top: 6px; display: block; letter-spacing: 0.05em;">SCAN VIA ANY UPI APP</span>
+              </div>
+
+              <div style="display: flex; flex-direction: column; justify-content: center; gap: 0.65rem; font-size: 0.88rem;">
+                <div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Payee Account</div>
+                  <strong id="renew-payee-name" style="color: var(--text-primary); font-size: 0.95rem;">-</strong>
+                </div>
+                <div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Official UPI ID</div>
+                  <span style="font-family: monospace; font-weight: 700; color: var(--primary); font-size: 0.95rem;" id="renew-upi-id">-</span>
+                </div>
+                <div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Total Amount</div>
+                  <strong id="renew-amount-txt" style="color: var(--primary); font-size: 1.15rem; font-weight: 800;">₹0</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="renew-txn-id">Transaction Reference / UTR Number <span class="required">*</span></label>
+              <input type="text" id="renew-txn-id" class="form-control" placeholder="e.g. 425619283741 or UPI Ref ID" required>
+              <small class="form-text" style="color: var(--text-muted); font-size: 0.78rem;">Enter the 12-digit UPI reference number from your payment receipt.</small>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Upload Renewal Payment Screenshot Proof <span class="required">*</span></label>
+              <div class="dropzone" onclick="document.getElementById('renew-proof-file').click()" style="cursor: pointer;">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem;"></i>
+                <div style="font-weight: 600; color: var(--text-primary);">Click or drag payment screenshot here</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Supports JPG, PNG (Max 5MB)</div>
+                <input type="file" id="renew-proof-file" accept="image/*" style="display: none;" onchange="handleRenewProofSelected(event)">
+              </div>
+              <img id="renew-proof-preview" class="dropzone-preview" alt="Proof Preview" style="display: none; max-height: 180px; margin-top: 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            </div>
+
+            <button type="submit" id="renew-submit-btn" class="btn btn-primary btn-block btn-lg" style="margin-top: 1.75rem; justify-content: center;">
+              <i class="fas fa-redo"></i> Submit Pass Renewal Request
+            </button>
+          </form>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/common.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/utils.js"></script>
+
+  <script>
+    let currentStudent = null;
+    let studentData = null;
+    let previousPass = null;
+    let currentRoute = null;
+    let currentOrg = null;
+    let calculatedRenewalFee = 0;
+    let renewProofDataUrl = '';
+
+    initAppShell('renew-pass');
+
+    requireAuth('student', async (user, data) => {
+      currentStudent = user;
+      studentData = data;
+
+      // Update student profile in topbar & sidebar
+      if (studentData && studentData.name) {
+        const fn = studentData.name.split(' ')[0];
+        const inits = studentData.name.charAt(0).toUpperCase();
+        const topEl = document.getElementById('topbar-student-name');
+        const sideEl = document.getElementById('sidebar-student-name');
+        if (topEl) topEl.textContent = fn;
+        if (sideEl) sideEl.textContent = studentData.name;
+        document.querySelectorAll('.avatar, .sidebar-user-avatar').forEach(av => {
+          av.textContent = inits;
+        });
+      }
+
+      // Realtime notification badge listener
+      db.collection('notifications')
+        .where('userId', '==', user.uid)
+        .where('read', '==', false)
+        .onSnapshot(snap => {
+          const badge = document.getElementById('student-notif-badge');
+          const dot = document.getElementById('topbar-notif-dot');
+          if (badge) {
+            badge.textContent = snap.size;
+            badge.style.display = snap.size > 0 ? 'inline-block' : 'none';
+          }
+          if (dot) dot.style.display = snap.size > 0 ? 'block' : 'none';
+        });
+
+      await fetchPreviousPass();
+    });
+
+    async function fetchPreviousPass() {
+      const snap = await db.collection('passes')
+        .where('studentId', '==', currentStudent.uid)
+        .limit(1)
+        .get();
+
+      const stateContainer = document.getElementById('renewal-state-container');
+      const form = document.getElementById('renewal-form');
+
+      if (snap.empty) {
+        stateContainer.innerHTML = `
+          <div class="state-container">
+            <div class="state-icon"><i class="fas fa-id-card"></i></div>
+            <h4 class="state-title">No Previous Pass Found</h4>
+            <p class="state-desc">You do not have any historical bus pass records to renew. Please submit a new pass application.</p>
+            <a href="apply-pass.html" class="btn btn-primary" style="margin-top: 1rem;"><i class="fas fa-plus"></i> Apply for First Pass</a>
+          </div>
+        `;
+        return;
+      }
+
+      previousPass = { id: snap.docs[0].id, ...snap.docs[0].data() };
+
+      // Fetch route info for stop fee
+      if (previousPass.routeId) {
+        const routeSnap = await db.collection('routes').doc(previousPass.routeId).get();
+        if (routeSnap.exists) currentRoute = routeSnap.data();
+      }
+
+      // Fetch org info for UPI ID
+      if (previousPass.organizationId) {
+        const orgSnap = await db.collection('organizations').doc(previousPass.organizationId).get();
+        if (orgSnap.exists) currentOrg = orgSnap.data();
+      }
+
+      // Populate form
+      stateContainer.style.display = 'none';
+      form.style.display = 'block';
+
+      document.getElementById('prev-pass-id').value = previousPass.id;
+      document.getElementById('prev-org-id').value = previousPass.organizationId;
+      document.getElementById('prev-route-id').value = previousPass.routeId;
+      document.getElementById('prev-stop').value = previousPass.boardingStop;
+
+      document.getElementById('renew-org-name').textContent = previousPass.organizationName || '-';
+      document.getElementById('renew-route-name').textContent = previousPass.routeName || '-';
+      document.getElementById('renew-stop-name').textContent = previousPass.boardingStop || '-';
+      document.getElementById('renew-prev-pass-no').textContent = previousPass.passNumber || previousPass.id;
+
+      calculateRenewalFee();
+    }
+
+    function calculateRenewalFee() {
+      const passType = document.getElementById('renew-pass-type').value;
+
+      if (currentRoute && currentRoute.stops) {
+        const matchedStop = currentRoute.stops.find(s => s.name === previousPass.boardingStop);
+        if (matchedStop) {
+          calculatedRenewalFee = passType === 'Semester' ? (matchedStop.semesterFee || 0) : (matchedStop.fullYearFee || 0);
+        } else {
+          calculatedRenewalFee = previousPass.fee || 20000;
+        }
+      } else {
+        calculatedRenewalFee = previousPass.fee || 20000;
+      }
+
+      document.getElementById('renew-fee-display').textContent = formatCurrency(calculatedRenewalFee);
+      document.getElementById('renew-amount-txt').textContent = formatCurrency(calculatedRenewalFee);
+
+      // Render Dynamic Payment QR
+      const upiId = (currentOrg && currentOrg.upiId) ? currentOrg.upiId : 'transport@upi';
+      const payeeName = (currentOrg && currentOrg.payeeName) ? currentOrg.payeeName : previousPass.organizationName;
+
+      document.getElementById('renew-payee-name').textContent = payeeName;
+      document.getElementById('renew-upi-id').textContent = upiId;
+
+      const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${calculatedRenewalFee}&cu=INR`;
+      generatePassQRCode('renew-payment-qr', upiUri, 150, 150);
+    }
+
+    async function handleRenewProofSelected(e) {
+      const file = e.target.files[0];
+      if (file) {
+        try {
+          renewProofDataUrl = await fileToDataUrl(file);
+          const preview = document.getElementById('renew-proof-preview');
+          preview.src = renewProofDataUrl;
+          preview.style.display = 'block';
+        } catch (err) {
+          showToast("Error reading file", "danger");
+        }
+      }
+    }
+
+    // Submit Renewal
+    document.getElementById('renewal-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('renew-submit-btn');
+      const txn = document.getElementById('renew-txn-id').value.trim();
+
+      if (!renewProofDataUrl) {
+        showToast("Please upload payment screenshot proof.", "warning");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Submitting Renewal...';
+
+      const passType = document.getElementById('renew-pass-type').value;
+
+      const appData = {
+        studentId: currentStudent.uid,
+        studentName: studentData.name || 'Student',
+        studentEmail: currentStudent.email || studentData.email || '',
+        studentPhone: studentData.phone || '',
+        vendorId: previousPass.vendorId,
+        organizationId: previousPass.organizationId,
+        organizationName: previousPass.organizationName,
+        routeId: previousPass.routeId,
+        routeName: previousPass.routeName,
+        boardingStop: previousPass.boardingStop,
+        busId: previousPass.busId || '',
+        passType: passType,
+        fee: calculatedRenewalFee,
+        isRenewal: true,
+        previousPassId: previousPass.id,
+        paymentStatus: 'PaidProofSubmitted',
+        transactionId: txn,
+        paymentScreenshotUrl: renewProofDataUrl,
+        status: 'Pending',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      try {
+        await db.collection('applications').add(appData);
+
+        await sendNotification(
+          currentStudent.uid,
+          'application',
+          'Pass Renewal Submitted',
+          `Your renewal request for ${previousPass.routeName} has been submitted. Awaiting vendor verification.`
+        );
+
+        showToast("Renewal application submitted successfully!", "success");
+        setTimeout(() => {
+          window.location.href = 'my-applications.html';
+        }, 1000);
+      } catch (err) {
+        console.error("Renewal error:", err);
+        showToast("Error submitting renewal: " + err.message, "danger");
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-redo"></i> Submit Pass Renewal Request';
+      }
+    });
+  </script>
+</body>
+</html>

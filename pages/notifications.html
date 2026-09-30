@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications Center | BusPass Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop"></div>
+
+    <!-- Student Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fas fa-bus-alt" style="color: var(--accent);"></i>
+          <span>STUDENT<strong>PASS</strong></span>
+        </div>
+        <button class="sidebar-close-btn">&times;</button>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="sidebar-section-title">Commuter Menu</div>
+        <ul class="sidebar-menu">
+          <li><a href="student-dashboard.html" class="sidebar-link" data-nav="student-dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a></li>
+          <li><a href="apply-pass.html" class="sidebar-link" data-nav="apply-pass"><i class="fas fa-id-card"></i><span>Apply for Pass</span></a></li>
+          <li><a href="my-applications.html" class="sidebar-link" data-nav="my-applications"><i class="fas fa-file-invoice"></i><span>My Applications</span></a></li>
+          <li><a href="my-bus-pass.html" class="sidebar-link" data-nav="my-bus-pass"><i class="fas fa-qrcode"></i><span>My Bus Pass</span></a></li>
+          <li><a href="renew-pass.html" class="sidebar-link" data-nav="renew-pass"><i class="fas fa-redo"></i><span>Renew Pass</span></a></li>
+          <li><a href="live-bus.html" class="sidebar-link" data-nav="live-bus"><i class="fas fa-satellite-dish"></i><span>Live Bus</span></a></li>
+          <li>
+            <a href="notifications.html" class="sidebar-link active" data-nav="notifications">
+              <i class="fas fa-bell"></i>
+              <span>Notifications</span>
+              <span class="sidebar-badge" id="student-notif-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li><a href="profile.html" class="sidebar-link" data-nav="profile"><i class="fas fa-user"></i><span>Profile</span></a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar" style="background: var(--accent);">S</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebar-student-name">Student Commuter</div>
+            <div class="sidebar-user-role">Student</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="logoutUser()" title="Logout">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <!-- Master Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle-btn"><i class="fas fa-bars"></i></button>
+          <div class="page-title-group">
+            <h1>Notifications & Alerts</h1>
+            <div class="page-breadcrumb">
+              <i class="fas fa-home"></i> <span>Student Portal</span> / <span>Notifications</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="btn btn-secondary btn-sm" onclick="markAllAsRead()">
+            <i class="fas fa-check-double"></i> Mark All as Read
+          </button>
+
+          <div class="topbar-user-pill" onclick="window.location.href='profile.html'">
+            <div class="avatar" style="background: var(--accent);">S</div>
+            <span class="topbar-user-name" id="topbar-student-name">Student</span>
+            <i class="fas fa-chevron-right" style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.35rem;"></i>
+          </div>
+        </div>
+      </header>
+
+      <main class="page-body">
+
+        <!-- Page Header Row -->
+        <div class="page-header-row" style="max-width: 840px; margin: 0 auto 1.5rem;">
+          <div>
+            <h2 class="page-header-title">Commuter Activity Feed</h2>
+            <p class="page-header-desc">Real-time alerts regarding application review, verification, payment statuses, and transit announcements.</p>
+          </div>
+          <div class="page-header-actions">
+            <span class="badge badge-primary" id="unread-count-badge" style="font-size: 0.85rem; padding: 0.4rem 0.85rem; font-weight: 700;">0 Unread</span>
+          </div>
+        </div>
+
+        <div class="card" style="max-width: 840px; margin: 0 auto;">
+          <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+            <div>
+              <h3 class="card-title"><i class="fas fa-bell text-primary"></i> Recent Notifications</h3>
+              <p class="card-subtitle">Showing latest announcements and automated system updates</p>
+            </div>
+          </div>
+
+          <!-- Notification Items List -->
+          <div id="notifications-list" style="display: flex; flex-direction: column; gap: 0.75rem; padding-top: 1rem;">
+            <div class="state-container">
+              <div class="spinner"></div>
+              <p style="margin-top: 1rem; color: var(--text-muted);">Loading notifications...</p>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/common.js"></script>
+  <script src="../js/auth.js"></script>
+
+  <script>
+    let currentStudent = null;
+    let notifsList = [];
+
+    initAppShell('notifications');
+
+    requireAuth('student', (user, data) => {
+      currentStudent = user;
+
+      // Update student profile in topbar & sidebar
+      if (data && data.name) {
+        const fn = data.name.split(' ')[0];
+        const inits = data.name.charAt(0).toUpperCase();
+        const topEl = document.getElementById('topbar-student-name');
+        const sideEl = document.getElementById('sidebar-student-name');
+        if (topEl) topEl.textContent = fn;
+        if (sideEl) sideEl.textContent = data.name;
+        document.querySelectorAll('.avatar, .sidebar-user-avatar').forEach(av => {
+          av.textContent = inits;
+        });
+      }
+
+      listenToNotifications();
+    });
+
+    function listenToNotifications() {
+      db.collection('notifications')
+        .where('userId', '==', currentStudent.uid)
+        .onSnapshot(snap => {
+          notifsList = [];
+          let unreadCount = 0;
+
+          snap.forEach(doc => {
+            const data = { id: doc.id, ...doc.data() };
+            if (!data.read) unreadCount++;
+            notifsList.push(data);
+          });
+
+          // Update sidebar badge
+          const badge = document.getElementById('student-notif-badge');
+          if (badge) {
+            badge.textContent = unreadCount;
+            badge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+          }
+
+          // Sort latest first
+          notifsList.sort((a, b) => {
+            const timeA = a.createdAt ? (a.createdAt.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt).getTime()) : 0;
+            const timeB = b.createdAt ? (b.createdAt.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt).getTime()) : 0;
+            return timeB - timeA;
+          });
+
+          document.getElementById('unread-count-badge').textContent = `${unreadCount} Unread`;
+          renderNotifications(notifsList);
+        });
+    }
+
+    function renderNotifications(notifs) {
+      const container = document.getElementById('notifications-list');
+
+      if (notifs.length === 0) {
+        container.innerHTML = `
+          <div class="state-container" style="padding: 3rem 1rem;">
+            <div class="state-icon"><i class="fas fa-bell-slash"></i></div>
+            <h4 class="state-title">No Notifications Yet</h4>
+            <p class="state-desc">You are all caught up! You will receive instant notifications whenever your pass or application is updated.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = notifs.map(n => {
+        const isRead = n.read === true;
+        let iconClass = 'fa-bell text-primary';
+        let bgStyle = isRead ? '#ffffff' : '#EEF2FF';
+        let borderStyle = isRead ? 'var(--border-color)' : '#C7D2FE';
+
+        if (n.type === 'pass') iconClass = 'fa-id-card text-success';
+        if (n.type === 'payment') iconClass = 'fa-receipt text-warning';
+        if (n.type === 'application') iconClass = 'fa-file-invoice text-info';
+
+        return `
+          <div style="background: ${bgStyle}; border: 1px solid ${borderStyle}; border-radius: var(--radius-md); padding: 1.15rem 1.25rem; display: flex; align-items: flex-start; gap: 1rem; transition: var(--transition); box-shadow: var(--shadow-sm);">
+            <div style="width: 38px; height: 38px; border-radius: var(--radius-md); background: ${isRead ? 'var(--bg-page)' : '#ffffff'}; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0; border: 1px solid var(--border-color);">
+              <i class="fas ${iconClass}"></i>
+            </div>
+            
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem; gap: 0.5rem; flex-wrap: wrap;">
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0;">${n.title}</h4>
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">${formatDateTime(n.createdAt)}</span>
+              </div>
+              <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.45; margin: 0;">${n.message}</p>
+            </div>
+
+            ${!isRead ? `
+              <button class="action-btn" title="Mark as Read" onclick="markAsRead('${n.id}')" style="background: #ffffff; color: var(--primary); border: 1px solid #C7D2FE; margin-top: 2px;">
+                <i class="fas fa-check"></i>
+              </button>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function markAsRead(id) {
+      try {
+        await db.collection('notifications').doc(id).update({ read: true });
+      } catch (e) {
+        showToast("Error updating notification", "danger");
+      }
+    }
+
+    async function markAllAsRead() {
+      const unread = notifsList.filter(n => !n.read);
+      if (unread.length === 0) return;
+
+      try {
+        const batch = db.batch();
+        unread.forEach(n => {
+          batch.update(db.collection('notifications').doc(n.id), { read: true });
+        });
+        await batch.commit();
+        showToast("All notifications marked as read.", "success");
+      } catch (e) {
+        showToast("Error marking all read: " + e.message, "danger");
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Bus GPS Tracker | BusPass Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop"></div>
+
+    <!-- Student Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fas fa-bus-alt" style="color: var(--accent);"></i>
+          <span>STUDENT<strong>PASS</strong></span>
+        </div>
+        <button class="sidebar-close-btn">&times;</button>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="sidebar-section-title">Commuter Menu</div>
+        <ul class="sidebar-menu">
+          <li><a href="student-dashboard.html" class="sidebar-link" data-nav="student-dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a></li>
+          <li><a href="apply-pass.html" class="sidebar-link" data-nav="apply-pass"><i class="fas fa-id-card"></i><span>Apply for Pass</span></a></li>
+          <li><a href="my-applications.html" class="sidebar-link" data-nav="my-applications"><i class="fas fa-file-invoice"></i><span>My Applications</span></a></li>
+          <li><a href="my-bus-pass.html" class="sidebar-link" data-nav="my-bus-pass"><i class="fas fa-qrcode"></i><span>My Bus Pass</span></a></li>
+          <li><a href="renew-pass.html" class="sidebar-link" data-nav="renew-pass"><i class="fas fa-redo"></i><span>Renew Pass</span></a></li>
+          <li><a href="live-bus.html" class="sidebar-link active" data-nav="live-bus"><i class="fas fa-satellite-dish"></i><span>Live Bus</span></a></li>
+          <li>
+            <a href="notifications.html" class="sidebar-link" data-nav="notifications">
+              <i class="fas fa-bell"></i>
+              <span>Notifications</span>
+              <span class="sidebar-badge" id="student-notif-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li><a href="profile.html" class="sidebar-link" data-nav="profile"><i class="fas fa-user"></i><span>Profile</span></a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar" style="background: var(--accent);">S</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebar-student-name">Student Commuter</div>
+            <div class="sidebar-user-role">Student</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="logoutUser()" title="Logout">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <!-- Master Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle-btn"><i class="fas fa-bars"></i></button>
+          <div class="page-title-group">
+            <h1>Live Bus GPS Tracking</h1>
+            <div class="page-breadcrumb">
+              <i class="fas fa-home"></i> <span>Student Portal</span> / <span>Live Bus</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div id="bus-live-pill" style="display: flex; align-items: center; gap: 0.5rem; background: #ffffff; padding: 0.4rem 0.85rem; border-radius: 9999px; border: 1px solid var(--border-color); font-size: 0.82rem; box-shadow: var(--shadow-sm);">
+            <span class="badge-dot" id="student-live-dot" style="background: var(--text-muted);"></span>
+            <span id="student-live-text" style="font-weight: 700; color: var(--text-muted);">Checking Signal...</span>
+          </div>
+
+          <a href="notifications.html" class="topbar-action-btn" title="Notifications">
+            <i class="fas fa-bell"></i>
+            <span class="topbar-badge-dot" id="topbar-notif-dot" style="display: none;"></span>
+          </a>
+
+          <div class="topbar-user-pill" onclick="window.location.href='profile.html'">
+            <div class="avatar" style="background: var(--accent);">S</div>
+            <span class="topbar-user-name" id="topbar-student-name">Student</span>
+            <i class="fas fa-chevron-right" style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.35rem;"></i>
+          </div>
+        </div>
+      </header>
+
+      <main class="page-body">
+
+        <!-- Page Header Row -->
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-header-title">Live Real-Time Fleet Tracking</h2>
+            <p class="page-header-desc">Track the real-time GPS coordinates and route progress of your assigned campus transit bus.</p>
+          </div>
+          <div class="page-header-actions">
+            <a href="my-bus-pass.html" class="btn btn-secondary btn-sm">
+              <i class="fas fa-qrcode"></i> View Pass
+            </a>
+          </div>
+        </div>
+
+        <!-- Assigned Bus Telemetry Card -->
+        <div class="card" style="margin-bottom: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <span class="badge badge-primary" id="track-bus-number" style="font-weight: 700; font-size: 0.85rem; padding: 0.35rem 0.65rem;">BUS-101</span>
+                <span class="badge badge-secondary" id="track-reg-number" style="font-weight: 600;">-</span>
+              </div>
+              <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.25rem;" id="track-route-name">Assigned Transit Route</h3>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">
+                Boarding Station: <strong id="track-boarding-stop" style="color: var(--primary); font-weight: 700;">-</strong>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 2rem; font-size: 0.88rem; flex-wrap: wrap;">
+              <div>
+                <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 2px;">Driver</span>
+                <div style="font-weight: 700; color: var(--text-primary);" id="track-driver-name">-</div>
+              </div>
+              <div>
+                <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 2px;">Conductor</span>
+                <div style="font-weight: 700; color: var(--text-primary);" id="track-conductor-name">-</div>
+                <div id="track-conductor-phone-box" style="margin-top: 4px;"></div>
+              </div>
+              <div>
+                <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 2px;">Last GPS Signal</span>
+                <div style="font-weight: 700; color: var(--text-primary);" id="track-updated-time">-</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Offline Alert Notice (Conditional) -->
+        <div id="offline-alert" style="display: none; background: #FEF3C7; border: 1px solid #FCD34D; color: #92400E; padding: 0.85rem 1.25rem; border-radius: var(--radius-md); margin-bottom: 1.25rem; font-size: 0.88rem; align-items: center; gap: 0.75rem;">
+          <i class="fas fa-exclamation-triangle" style="font-size: 1.15rem; color: #D97706;"></i>
+          <div>
+            <strong>Bus is currently offline / idle.</strong> The conductor has not started live GPS duty yet. Location shows the last recorded station checkpoint.
+          </div>
+        </div>
+
+        <!-- Leaflet Map Container Card -->
+        <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 0; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); border-radius: var(--radius-lg);">
+          <div id="student-leaflet-map" class="map-container" style="height: 540px; border-radius: 0;"></div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/common.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/utils.js"></script>
+
+  <script>
+    let currentStudent = null;
+    let studentData = null;
+    let studentPass = null;
+    let map = null;
+    let busMarker = null;
+
+    initAppShell('live-bus');
+
+    requireAuth('student', async (user, data) => {
+      currentStudent = user;
+      studentData = data;
+
+      // Update student profile in topbar & sidebar
+      if (studentData && studentData.name) {
+        const fn = studentData.name.split(' ')[0];
+        const inits = studentData.name.charAt(0).toUpperCase();
+        const topEl = document.getElementById('topbar-student-name');
+        const sideEl = document.getElementById('sidebar-student-name');
+        if (topEl) topEl.textContent = fn;
+        if (sideEl) sideEl.textContent = studentData.name;
+        document.querySelectorAll('.avatar, .sidebar-user-avatar').forEach(av => {
+          av.textContent = inits;
+        });
+      }
+
+      // Realtime notification badge listener
+      db.collection('notifications')
+        .where('userId', '==', user.uid)
+        .where('read', '==', false)
+        .onSnapshot(snap => {
+          const badge = document.getElementById('student-notif-badge');
+          const dot = document.getElementById('topbar-notif-dot');
+          if (badge) {
+            badge.textContent = snap.size;
+            badge.style.display = snap.size > 0 ? 'inline-block' : 'none';
+          }
+          if (dot) dot.style.display = snap.size > 0 ? 'block' : 'none';
+        });
+
+      initStudentMap();
+      await fetchStudentActivePass();
+    });
+
+    function initStudentMap() {
+      map = L.map('student-leaflet-map').setView([17.3850, 78.4867], 12);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+    }
+
+    async function fetchStudentActivePass() {
+      const snap = await db.collection('passes')
+        .where('studentId', '==', currentStudent.uid)
+        .where('status', '==', 'Active')
+        .limit(1)
+        .get();
+
+      if (snap.empty) {
+        showToast("No active bus pass found for your account.", "warning");
+        document.getElementById('track-bus-number').textContent = 'No Pass';
+        document.getElementById('track-route-name').textContent = 'Please apply for a bus pass to track your vehicle.';
+        return;
+      }
+
+      studentPass = { id: snap.docs[0].id, ...snap.docs[0].data() };
+
+      document.getElementById('track-bus-number').textContent = studentPass.busNumber || 'BUS-101';
+      document.getElementById('track-reg-number').textContent = studentPass.registrationNumber || '';
+      document.getElementById('track-route-name').textContent = studentPass.routeName || 'Assigned Route';
+      document.getElementById('track-boarding-stop').textContent = studentPass.boardingStop || '-';
+      document.getElementById('track-driver-name').textContent = studentPass.driverName || 'Designated Driver';
+
+      // Conductor Contact Lookup & Population
+      if (studentPass.conductorPhone) {
+        document.getElementById('track-conductor-name').textContent = studentPass.conductorName || 'Conductor';
+        document.getElementById('track-conductor-phone-box').innerHTML = `
+          <a href="tel:${studentPass.conductorPhone}" class="badge badge-success" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-weight: 600;">
+            <i class="fas fa-phone-alt"></i> ${studentPass.conductorPhone}
+          </a>
+        `;
+      } else if (studentPass.busId || studentPass.routeId) {
+        const cq = studentPass.busId ? db.collection('conductors').where('busId', '==', studentPass.busId) : db.collection('conductors').where('routeId', '==', studentPass.routeId);
+        cq.limit(1).get().then(csnap => {
+          if (!csnap.empty) {
+            const c = csnap.docs[0].data();
+            document.getElementById('track-conductor-name').textContent = c.name || 'Conductor';
+            if (c.phone) {
+              document.getElementById('track-conductor-phone-box').innerHTML = `
+                <a href="tel:${c.phone}" class="badge badge-success" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-weight: 600;">
+                  <i class="fas fa-phone-alt"></i> ${c.phone}
+                </a>
+              `;
+            }
+          }
+        }).catch(e => console.warn(e));
+      }
+
+      // Start Real-Time Location Listener on assigned bus
+      if (studentPass.busId) {
+        listenToAssignedBus(studentPass.busId);
+      }
+    }
+
+    function listenToAssignedBus(busId) {
+      db.collection('liveBusLocations').doc(busId)
+        .onSnapshot(doc => {
+          if (!doc.exists) {
+            updateOfflineUI(null);
+            return;
+          }
+
+          const loc = doc.data();
+          if (loc.conductorName) {
+            document.getElementById('track-conductor-name').textContent = loc.conductorName;
+          }
+          if (loc.updatedAt) {
+            document.getElementById('track-updated-time').textContent = formatDateTime(loc.updatedAt);
+          }
+
+          if (loc.isLive && loc.latitude && loc.longitude) {
+            updateLiveUI(loc);
+          } else {
+            updateOfflineUI(loc);
+          }
+        });
+    }
+
+    function updateLiveUI(loc) {
+      document.getElementById('offline-alert').style.display = 'none';
+
+      const dot = document.getElementById('student-live-dot');
+      const text = document.getElementById('student-live-text');
+
+      dot.className = 'pulse-dot';
+      dot.style.position = 'static';
+      dot.style.display = 'inline-block';
+      text.textContent = 'Bus Live on Duty';
+      text.style.color = 'var(--success)';
+
+      const lat = loc.latitude;
+      const lng = loc.longitude;
+
+      const popupHtml = `
+        <div style="font-family: 'Inter', sans-serif; padding: 6px;">
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+            <strong style="color:var(--primary); font-size:1.05rem;">${studentPass.busNumber}</strong>
+            <span class="badge badge-success">LIVE</span>
+          </div>
+          <div style="font-size:0.82rem; color:#475569; line-height: 1.5;">
+            <div><strong>Route:</strong> ${studentPass.routeName}</div>
+            <div><strong>Your Stop:</strong> ${studentPass.boardingStop}</div>
+            <div><strong>Driver:</strong> ${studentPass.driverName || '-'}</div>
+            <div><strong>Accuracy:</strong> ±${Math.round(loc.accuracy || 10)}m</div>
+          </div>
+        </div>
+      `;
+
+      if (busMarker) {
+        busMarker.setLatLng([lat, lng]);
+        busMarker.getPopup().setContent(popupHtml);
+      } else {
+        busMarker = createBusMarker(lat, lng, studentPass.busNumber, true);
+        busMarker.bindPopup(popupHtml).addTo(map);
+      }
+
+      map.setView([lat, lng], 15, { animate: true });
+    }
+
+    function updateOfflineUI(loc) {
+      document.getElementById('offline-alert').style.display = 'flex';
+
+      const dot = document.getElementById('student-live-dot');
+      const text = document.getElementById('student-live-text');
+
+      dot.className = 'badge-dot';
+      dot.style.background = 'var(--text-muted)';
+      text.textContent = 'Bus is Offline';
+      text.style.color = 'var(--text-muted)';
+
+      if (loc && loc.latitude && loc.longitude) {
+        if (!busMarker) {
+          busMarker = createBusMarker(loc.latitude, loc.longitude, studentPass.busNumber, false);
+          busMarker.bindPopup(`<strong>${studentPass.busNumber}</strong><br>Last seen here`).addTo(map);
+        }
+        map.setView([loc.latitude, loc.longitude], 13);
+      }
+    }
+  </script>
+</body>
+</html>

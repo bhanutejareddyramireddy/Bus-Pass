@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Routes & Stops | BusPass Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop"></div>
+
+    <!-- Master Vendor Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fas fa-bus-alt"></i>
+          <span>BUSPASS<strong>PRO</strong></span>
+        </div>
+        <button class="sidebar-close-btn">&times;</button>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="sidebar-section-title">Main Menu</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-dashboard.html" class="sidebar-link" data-nav="dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a></li>
+          <li><a href="vendor-organizations.html" class="sidebar-link" data-nav="organizations"><i class="fas fa-sitemap"></i><span>Organizations</span></a></li>
+          <li><a href="vendor-routes.html" class="sidebar-link" data-nav="routes"><i class="fas fa-route"></i><span>Routes & Stops</span></a></li>
+          <li><a href="vendor-buses.html" class="sidebar-link" data-nav="buses"><i class="fas fa-bus"></i><span>Bus Fleet</span></a></li>
+          <li><a href="vendor-conductors.html" class="sidebar-link" data-nav="conductors"><i class="fas fa-id-badge"></i><span>Conductors</span></a></li>
+          <li>
+            <a href="vendor-applications.html" class="sidebar-link" data-nav="applications">
+              <i class="fas fa-file-invoice"></i>
+              <span>Applications</span>
+              <span class="sidebar-badge" id="sidebar-pending-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li><a href="vendor-students.html" class="sidebar-link" data-nav="students"><i class="fas fa-user-graduate"></i><span>Students</span></a></li>
+        </ul>
+
+        <div class="sidebar-section-title">Operations & Fleet</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-live-tracking.html" class="sidebar-link" data-nav="live-tracking"><i class="fas fa-map-marked-alt"></i><span>Live Tracking</span></a></li>
+          <li><a href="vendor-analytics.html" class="sidebar-link" data-nav="analytics"><i class="fas fa-chart-pie"></i><span>Analytics</span></a></li>
+          <li><a href="vendor-payment-settings.html" class="sidebar-link" data-nav="payment-settings"><i class="fas fa-qrcode"></i><span>Payment Settings</span></a></li>
+          <li><a href="vendor-settings.html" class="sidebar-link" data-nav="settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar">V</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name">Vendor Admin</div>
+            <div class="sidebar-user-role">Transport Vendor</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="logoutUser()" title="Sign Out">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <!-- Master Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle-btn"><i class="fas fa-bars"></i></button>
+          <div class="page-title-group">
+            <h1>Routes & Stop Pricing</h1>
+            <div class="page-breadcrumb">
+              <i class="fas fa-home"></i> <span>Vendor Portal</span> / <span>Routes</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-live-tracking.html'" title="Live Tracking">
+            <i class="fas fa-satellite-dish"></i>
+          </button>
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-applications.html'" title="Pending Applications">
+            <i class="fas fa-bell"></i>
+            <span class="topbar-badge-dot" id="topbar-notif-dot" style="display: none;"></span>
+          </button>
+
+          <div class="topbar-user-pill" onclick="window.location.href='vendor-settings.html'">
+            <div class="avatar">V</div>
+            <span class="topbar-user-name">Vendor Admin</span>
+            <i class="fas fa-chevron-right" style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.35rem;"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-body">
+
+        <!-- Page Header & Action -->
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-header-title">Transit Routes & Stations</h2>
+            <p class="page-header-desc">Define pickup routes, morning/evening schedules, boarding stops, and tiered pass fares.</p>
+          </div>
+          <div class="page-header-actions">
+            <button class="btn btn-primary" onclick="openCreateRouteModal()">
+              <i class="fas fa-plus-circle"></i> Create Route
+            </button>
+          </div>
+        </div>
+
+        <!-- Master KPI Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon info"><i class="fas fa-route"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Total Routes</div>
+              <div class="stat-value" id="stat-total-routes">0</div>
+              <div class="stat-desc">Configured transit lines</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon success"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Active Routes</div>
+              <div class="stat-value" id="stat-active-routes" style="color: var(--success);">0</div>
+              <div class="stat-desc">Operational for student booking</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon primary"><i class="fas fa-map-marker-alt"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Boarding Stops</div>
+              <div class="stat-value" id="stat-total-stops">0</div>
+              <div class="stat-desc">Fare-configured pickup points</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon purple"><i class="fas fa-building"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Institutions Covered</div>
+              <div class="stat-value" id="stat-covered-orgs">0</div>
+              <div class="stat-desc">With connected bus lines</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toolbar: Search & Filters -->
+        <div class="table-toolbar">
+          <div class="table-search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-routes" class="form-control" placeholder="Search route, stops, destinations..." oninput="filterRoutes()">
+          </div>
+
+          <div class="table-filters">
+            <select id="filter-org" class="form-control" onchange="filterRoutes()" style="min-width: 200px;">
+              <option value="">All Organizations</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Routes Card -->
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Route Name</th>
+                  <th>Organization</th>
+                  <th>Origin → Destination</th>
+                  <th>Schedule</th>
+                  <th>Stops & Fees</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="routes-table-body">
+                <tr>
+                  <td colspan="7" style="text-align: center; padding: 2.5rem;">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 0.5rem; color: var(--text-muted);">Loading routes...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Create / Edit Route Modal -->
+  <div class="modal-backdrop" id="route-modal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title" id="route-modal-title">Create Transit Route</h3>
+        <button class="modal-close-btn" onclick="closeModal('route-modal')">&times;</button>
+      </div>
+      <form id="route-form">
+        <div class="modal-body">
+          <input type="hidden" id="route-doc-id">
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="route-org">Affiliated Organization <span class="required">*</span></label>
+              <select id="route-org" class="form-control" required>
+                <option value="">Select Organization</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="route-name">Route Name / Code <span class="required">*</span></label>
+              <input type="text" id="route-name" class="form-control" placeholder="e.g. Route 14: Jadcherla → Campus" required>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="route-origin">Starting Point <span class="required">*</span></label>
+              <input type="text" id="route-origin" class="form-control" placeholder="e.g. Jadcherla Bus Stand" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="route-dest">Destination <span class="required">*</span></label>
+              <input type="text" id="route-dest" class="form-control" placeholder="e.g. College Main Gate" required>
+            </div>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label class="form-label" for="route-morning">Morning Pickup Timing</label>
+              <input type="time" id="route-morning" class="form-control" value="07:30">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="route-evening">Evening Return Timing</label>
+              <input type="time" id="route-evening" class="form-control" value="16:45">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="route-status">Status</label>
+              <select id="route-status" class="form-control">
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Stops & Fee Configuration Section -->
+          <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; margin-top: 0.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <div>
+                <h4 style="font-size: 1rem; font-weight: 700; color: var(--text-primary);">Route Stops & Stop-Wise Pricing</h4>
+                <p style="font-size: 0.78rem; color: var(--text-muted);">Set unique Full Year and Semester pass prices for each boarding point</p>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="addStopRow()">
+                <i class="fas fa-plus"></i> Add Boarding Stop
+              </button>
+            </div>
+
+            <div id="stops-container" style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <!-- Dynamic Stop Rows -->
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('route-modal')">Cancel</button>
+          <button type="submit" id="save-route-btn" class="btn btn-primary">Save Route</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    let currentVendorId = null;
+    let organizationsMap = {};
+    let routesList = [];
+
+    initAppShell('routes');
+
+    requireAuth('vendor', async (user) => {
+      currentVendorId = user.uid;
+      await loadOrganizationsDropdown();
+      loadRoutes();
+      listenToPendingBadge();
+    });
+
+    // Real-time listener for pending badge
+    function listenToPendingBadge() {
+      db.collection('applications')
+        .where('vendorId', '==', currentVendorId)
+        .where('status', '==', 'Pending')
+        .onSnapshot(snap => {
+          const count = snap.size;
+          const badge = document.getElementById('sidebar-pending-badge');
+          const dot = document.getElementById('topbar-notif-dot');
+          if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+          }
+          if (dot) {
+            dot.style.display = count > 0 ? 'block' : 'none';
+          }
+        }, err => console.error("Badge listener error:", err));
+    }
+
+    async function loadOrganizationsDropdown() {
+      const snap = await db.collection('organizations').where('vendorId', '==', currentVendorId).get();
+      const orgSelect = document.getElementById('route-org');
+      const filterOrg = document.getElementById('filter-org');
+
+      orgSelect.innerHTML = '<option value="">Select Organization</option>';
+      filterOrg.innerHTML = '<option value="">All Organizations</option>';
+
+      snap.forEach(doc => {
+        const d = doc.data();
+        organizationsMap[doc.id] = d.name;
+        orgSelect.innerHTML += `<option value="${doc.id}">${d.name}</option>`;
+        filterOrg.innerHTML += `<option value="${doc.id}">${d.name}</option>`;
+      });
+    }
+
+    function loadRoutes() {
+      db.collection('routes')
+        .where('vendorId', '==', currentVendorId)
+        .onSnapshot(snap => {
+          routesList = [];
+          snap.forEach(doc => {
+            routesList.push({ id: doc.id, ...doc.data() });
+          });
+          updateRouteKPIs(routesList);
+          filterRoutes();
+        });
+    }
+
+    function updateRouteKPIs(routes) {
+      const total = routes.length;
+      const active = routes.filter(r => r.status === 'Active').length;
+      let totalStops = 0;
+      const orgSet = new Set();
+
+      routes.forEach(r => {
+        if (r.stops && Array.isArray(r.stops)) totalStops += r.stops.length;
+        if (r.organizationId) orgSet.add(r.organizationId);
+      });
+
+      document.getElementById('stat-total-routes').textContent = total;
+      document.getElementById('stat-active-routes').textContent = active;
+      document.getElementById('stat-total-stops').textContent = totalStops;
+      document.getElementById('stat-covered-orgs').textContent = orgSet.size;
+    }
+
+    function filterRoutes() {
+      const search = document.getElementById('search-routes').value.toLowerCase().trim();
+      const orgFilter = document.getElementById('filter-org').value;
+
+      const filtered = routesList.filter(r => {
+        const matchesOrg = !orgFilter || r.organizationId === orgFilter;
+        const matchesSearch = !search || 
+          (r.routeName && r.routeName.toLowerCase().includes(search)) ||
+          (r.startPoint && r.startPoint.toLowerCase().includes(search)) ||
+          (r.destination && r.destination.toLowerCase().includes(search)) ||
+          (r.stops && r.stops.some(s => s.name.toLowerCase().includes(search)));
+        return matchesOrg && matchesSearch;
+      });
+
+      renderRoutesTable(filtered);
+    }
+
+    function renderRoutesTable(routes) {
+      const tbody = document.getElementById('routes-table-body');
+      if (routes.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7">
+              <div class="state-container">
+                <div class="state-icon"><i class="fas fa-route"></i></div>
+                <h4 class="state-title">No Routes Configured</h4>
+                <p class="state-desc">Create your first bus route with custom boarding stops and pricing.</p>
+                <button class="btn btn-primary" onclick="openCreateRouteModal()"><i class="fas fa-plus"></i> Add New Route</button>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = routes.map(route => {
+        const isAct = route.status === 'Active';
+        const stopsCount = route.stops ? route.stops.length : 0;
+        const stopsPreview = (route.stops || []).map(s => `${s.name} (${formatCurrency(s.fullYearFee)}/yr)`).slice(0, 3).join(', ');
+
+        return `
+          <tr>
+            <td>
+              <strong style="font-size: 0.95rem; color: var(--text-primary);">${route.routeName}</strong>
+            </td>
+            <td>
+              <span class="badge badge-primary">${route.organizationName || organizationsMap[route.organizationId] || 'Assigned Org'}</span>
+            </td>
+            <td>
+              <span style="font-weight: 500;">${route.startPoint}</span> 
+              <i class="fas fa-long-arrow-alt-right text-muted" style="margin: 0 4px;"></i> 
+              <span style="font-weight: 500;">${route.destination}</span>
+            </td>
+            <td>
+              <div style="font-size: 0.78rem;">
+                <div><i class="fas fa-sun text-warning"></i> Morning: <strong>${route.morningTime || '07:30'}</strong></div>
+                <div><i class="fas fa-moon text-info"></i> Evening: <strong>${route.eveningTime || '16:45'}</strong></div>
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-secondary" style="font-weight: 700;">${stopsCount} Stops</span>
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                ${stopsPreview}${stopsCount > 3 ? '...' : ''}
+              </div>
+            </td>
+            <td>
+              <span class="badge ${isAct ? 'badge-success' : 'badge-secondary'}">
+                <span class="badge-dot"></span> ${route.status}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <div class="action-btn-group" style="justify-content: flex-end;">
+                <button class="action-btn" title="Toggle Status" onclick="toggleRouteStatus('${route.id}', '${route.status}')">
+                  <i class="fas ${isAct ? 'fa-toggle-on text-success' : 'fa-toggle-off text-muted'}"></i>
+                </button>
+                <button class="action-btn" title="Edit Route" onclick="openEditRouteModal('${route.id}')">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="action-btn delete" title="Delete Route" onclick="deleteRoute('${route.id}', '${route.routeName.replace(/'/g, "\\'")}')">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function addStopRow(name = '', fullYear = '', sem = '') {
+      const container = document.getElementById('stops-container');
+      const row = document.createElement('div');
+      row.className = 'stop-item-row';
+      row.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr 40px; gap: 0.5rem; align-items: center; background: var(--bg-page); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);';
+      row.innerHTML = `
+        <input type="text" class="form-control stop-name-input" placeholder="Stop Name (e.g. Shamshabad)" value="${name}" required>
+        <input type="number" class="form-control stop-year-input" placeholder="Full Year ₹" value="${fullYear}" required min="0">
+        <input type="number" class="form-control stop-sem-input" placeholder="Semester ₹" value="${sem}" required min="0">
+        <button type="button" class="action-btn delete" title="Remove stop" onclick="this.parentElement.remove()">
+          <i class="fas fa-times"></i>
+        </button>
+      `;
+      container.appendChild(row);
+    }
+
+    function openCreateRouteModal() {
+      document.getElementById('route-doc-id').value = '';
+      document.getElementById('route-form').reset();
+      document.getElementById('stops-container').innerHTML = '';
+      addStopRow('Main Stop / Origin', 25000, 14000);
+      addStopRow('Intermediate Stop', 22000, 12000);
+      document.getElementById('route-modal-title').textContent = 'Create Transit Route';
+      openModal('route-modal');
+    }
+
+    function openEditRouteModal(id) {
+      const route = routesList.find(r => r.id === id);
+      if (!route) return;
+
+      document.getElementById('route-doc-id').value = route.id;
+      document.getElementById('route-org').value = route.organizationId || '';
+      document.getElementById('route-name').value = route.routeName || '';
+      document.getElementById('route-origin').value = route.startPoint || '';
+      document.getElementById('route-dest').value = route.destination || '';
+      document.getElementById('route-morning').value = route.morningTime || '07:30';
+      document.getElementById('route-evening').value = route.eveningTime || '16:45';
+      document.getElementById('route-status').value = route.status || 'Active';
+
+      const container = document.getElementById('stops-container');
+      container.innerHTML = '';
+      if (route.stops && route.stops.length > 0) {
+        route.stops.forEach(s => addStopRow(s.name, s.fullYearFee, s.semesterFee));
+      } else {
+        addStopRow('', '', '');
+      }
+
+      document.getElementById('route-modal-title').textContent = 'Edit Transit Route';
+      openModal('route-modal');
+    }
+
+    // Save Route
+    document.getElementById('route-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const docId = document.getElementById('route-doc-id').value;
+      const saveBtn = document.getElementById('save-route-btn');
+      const orgId = document.getElementById('route-org').value;
+
+      const stopRows = document.querySelectorAll('.stop-item-row');
+      const stops = [];
+      stopRows.forEach(row => {
+        const name = row.querySelector('.stop-name-input').value.trim();
+        const year = Number(row.querySelector('.stop-year-input').value) || 0;
+        const sem = Number(row.querySelector('.stop-sem-input').value) || 0;
+        if (name) {
+          stops.push({ name, fullYearFee: year, semesterFee: sem });
+        }
+      });
+
+      if (stops.length === 0) {
+        showToast("Please add at least one boarding stop.", "warning");
+        return;
+      }
+
+      const routeData = {
+        vendorId: currentVendorId,
+        organizationId: orgId,
+        organizationName: organizationsMap[orgId] || '',
+        routeName: document.getElementById('route-name').value.trim(),
+        startPoint: document.getElementById('route-origin').value.trim(),
+        destination: document.getElementById('route-dest').value.trim(),
+        morningTime: document.getElementById('route-morning').value,
+        eveningTime: document.getElementById('route-evening').value,
+        status: document.getElementById('route-status').value,
+        stops: stops,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Saving...';
+
+      try {
+        if (docId) {
+          await db.collection('routes').doc(docId).update(routeData);
+          showToast("Route updated successfully!", "success");
+        } else {
+          routeData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+          await db.collection('routes').add(routeData);
+          showToast("Route created successfully!", "success");
+        }
+        closeModal('route-modal');
+      } catch (err) {
+        console.error("Save route error:", err);
+        showToast("Error saving route: " + err.message, "danger");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<span>Save Route</span>';
+      }
+    });
+
+    async function toggleRouteStatus(id, currentStatus) {
+      const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+      try {
+        await db.collection('routes').doc(id).update({
+          status: newStatus,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast(`Route status set to ${newStatus}`, "info");
+      } catch (err) {
+        showToast("Failed to toggle status", "danger");
+      }
+    }
+
+    function deleteRoute(id, name) {
+      confirmAction(
+        "Delete Route",
+        `Are you sure you want to permanently delete route "${name}"?`,
+        async () => {
+          try {
+            await db.collection('routes').doc(id).delete();
+            showToast("Route deleted successfully.", "success");
+          } catch (e) {
+            showToast("Error deleting route: " + e.message, "danger");
+          }
+        },
+        "Delete Route",
+        true
+      );
+    }
+  </script>
+</body>
+</html>

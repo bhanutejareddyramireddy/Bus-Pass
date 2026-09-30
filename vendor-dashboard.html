@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vendor Dashboard | BusPass Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop"></div>
+
+    <!-- Master Vendor Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fas fa-bus-alt"></i>
+          <span>BUSPASS<strong>PRO</strong></span>
+        </div>
+        <button class="sidebar-close-btn">&times;</button>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="sidebar-section-title">Main Menu</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-dashboard.html" class="sidebar-link" data-nav="dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a></li>
+          <li><a href="vendor-organizations.html" class="sidebar-link" data-nav="organizations"><i class="fas fa-sitemap"></i><span>Organizations</span></a></li>
+          <li><a href="vendor-routes.html" class="sidebar-link" data-nav="routes"><i class="fas fa-route"></i><span>Routes & Stops</span></a></li>
+          <li><a href="vendor-buses.html" class="sidebar-link" data-nav="buses"><i class="fas fa-bus"></i><span>Bus Fleet</span></a></li>
+          <li><a href="vendor-conductors.html" class="sidebar-link" data-nav="conductors"><i class="fas fa-id-badge"></i><span>Conductors</span></a></li>
+          <li>
+            <a href="vendor-applications.html" class="sidebar-link" data-nav="applications">
+              <i class="fas fa-file-invoice"></i>
+              <span>Applications</span>
+              <span class="sidebar-badge" id="sidebar-pending-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li><a href="vendor-students.html" class="sidebar-link" data-nav="students"><i class="fas fa-user-graduate"></i><span>Students</span></a></li>
+        </ul>
+
+        <div class="sidebar-section-title">Operations & Fleet</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-live-tracking.html" class="sidebar-link" data-nav="live-tracking"><i class="fas fa-map-marked-alt"></i><span>Live Tracking</span></a></li>
+          <li><a href="vendor-analytics.html" class="sidebar-link" data-nav="analytics"><i class="fas fa-chart-pie"></i><span>Analytics</span></a></li>
+          <li><a href="vendor-payment-settings.html" class="sidebar-link" data-nav="payment-settings"><i class="fas fa-qrcode"></i><span>Payment Settings</span></a></li>
+          <li><a href="vendor-settings.html" class="sidebar-link" data-nav="settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar">V</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name">Vendor Admin</div>
+            <div class="sidebar-user-role">Transport Vendor</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="logoutUser()" title="Sign Out">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <!-- Master Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle-btn"><i class="fas fa-bars"></i></button>
+          <div class="page-title-group">
+            <h1>Transport Fleet Overview</h1>
+            <div class="page-breadcrumb">
+              <i class="fas fa-home"></i> <span>Vendor Portal</span> / <span>Dashboard</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-live-tracking.html'" title="Live Tracking">
+            <i class="fas fa-satellite-dish"></i>
+          </button>
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-applications.html'" title="Pending Applications">
+            <i class="fas fa-bell"></i>
+            <span class="topbar-badge-dot" id="topbar-notif-dot" style="display: none;"></span>
+          </button>
+
+          <div class="topbar-user-pill" onclick="window.location.href='vendor-settings.html'">
+            <div class="avatar">V</div>
+            <span class="topbar-user-name">Vendor Admin</span>
+            <i class="fas fa-chevron-right" style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.35rem;"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-body">
+
+        <!-- Welcome Banner -->
+        <div class="card" style="background: linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #4338CA 100%); color: #FFFFFF; border: none; padding: 1.75rem 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <span class="badge" style="background: rgba(255,255,255,0.2); color: #fff; margin-bottom: 0.75rem;">
+                <i class="fas fa-shield-alt"></i> Enterprise Fleet Control
+              </span>
+              <h2 style="font-size: 1.6rem; font-weight: 800; color: #fff;" id="welcome-title">Welcome back, Vendor Admin</h2>
+              <p style="color: #C7D2FE; font-size: 0.95rem; margin-top: 0.25rem;">
+                Here is your live operations summary across all registered organizations, routes, and buses.
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+              <a href="vendor-organizations.html" class="btn btn-secondary" style="background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3);">
+                <i class="fas fa-plus"></i> Add Organization
+              </a>
+              <a href="vendor-applications.html" class="btn btn-primary" style="background: #FFFFFF; color: var(--primary);">
+                <i class="fas fa-clipboard-check"></i> Review Applications
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI Stats Grid -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon primary"><i class="fas fa-sitemap"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Organizations</div>
+              <div class="stat-value" id="stat-orgs">-</div>
+              <div class="stat-desc"><i class="fas fa-building text-primary"></i> Active institutions</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon info"><i class="fas fa-route"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Active Routes</div>
+              <div class="stat-value" id="stat-routes">-</div>
+              <div class="stat-desc"><i class="fas fa-map-pin text-info"></i> Configured transit lines</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon warning"><i class="fas fa-bus"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Total Buses</div>
+              <div class="stat-value" id="stat-buses">-</div>
+              <div class="stat-desc"><i class="fas fa-tachometer-alt text-warning"></i> Assigned fleet units</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon purple"><i class="fas fa-id-badge"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Active Conductors</div>
+              <div class="stat-value" id="stat-conductors">-</div>
+              <div class="stat-desc"><i class="fas fa-user-check text-purple"></i> Duty staff accounts</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon success"><i class="fas fa-user-graduate"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Total Students</div>
+              <div class="stat-value" id="stat-students">-</div>
+              <div class="stat-desc"><i class="fas fa-users text-success"></i> Registered commuters</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon danger"><i class="fas fa-clock"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Pending Applications</div>
+              <div class="stat-value" id="stat-pending">-</div>
+              <div class="stat-desc"><i class="fas fa-exclamation-circle text-danger"></i> Needs payment review</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Application Status & Fleet Pipeline Grid -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+          <!-- Recent Applications Table Card -->
+          <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Recent Pass Applications</h3>
+                <p class="card-subtitle">Real-time submissions awaiting verification and pass generation</p>
+              </div>
+              <a href="vendor-applications.html" class="btn btn-outline-primary btn-sm">View All Applications</a>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Student Name</th>
+                    <th>Organization</th>
+                    <th>Route / Stop</th>
+                    <th>Fee</th>
+                    <th>Payment</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-apps-tbody">
+                  <tr>
+                    <td colspan="7" style="text-align: center; padding: 2rem;">
+                      <div class="spinner spinner-sm"></div> Loading recent applications...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Live Fleet & Org Summary Card -->
+          <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Live Fleet Status</h3>
+                <p class="card-subtitle">Real-time GPS duty telemetry</p>
+              </div>
+              <a href="vendor-live-tracking.html" class="btn btn-secondary btn-sm"><i class="fas fa-external-link-alt"></i> Map</a>
+            </div>
+
+            <div style="background: var(--bg-page); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-around;">
+              <div style="text-align: center;">
+                <div style="font-size: 1.85rem; font-weight: 800; color: var(--success);" id="live-buses-count">0</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Live On Duty</div>
+              </div>
+              <div style="width: 1px; height: 40px; background: var(--border-color);"></div>
+              <div style="text-align: center;">
+                <div style="font-size: 1.85rem; font-weight: 800; color: var(--text-muted);" id="offline-buses-count">0</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Offline / Idle</div>
+              </div>
+            </div>
+
+            <h4 style="font-size: 0.88rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;">
+              Registered Organizations
+            </h4>
+            <div id="orgs-mini-list" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 250px; overflow-y: auto;">
+              <div class="state-container" style="padding: 1rem;"><div class="spinner spinner-sm"></div></div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    let currentVendorId = null;
+
+    initAppShell('dashboard');
+
+    requireAuth('vendor', (user, userData) => {
+      currentVendorId = user.uid;
+      document.getElementById('welcome-title').textContent = `Welcome back, ${userData.businessName || userData.name || 'Vendor Admin'}`;
+      
+      // Load real-time dashboard data
+      loadDashboardMetrics();
+      listenToLiveFleet();
+    });
+
+    async function loadDashboardMetrics() {
+      try {
+        // 1. Organizations Count
+        const orgsSnap = await db.collection('organizations').where('vendorId', '==', currentVendorId).get();
+        document.getElementById('stat-orgs').textContent = orgsSnap.size;
+
+        // Render mini org list
+        const orgsListEl = document.getElementById('orgs-mini-list');
+        if (orgsSnap.empty) {
+          orgsListEl.innerHTML = `
+            <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 1rem;">
+              No organizations yet. <br><a href="vendor-organizations.html" class="btn btn-primary btn-sm" style="margin-top: 0.5rem;">Create Organization</a>
+            </div>
+          `;
+        } else {
+          orgsListEl.innerHTML = '';
+          orgsSnap.forEach(doc => {
+            const org = doc.data();
+            const item = document.createElement('div');
+            item.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.85rem; background: var(--bg-page); border-radius: var(--radius-sm); border: 1px solid var(--border-color);';
+            item.innerHTML = `
+              <div>
+                <strong style="font-size: 0.88rem; color: var(--text-primary); display: block;">${org.name}</strong>
+                <span style="font-size: 0.72rem; color: var(--text-muted);">${org.type || 'College'} • ${org.location || 'Local'}</span>
+              </div>
+              <span class="badge ${org.status === 'Active' ? 'badge-success' : 'badge-secondary'}">${org.status || 'Active'}</span>
+            `;
+            orgsListEl.appendChild(item);
+          });
+        }
+
+        // 2. Routes Count
+        const routesSnap = await db.collection('routes').where('vendorId', '==', currentVendorId).get();
+        document.getElementById('stat-routes').textContent = routesSnap.size;
+
+        // 3. Buses Count
+        const busesSnap = await db.collection('buses').where('vendorId', '==', currentVendorId).get();
+        document.getElementById('stat-buses').textContent = busesSnap.size;
+
+        // 4. Conductors Count
+        const conductorsSnap = await db.collection('conductors').where('vendorId', '==', currentVendorId).get();
+        document.getElementById('stat-conductors').textContent = conductorsSnap.size;
+
+        // 5. Real-time Applications listener
+        db.collection('applications')
+          .where('vendorId', '==', currentVendorId)
+          .onSnapshot(snap => {
+            let pendingCount = 0;
+            const apps = [];
+            snap.forEach(doc => {
+              const data = { id: doc.id, ...doc.data() };
+              if (data.status === 'Pending') pendingCount++;
+              apps.push(data);
+            });
+
+            document.getElementById('stat-pending').textContent = pendingCount;
+            const badge = document.getElementById('sidebar-pending-badge');
+            const notifDot = document.getElementById('topbar-notif-dot');
+            if (pendingCount > 0) {
+              badge.textContent = pendingCount;
+              badge.style.display = 'inline-block';
+              notifDot.style.display = 'block';
+            } else {
+              badge.style.display = 'none';
+              notifDot.style.display = 'none';
+            }
+
+            // Estimate total unique students
+            const studentIds = new Set(apps.map(a => a.studentId));
+            document.getElementById('stat-students').textContent = studentIds.size;
+
+            // Render Recent Applications (up to 5)
+            renderRecentApplications(apps.slice(0, 5));
+          });
+
+      } catch (error) {
+        console.error("Dashboard metrics error:", error);
+        showToast("Failed to load dashboard metrics.", "danger");
+      }
+    }
+
+    function renderRecentApplications(apps) {
+      const tbody = document.getElementById('recent-apps-tbody');
+      if (!apps || apps.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+              No pass applications received yet.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = apps.map(app => {
+        let statusBadge = '<span class="badge badge-warning">Pending</span>';
+        if (app.status === 'Approved') statusBadge = '<span class="badge badge-success">Approved</span>';
+        if (app.status === 'Rejected') statusBadge = '<span class="badge badge-danger">Rejected</span>';
+
+        let payBadge = '<span class="badge badge-secondary">Pending</span>';
+        if (app.paymentStatus === 'PaidProofSubmitted') payBadge = '<span class="badge badge-warning">Proof Submitted</span>';
+        if (app.paymentStatus === 'Verified') payBadge = '<span class="badge badge-success">Verified</span>';
+        if (app.paymentStatus === 'Rejected') payBadge = '<span class="badge badge-danger">Invalid Proof</span>';
+
+        return `
+          <tr>
+            <td><strong>${app.studentName || 'Student'}</strong></td>
+            <td>${app.organizationName || 'Assigned Org'}</td>
+            <td>${app.routeName || 'Route'} <br><small style="color:var(--text-muted);">${app.boardingStop || '-'}</small></td>
+            <td><strong>${formatCurrency(app.fee)}</strong></td>
+            <td>${payBadge}</td>
+            <td>${statusBadge}</td>
+            <td>
+              <a href="vendor-applications.html" class="btn btn-secondary btn-sm" title="Review Application">
+                <i class="fas fa-eye"></i> Review
+              </a>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Real-time Live Fleet Telemetry
+    function listenToLiveFleet() {
+      db.collection('liveBusLocations')
+        .where('vendorId', '==', currentVendorId)
+        .onSnapshot(snap => {
+          let liveCount = 0;
+          let totalCount = snap.size;
+
+          snap.forEach(doc => {
+            const data = doc.data();
+            if (data.isLive) liveCount++;
+          });
+
+          document.getElementById('live-buses-count').textContent = liveCount;
+          document.getElementById('offline-buses-count').textContent = Math.max(0, totalCount - liveCount);
+        });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conductor Duty Login | BusPass</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="auth-page">
+
+  <div class="split-auth-container">
+    <!-- Left Hero Banner: Conductor Duty Portal -->
+    <div class="split-auth-banner conductor-banner">
+      <div class="split-banner-content">
+        <a href="index.html" class="split-brand">
+          <div class="split-brand-icon">
+            <i class="fas fa-bus-alt"></i>
+          </div>
+          <span>BusPass</span>
+        </a>
+
+        <h1 class="split-title">Conductor Portal</h1>
+        <p class="split-subtitle">Rapid boarding validation & live GPS duty</p>
+
+        <ul class="split-checklist">
+          <li class="split-check-item">
+            <span class="split-check-icon"><i class="fas fa-camera"></i></span>
+            <span>Scan Student QR Passes</span>
+          </li>
+          <li class="split-check-item">
+            <span class="split-check-icon"><i class="fas fa-check-double"></i></span>
+            <span>Real-Time Validation</span>
+          </li>
+          <li class="split-check-item">
+            <span class="split-check-icon"><i class="fas fa-clipboard-list"></i></span>
+            <span>Boarding Record Logging</span>
+          </li>
+          <li class="split-check-item">
+            <span class="split-check-icon"><i class="fas fa-satellite-dish"></i></span>
+            <span>Live Duty GPS Broadcast</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Bus Graphic at Bottom -->
+      <div class="split-bottom-art">
+        <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=700&q=80" alt="Conductor Bus Fleet">
+      </div>
+
+      <!-- Organic Wave Divider to Form -->
+      <div class="split-banner-curve">
+        <svg viewBox="0 0 100 600" preserveAspectRatio="none">
+          <path d="M100,0 C30,160 30,440 100,600 L100,0 Z" fill="#FFFFFF"></path>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Right Form Section: Conductor Login -->
+    <div class="split-auth-form-wrap">
+      <div class="split-form-header">
+        <h2>Conductor Login</h2>
+        <p>Enter your vendor-issued Conductor ID and Password</p>
+      </div>
+
+      <!-- Official Tip Callout -->
+      <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.82rem; color: #334155; display: flex; gap: 0.65rem; align-items: flex-start;">
+        <i class="fas fa-info-circle" style="color: #10B981; font-size: 1rem; margin-top: 0.15rem; flex-shrink: 0;"></i>
+        <div>
+          <strong>Duty Terminal:</strong> Enter your official ID (e.g. <code style="font-family: monospace; font-weight: 700; color: #059669;">CON-7F42A9</code>).
+        </div>
+      </div>
+
+      <form id="conductor-login-form" class="split-auth-form">
+        <div class="form-group">
+          <label class="form-label" for="conductor-id">Conductor ID</label>
+          <input type="text" id="conductor-id" class="form-control" placeholder="CON-XXXXXX" style="text-transform: uppercase; font-family: monospace; font-size: 1.05rem; letter-spacing: 0.05em; font-weight: 700;" required autocomplete="username">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="split-input-password">
+            <input type="password" id="password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+            <button type="button" id="toggle-password-btn" class="split-eye-btn" title="Toggle password visibility">
+              <i class="fas fa-eye" id="toggle-password-icon"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="login-btn" class="split-btn-primary" style="background: #10B981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); margin-top: 1rem;">
+          <i class="fas fa-sign-in-alt"></i> Start Conductor Duty
+        </button>
+      </form>
+
+      <div class="split-auth-footer">
+        Need credentials? Contact your transport vendor admin.
+      </div>
+
+      <div class="split-role-switches">
+        <a href="login.html"><i class="fas fa-graduation-cap"></i> Student Login</a>
+        <a href="vendor-login.html"><i class="fas fa-user-shield"></i> Vendor Portal</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    const form = document.getElementById('conductor-login-form');
+    const btn = document.getElementById('login-btn');
+    const idInput = document.getElementById('conductor-id');
+    const passInput = document.getElementById('password');
+    const togglePassBtn = document.getElementById('toggle-password-btn');
+    const togglePassIcon = document.getElementById('toggle-password-icon');
+
+    // Toggle password visibility
+    if (togglePassBtn) {
+      togglePassBtn.addEventListener('click', () => {
+        const isPass = passInput.type === 'password';
+        passInput.type = isPass ? 'text' : 'password';
+        togglePassIcon.className = isPass ? 'fas fa-eye-slash' : 'fas fa-eye';
+      });
+    }
+
+    // Auto format and clean ID
+    idInput.addEventListener('input', () => {
+      let val = idInput.value.toUpperCase().replace(/\s+/g, '');
+      idInput.value = val;
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      let conductorId = idInput.value.trim();
+      const password = passInput.value;
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Authenticating duty...';
+
+      try {
+        await loginConductor(conductorId, password);
+        showToast("Conductor authenticated successfully!", "success");
+        setTimeout(() => {
+          window.location.href = 'conductor-dashboard.html';
+        }, 800);
+      } catch (error) {
+        showToast(error.message, "danger", "Authentication Failed");
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Start Conductor Duty';
+      }
+    });
+
+    // Auto redirect if already logged in as conductor
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        try {
+          const userDoc = await db.collection('users').doc(user.uid).get();
+          if (userDoc.exists && userDoc.data().role === 'conductor') {
+            window.location.href = 'conductor-dashboard.html';
+          }
+        } catch(e) {}
+      }
+    });
+  </script>
+</body>
+</html>

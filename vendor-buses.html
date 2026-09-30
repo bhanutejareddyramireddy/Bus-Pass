@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Bus Fleet | BusPass Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop"></div>
+
+    <!-- Master Vendor Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fas fa-bus-alt"></i>
+          <span>BUSPASS<strong>PRO</strong></span>
+        </div>
+        <button class="sidebar-close-btn">&times;</button>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="sidebar-section-title">Main Menu</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-dashboard.html" class="sidebar-link" data-nav="dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a></li>
+          <li><a href="vendor-organizations.html" class="sidebar-link" data-nav="organizations"><i class="fas fa-sitemap"></i><span>Organizations</span></a></li>
+          <li><a href="vendor-routes.html" class="sidebar-link" data-nav="routes"><i class="fas fa-route"></i><span>Routes & Stops</span></a></li>
+          <li><a href="vendor-buses.html" class="sidebar-link" data-nav="buses"><i class="fas fa-bus"></i><span>Bus Fleet</span></a></li>
+          <li><a href="vendor-conductors.html" class="sidebar-link" data-nav="conductors"><i class="fas fa-id-badge"></i><span>Conductors</span></a></li>
+          <li>
+            <a href="vendor-applications.html" class="sidebar-link" data-nav="applications">
+              <i class="fas fa-file-invoice"></i>
+              <span>Applications</span>
+              <span class="sidebar-badge" id="sidebar-pending-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li><a href="vendor-students.html" class="sidebar-link" data-nav="students"><i class="fas fa-user-graduate"></i><span>Students</span></a></li>
+        </ul>
+
+        <div class="sidebar-section-title">Operations & Fleet</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-live-tracking.html" class="sidebar-link" data-nav="live-tracking"><i class="fas fa-map-marked-alt"></i><span>Live Tracking</span></a></li>
+          <li><a href="vendor-analytics.html" class="sidebar-link" data-nav="analytics"><i class="fas fa-chart-pie"></i><span>Analytics</span></a></li>
+          <li><a href="vendor-payment-settings.html" class="sidebar-link" data-nav="payment-settings"><i class="fas fa-qrcode"></i><span>Payment Settings</span></a></li>
+          <li><a href="vendor-settings.html" class="sidebar-link" data-nav="settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar">V</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name">Vendor Admin</div>
+            <div class="sidebar-user-role">Transport Vendor</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="logoutUser()" title="Sign Out">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <!-- Master Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle-btn"><i class="fas fa-bars"></i></button>
+          <div class="page-title-group">
+            <h1>Bus Fleet Management</h1>
+            <div class="page-breadcrumb">
+              <i class="fas fa-home"></i> <span>Vendor Portal</span> / <span>Buses</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-live-tracking.html'" title="Live Tracking">
+            <i class="fas fa-satellite-dish"></i>
+          </button>
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-applications.html'" title="Pending Applications">
+            <i class="fas fa-bell"></i>
+            <span class="topbar-badge-dot" id="topbar-notif-dot" style="display: none;"></span>
+          </button>
+
+          <div class="topbar-user-pill" onclick="window.location.href='vendor-settings.html'">
+            <div class="avatar">V</div>
+            <span class="topbar-user-name">Vendor Admin</span>
+            <i class="fas fa-chevron-right" style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.35rem;"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-body">
+
+        <!-- Page Header & Action -->
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-header-title">Transport Fleet Vehicles</h2>
+            <p class="page-header-desc">Register buses, assign routes to institutions, configure seating capacity, and designate drivers.</p>
+          </div>
+          <div class="page-header-actions">
+            <button class="btn btn-primary" onclick="openCreateBusModal()">
+              <i class="fas fa-plus-circle"></i> Add New Bus
+            </button>
+          </div>
+        </div>
+
+        <!-- Master KPI Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon warning"><i class="fas fa-bus"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Total Buses</div>
+              <div class="stat-value" id="stat-total-buses">0</div>
+              <div class="stat-desc">Fleet vehicles registered</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon success"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Active Fleet</div>
+              <div class="stat-value" id="stat-active-buses" style="color: var(--success);">0</div>
+              <div class="stat-desc">In operational service</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon primary"><i class="fas fa-users"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Total Capacity</div>
+              <div class="stat-value" id="stat-total-capacity">0</div>
+              <div class="stat-desc">Combined passenger seats</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon danger"><i class="fas fa-pause-circle"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Idle / Inactive</div>
+              <div class="stat-value" id="stat-inactive-buses">0</div>
+              <div class="stat-desc">Out of service or maintenance</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toolbar: Search & Filters -->
+        <div class="table-toolbar">
+          <div class="table-search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-buses" class="form-control" placeholder="Search bus number, registration, driver..." oninput="filterBuses()">
+          </div>
+
+          <div class="table-filters">
+            <select id="filter-org" class="form-control" onchange="filterBuses()" style="min-width: 200px;">
+              <option value="">All Organizations</option>
+            </select>
+
+            <select id="filter-status" class="form-control" onchange="filterBuses()" style="width: auto;">
+              <option value="">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Bus Table Card -->
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Bus Identifier</th>
+                  <th>Organization</th>
+                  <th>Assigned Route</th>
+                  <th>Capacity</th>
+                  <th>Driver Details</th>
+                  <th>Timings</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="buses-table-body">
+                <tr>
+                  <td colspan="8" style="text-align: center; padding: 2.5rem;">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 0.5rem; color: var(--text-muted);">Loading fleet...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Create / Edit Bus Modal -->
+  <div class="modal-backdrop" id="bus-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="bus-modal-title">Add Vehicle to Fleet</h3>
+        <button class="modal-close-btn" onclick="closeModal('bus-modal')">&times;</button>
+      </div>
+      <form id="bus-form">
+        <div class="modal-body">
+          <input type="hidden" id="bus-doc-id">
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="bus-org">Organization <span class="required">*</span></label>
+              <select id="bus-org" class="form-control" required onchange="onModalOrgChange()">
+                <option value="">Select Organization</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="bus-route">Assigned Route <span class="required">*</span></label>
+              <select id="bus-route" class="form-control" required>
+                <option value="">Select Route</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="bus-number">Bus Number / Code <span class="required">*</span></label>
+              <input type="text" id="bus-number" class="form-control" placeholder="e.g. BUS-101" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="bus-reg">Registration Number <span class="required">*</span></label>
+              <input type="text" id="bus-reg" class="form-control" placeholder="e.g. TS09AB1234" required style="text-transform: uppercase;">
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="bus-capacity">Passenger Capacity <span class="required">*</span></label>
+              <input type="number" id="bus-capacity" class="form-control" placeholder="50" min="1" max="120" value="50" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="bus-driver">Designated Driver Name <span class="required">*</span></label>
+              <input type="text" id="bus-driver" class="form-control" placeholder="e.g. Ramesh Kumar" required>
+            </div>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label class="form-label" for="bus-morning">Morning Timing</label>
+              <input type="time" id="bus-morning" class="form-control" value="07:30">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="bus-evening">Evening Timing</label>
+              <input type="time" id="bus-evening" class="form-control" value="16:45">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="bus-status">Status</label>
+              <select id="bus-status" class="form-control">
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('bus-modal')">Cancel</button>
+          <button type="submit" id="save-bus-btn" class="btn btn-primary">Save Bus</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    let currentVendorId = null;
+    let organizationsMap = {};
+    let routesCache = [];
+    let busesList = [];
+
+    initAppShell('buses');
+
+    requireAuth('vendor', async (user) => {
+      currentVendorId = user.uid;
+      await loadOrganizations();
+      await loadRoutesCache();
+      loadBuses();
+      listenToPendingBadge();
+    });
+
+    // Real-time listener for pending badge
+    function listenToPendingBadge() {
+      db.collection('applications')
+        .where('vendorId', '==', currentVendorId)
+        .where('status', '==', 'Pending')
+        .onSnapshot(snap => {
+          const count = snap.size;
+          const badge = document.getElementById('sidebar-pending-badge');
+          const dot = document.getElementById('topbar-notif-dot');
+          if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+          }
+          if (dot) {
+            dot.style.display = count > 0 ? 'block' : 'none';
+          }
+        }, err => console.error("Badge listener error:", err));
+    }
+
+    async function loadOrganizations() {
+      const snap = await db.collection('organizations').where('vendorId', '==', currentVendorId).get();
+      const orgSelect = document.getElementById('bus-org');
+      const filterOrg = document.getElementById('filter-org');
+
+      orgSelect.innerHTML = '<option value="">Select Organization</option>';
+      filterOrg.innerHTML = '<option value="">All Organizations</option>';
+
+      snap.forEach(doc => {
+        const d = doc.data();
+        organizationsMap[doc.id] = d.name;
+        orgSelect.innerHTML += `<option value="${doc.id}">${d.name}</option>`;
+        filterOrg.innerHTML += `<option value="${doc.id}">${d.name}</option>`;
+      });
+    }
+
+    async function loadRoutesCache() {
+      const snap = await db.collection('routes').where('vendorId', '==', currentVendorId).get();
+      routesCache = [];
+      snap.forEach(doc => {
+        routesCache.push({ id: doc.id, ...doc.data() });
+      });
+    }
+
+    function onModalOrgChange() {
+      const orgId = document.getElementById('bus-org').value;
+      const routeSelect = document.getElementById('bus-route');
+      routeSelect.innerHTML = '<option value="">Select Route</option>';
+
+      const matchedRoutes = routesCache.filter(r => r.organizationId === orgId);
+      matchedRoutes.forEach(r => {
+        routeSelect.innerHTML += `<option value="${r.id}">${r.routeName}</option>`;
+      });
+    }
+
+    function loadBuses() {
+      db.collection('buses')
+        .where('vendorId', '==', currentVendorId)
+        .onSnapshot(snap => {
+          busesList = [];
+          snap.forEach(doc => {
+            busesList.push({ id: doc.id, ...doc.data() });
+          });
+          updateBusKPIs(busesList);
+          filterBuses();
+        });
+    }
+
+    function updateBusKPIs(buses) {
+      const total = buses.length;
+      const active = buses.filter(b => b.status === 'Active').length;
+      const inactive = buses.filter(b => b.status === 'Inactive').length;
+      let totalCapacity = 0;
+      buses.forEach(b => {
+        totalCapacity += Number(b.capacity) || 0;
+      });
+
+      document.getElementById('stat-total-buses').textContent = total;
+      document.getElementById('stat-active-buses').textContent = active;
+      document.getElementById('stat-total-capacity').textContent = totalCapacity;
+      document.getElementById('stat-inactive-buses').textContent = inactive;
+    }
+
+    function filterBuses() {
+      const search = document.getElementById('search-buses').value.toLowerCase().trim();
+      const orgFilter = document.getElementById('filter-org').value;
+      const statusFilter = document.getElementById('filter-status').value;
+
+      const filtered = busesList.filter(b => {
+        const matchesOrg = !orgFilter || b.organizationId === orgFilter;
+        const matchesStatus = !statusFilter || b.status === statusFilter;
+        const matchesSearch = !search ||
+          (b.busNumber && b.busNumber.toLowerCase().includes(search)) ||
+          (b.registrationNumber && b.registrationNumber.toLowerCase().includes(search)) ||
+          (b.driverName && b.driverName.toLowerCase().includes(search));
+        return matchesOrg && matchesStatus && matchesSearch;
+      });
+
+      renderBusesTable(filtered);
+    }
+
+    function renderBusesTable(buses) {
+      const tbody = document.getElementById('buses-table-body');
+      if (buses.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8">
+              <div class="state-container">
+                <div class="state-icon"><i class="fas fa-bus"></i></div>
+                <h4 class="state-title">No Buses Registered</h4>
+                <p class="state-desc">Add fleet vehicles to assign routes and conductors.</p>
+                <button class="btn btn-primary" onclick="openCreateBusModal()"><i class="fas fa-plus"></i> Add New Bus</button>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = buses.map(bus => {
+        const isAct = bus.status === 'Active';
+        const routeObj = routesCache.find(r => r.id === bus.routeId);
+        const routeName = routeObj ? routeObj.routeName : (bus.routeName || 'Unassigned');
+
+        return `
+          <tr>
+            <td>
+              <strong style="font-size: 0.95rem; color: var(--text-primary);">${bus.busNumber}</strong>
+              <div style="font-size: 0.72rem; color: var(--text-muted); font-family: monospace;">${bus.registrationNumber}</div>
+            </td>
+            <td>
+              <span class="badge badge-primary">${organizationsMap[bus.organizationId] || 'Assigned Org'}</span>
+            </td>
+            <td>
+              <span style="font-weight: 500;">${routeName}</span>
+            </td>
+            <td>
+              <strong>${bus.capacity || 50}</strong> <span style="font-size: 0.75rem; color: var(--text-muted);">seats</span>
+            </td>
+            <td>
+              <i class="fas fa-user-tie text-muted" style="margin-right: 4px;"></i> ${bus.driverName || 'Driver'}
+            </td>
+            <td>
+              <div style="font-size: 0.78rem;">
+                <div><i class="fas fa-sun text-warning"></i> ${bus.morningTime || '07:30'}</div>
+                <div><i class="fas fa-moon text-info"></i> ${bus.eveningTime || '16:45'}</div>
+              </div>
+            </td>
+            <td>
+              <span class="badge ${isAct ? 'badge-success' : 'badge-secondary'}">
+                <span class="badge-dot"></span> ${bus.status}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <div class="action-btn-group" style="justify-content: flex-end;">
+                <button class="action-btn" title="Toggle Status" onclick="toggleBusStatus('${bus.id}', '${bus.status}')">
+                  <i class="fas ${isAct ? 'fa-toggle-on text-success' : 'fa-toggle-off text-muted'}"></i>
+                </button>
+                <button class="action-btn" title="Edit Bus" onclick="openEditBusModal('${bus.id}')">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="action-btn delete" title="Delete Bus" onclick="deleteBus('${bus.id}', '${bus.busNumber.replace(/'/g, "\\'")}')">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openCreateBusModal() {
+      document.getElementById('bus-doc-id').value = '';
+      document.getElementById('bus-form').reset();
+      document.getElementById('bus-route').innerHTML = '<option value="">Select Route</option>';
+      document.getElementById('bus-modal-title').textContent = 'Add Vehicle to Fleet';
+      openModal('bus-modal');
+    }
+
+    function openEditBusModal(id) {
+      const bus = busesList.find(b => b.id === id);
+      if (!bus) return;
+
+      document.getElementById('bus-doc-id').value = bus.id;
+      document.getElementById('bus-org').value = bus.organizationId || '';
+      
+      // Populate routes for this org
+      onModalOrgChange();
+      document.getElementById('bus-route').value = bus.routeId || '';
+
+      document.getElementById('bus-number').value = bus.busNumber || '';
+      document.getElementById('bus-reg').value = bus.registrationNumber || '';
+      document.getElementById('bus-capacity').value = bus.capacity || 50;
+      document.getElementById('bus-driver').value = bus.driverName || '';
+      document.getElementById('bus-morning').value = bus.morningTime || '07:30';
+      document.getElementById('bus-evening').value = bus.eveningTime || '16:45';
+      document.getElementById('bus-status').value = bus.status || 'Active';
+
+      document.getElementById('bus-modal-title').textContent = 'Edit Fleet Vehicle';
+      openModal('bus-modal');
+    }
+
+    // Save Bus
+    document.getElementById('bus-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const docId = document.getElementById('bus-doc-id').value;
+      const saveBtn = document.getElementById('save-bus-btn');
+      const orgId = document.getElementById('bus-org').value;
+      const routeId = document.getElementById('bus-route').value;
+      const routeObj = routesCache.find(r => r.id === routeId);
+
+      const busData = {
+        vendorId: currentVendorId,
+        organizationId: orgId,
+        organizationName: organizationsMap[orgId] || '',
+        routeId: routeId,
+        routeName: routeObj ? routeObj.routeName : '',
+        busNumber: document.getElementById('bus-number').value.trim(),
+        registrationNumber: document.getElementById('bus-reg').value.trim().toUpperCase(),
+        capacity: Number(document.getElementById('bus-capacity').value) || 50,
+        driverName: document.getElementById('bus-driver').value.trim(),
+        morningTime: document.getElementById('bus-morning').value,
+        eveningTime: document.getElementById('bus-evening').value,
+        status: document.getElementById('bus-status').value,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Saving...';
+
+      try {
+        if (docId) {
+          await db.collection('buses').doc(docId).update(busData);
+          showToast("Bus details updated successfully!", "success");
+        } else {
+          busData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+          await db.collection('buses').add(busData);
+          showToast("New bus added to fleet!", "success");
+        }
+        closeModal('bus-modal');
+      } catch (err) {
+        console.error("Save bus error:", err);
+        showToast("Error saving bus: " + err.message, "danger");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<span>Save Bus</span>';
+      }
+    });
+
+    async function toggleBusStatus(id, currentStatus) {
+      const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+      try {
+        await db.collection('buses').doc(id).update({
+          status: newStatus,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast(`Bus status set to ${newStatus}`, "info");
+      } catch (err) {
+        showToast("Failed to toggle status", "danger");
+      }
+    }
+
+    function deleteBus(id, busNumber) {
+      confirmAction(
+        "Delete Bus",
+        `Are you sure you want to delete bus "${busNumber}"? Any assigned conductor will become unassigned.`,
+        async () => {
+          try {
+            await db.collection('buses').doc(id).delete();
+            showToast("Bus removed from fleet.", "success");
+          } catch (e) {
+            showToast("Error deleting bus: " + e.message, "danger");
+          }
+        },
+        "Delete Bus",
+        true
+      );
+    }
+  </script>
+</body>
+</html>

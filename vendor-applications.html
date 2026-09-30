@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pass Applications | BusPass Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop"></div>
+
+    <!-- Master Vendor Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fas fa-bus-alt"></i>
+          <span>BUSPASS<strong>PRO</strong></span>
+        </div>
+        <button class="sidebar-close-btn">&times;</button>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="sidebar-section-title">Main Menu</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-dashboard.html" class="sidebar-link" data-nav="dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a></li>
+          <li><a href="vendor-organizations.html" class="sidebar-link" data-nav="organizations"><i class="fas fa-sitemap"></i><span>Organizations</span></a></li>
+          <li><a href="vendor-routes.html" class="sidebar-link" data-nav="routes"><i class="fas fa-route"></i><span>Routes & Stops</span></a></li>
+          <li><a href="vendor-buses.html" class="sidebar-link" data-nav="buses"><i class="fas fa-bus"></i><span>Bus Fleet</span></a></li>
+          <li><a href="vendor-conductors.html" class="sidebar-link" data-nav="conductors"><i class="fas fa-id-badge"></i><span>Conductors</span></a></li>
+          <li>
+            <a href="vendor-applications.html" class="sidebar-link" data-nav="applications">
+              <i class="fas fa-file-invoice"></i>
+              <span>Applications</span>
+              <span class="sidebar-badge" id="sidebar-pending-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li><a href="vendor-students.html" class="sidebar-link" data-nav="students"><i class="fas fa-user-graduate"></i><span>Students</span></a></li>
+        </ul>
+
+        <div class="sidebar-section-title">Operations & Fleet</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-live-tracking.html" class="sidebar-link" data-nav="live-tracking"><i class="fas fa-map-marked-alt"></i><span>Live Tracking</span></a></li>
+          <li><a href="vendor-analytics.html" class="sidebar-link" data-nav="analytics"><i class="fas fa-chart-pie"></i><span>Analytics</span></a></li>
+          <li><a href="vendor-payment-settings.html" class="sidebar-link" data-nav="payment-settings"><i class="fas fa-qrcode"></i><span>Payment Settings</span></a></li>
+          <li><a href="vendor-settings.html" class="sidebar-link" data-nav="settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar">V</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name">Vendor Admin</div>
+            <div class="sidebar-user-role">Transport Vendor</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="logoutUser()" title="Sign Out">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <!-- Master Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle-btn"><i class="fas fa-bars"></i></button>
+          <div class="page-title-group">
+            <h1>Pass Applications & Verification</h1>
+            <div class="page-breadcrumb">
+              <i class="fas fa-home"></i> <span>Vendor Portal</span> / <span>Applications</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-live-tracking.html'" title="Live Tracking">
+            <i class="fas fa-satellite-dish"></i>
+          </button>
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-applications.html'" title="Pending Applications">
+            <i class="fas fa-bell"></i>
+            <span class="topbar-badge-dot" id="topbar-notif-dot" style="display: none;"></span>
+          </button>
+
+          <div class="topbar-user-pill" onclick="window.location.href='vendor-settings.html'">
+            <div class="avatar">V</div>
+            <span class="topbar-user-name">Vendor Admin</span>
+            <i class="fas fa-chevron-right" style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.35rem;"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-body">
+
+        <!-- Page Header & Action -->
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-header-title">Student Pass Applications</h2>
+            <p class="page-header-desc">Review student registrations, verify payment screenshots & UTR numbers, assign fleet buses, and issue digital passes.</p>
+          </div>
+          <div class="page-header-actions">
+            <span class="badge badge-warning" id="pending-counter-pill" style="padding: 0.45rem 0.95rem; font-size: 0.85rem; font-weight: 700;">
+              <i class="fas fa-clock"></i> 0 Pending Approvals
+            </span>
+          </div>
+        </div>
+
+        <!-- Master KPI Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon primary"><i class="fas fa-file-invoice"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Total Submissions</div>
+              <div class="stat-value" id="stat-total-apps">0</div>
+              <div class="stat-desc">All-time applications received</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon warning"><i class="fas fa-hourglass-half"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Pending Review</div>
+              <div class="stat-value" id="stat-pending-apps" style="color: var(--warning);">0</div>
+              <div class="stat-desc">Awaiting verification</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon success"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Approved Passes</div>
+              <div class="stat-value" id="stat-approved-apps" style="color: var(--success);">0</div>
+              <div class="stat-desc">Active QR passes generated</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon danger"><i class="fas fa-ban"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Rejected / Invalid</div>
+              <div class="stat-value" id="stat-rejected-apps">0</div>
+              <div class="stat-desc">Declined submissions</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toolbar: Search & Filters -->
+        <div class="table-toolbar">
+          <div class="table-search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-apps" class="form-control" placeholder="Search student name, transaction ID, route..." oninput="filterApplications()">
+          </div>
+
+          <div class="table-filters">
+            <select id="filter-org" class="form-control" onchange="filterApplications()" style="min-width: 180px;">
+              <option value="">All Organizations</option>
+            </select>
+
+            <select id="filter-status" class="form-control" onchange="filterApplications()" style="width: auto;">
+              <option value="">All Statuses</option>
+              <option value="Pending" selected>Pending Only</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+
+            <select id="filter-pass-type" class="form-control" onchange="filterApplications()" style="width: auto;">
+              <option value="">All Pass Types</option>
+              <option value="Full Year">Full Year</option>
+              <option value="Semester">Semester</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Applications Table Card -->
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student Info</th>
+                  <th>Organization</th>
+                  <th>Route & Boarding Stop</th>
+                  <th>Pass Type</th>
+                  <th>Fee</th>
+                  <th>Payment Proof & Txn</th>
+                  <th>App Status</th>
+                  <th style="text-align: right;">Review Action</th>
+                </tr>
+              </thead>
+              <tbody id="apps-table-body">
+                <tr>
+                  <td colspan="8" style="text-align: center; padding: 2.5rem;">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 0.5rem; color: var(--text-muted);">Loading applications...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Application Review Modal -->
+  <div class="modal-backdrop" id="review-modal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title">Review Bus Pass Application</h3>
+        <button class="modal-close-btn" onclick="closeModal('review-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="review-app-id">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+          <!-- Left: Commuter & Pass Details -->
+          <div style="background: var(--bg-page); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--primary); margin-bottom: 0.75rem;">
+              <i class="fas fa-user-graduate"></i> Commuter & Route Information
+            </h4>
+            
+            <div style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.88rem;">
+              <div><span style="color: var(--text-muted);">Student Name:</span> <strong id="modal-student-name">-</strong></div>
+              <div><span style="color: var(--text-muted);">Student Email:</span> <span id="modal-student-email">-</span></div>
+              <div><span style="color: var(--text-muted);">Student Phone:</span> <span id="modal-student-phone">-</span></div>
+              <div style="border-top: 1px dashed var(--border-color); padding-top: 0.5rem;"></div>
+              <div><span style="color: var(--text-muted);">Organization:</span> <strong id="modal-org-name">-</strong></div>
+              <div><span style="color: var(--text-muted);">Route:</span> <strong id="modal-route-name">-</strong></div>
+              <div><span style="color: var(--text-muted);">Boarding Stop:</span> <strong id="modal-stop-name">-</strong></div>
+              <div><span style="color: var(--text-muted);">Pass Type:</span> <span class="badge badge-primary" id="modal-pass-type">-</span></div>
+              <div><span style="color: var(--text-muted);">Calculated Fee:</span> <strong style="font-size: 1.1rem; color: var(--primary);" id="modal-fee">-</strong></div>
+              <div><span style="color: var(--text-muted);">Applied Date:</span> <span id="modal-date">-</span></div>
+            </div>
+          </div>
+
+          <!-- Right: Payment Proof & Verification -->
+          <div style="background: var(--bg-page); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; flex-direction: column;">
+            <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--primary); margin-bottom: 0.75rem;">
+              <i class="fas fa-receipt"></i> Payment Verification
+            </h4>
+
+            <div style="margin-bottom: 0.75rem;">
+              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Transaction ID:</div>
+              <div id="modal-txn-id" style="font-family: monospace; font-size: 1rem; font-weight: 700; color: var(--text-primary); word-break: break-all;">-</div>
+            </div>
+
+            <div style="margin-bottom: 0.75rem;">
+              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Payment Status:</div>
+              <div id="modal-pay-status-badge"></div>
+            </div>
+
+            <div style="flex: 1; display: flex; flex-direction: column;">
+              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;">Payment Screenshot Proof:</div>
+              <div id="modal-proof-container" style="flex: 1; border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; min-height: 180px;">
+                <!-- Image or placeholder -->
+              </div>
+            </div>
+
+            <!-- Payment Verify Quick Buttons -->
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;" id="payment-verify-actions">
+              <button class="btn btn-success btn-sm btn-block" onclick="setPaymentStatus('Verified')">
+                <i class="fas fa-check"></i> Mark Payment Verified
+              </button>
+              <button class="btn btn-danger btn-sm" onclick="setPaymentStatus('Rejected')" title="Flag as invalid payment">
+                <i class="fas fa-times"></i> Reject Payment
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bus Assignment for Approved Pass -->
+        <div class="form-group" style="background: #EEF2FF; padding: 1rem; border-radius: var(--radius-sm); border: 1px solid #C7D2FE;">
+          <label class="form-label" for="assign-bus-select" style="color: var(--primary-dark);">
+            <i class="fas fa-bus"></i> Assign Fleet Bus for this Pass <span class="required">*</span>
+          </label>
+          <select id="assign-bus-select" class="form-control">
+            <option value="">Select bus for student route...</option>
+          </select>
+          <div class="form-text">Choose the bus assigned to this route so conductors on that bus can validate this pass.</div>
+        </div>
+
+        <!-- Optional remarks / reason -->
+        <div class="form-group">
+          <label class="form-label" for="review-remarks">Remarks / Rejection Reason (sent to student notification)</label>
+          <input type="text" id="review-remarks" class="form-control" placeholder="e.g. Approved for semester 1. Payment verified.">
+        </div>
+      </div>
+
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn btn-danger" onclick="rejectCurrentApplication()">
+          <i class="fas fa-ban"></i> Reject Application
+        </button>
+
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('review-modal')">Close</button>
+          <button type="button" id="approve-pass-btn" class="btn btn-primary" onclick="approveCurrentApplication()">
+            <i class="fas fa-id-card"></i> Approve & Issue Digital Pass
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/utils.js"></script>
+
+  <script>
+    let currentVendorId = null;
+    let organizationsMap = {};
+    let busesCache = [];
+    let applicationsList = [];
+    let selectedApp = null;
+
+    initAppShell('applications');
+
+    requireAuth('vendor', async (user) => {
+      currentVendorId = user.uid;
+      await loadOrganizations();
+      await loadBusesCache();
+      loadApplications();
+    });
+
+    async function loadOrganizations() {
+      const snap = await db.collection('organizations').where('vendorId', '==', currentVendorId).get();
+      const filterOrg = document.getElementById('filter-org');
+      filterOrg.innerHTML = '<option value="">All Organizations</option>';
+
+      snap.forEach(doc => {
+        const d = doc.data();
+        organizationsMap[doc.id] = d.name;
+        filterOrg.innerHTML += `<option value="${doc.id}">${d.name}</option>`;
+      });
+    }
+
+    async function loadBusesCache() {
+      const snap = await db.collection('buses').where('vendorId', '==', currentVendorId).get();
+      busesCache = [];
+      snap.forEach(doc => {
+        busesCache.push({ id: doc.id, ...doc.data() });
+      });
+    }
+
+    function loadApplications() {
+      db.collection('applications')
+        .where('vendorId', '==', currentVendorId)
+        .onSnapshot(snap => {
+          applicationsList = [];
+          let pendingCount = 0;
+          let approvedCount = 0;
+          let rejectedCount = 0;
+
+          snap.forEach(doc => {
+            const data = { id: doc.id, ...doc.data() };
+            if (data.status === 'Pending') pendingCount++;
+            if (data.status === 'Approved') approvedCount++;
+            if (data.status === 'Rejected') rejectedCount++;
+            applicationsList.push(data);
+          });
+
+          // Sort latest first
+          applicationsList.sort((a, b) => {
+            const timeA = a.createdAt ? (a.createdAt.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt).getTime()) : 0;
+            const timeB = b.createdAt ? (b.createdAt.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt).getTime()) : 0;
+            return timeB - timeA;
+          });
+
+          // Update KPI stats
+          document.getElementById('stat-total-apps').textContent = applicationsList.length;
+          document.getElementById('stat-pending-apps').textContent = pendingCount;
+          document.getElementById('stat-approved-apps').textContent = approvedCount;
+          document.getElementById('stat-rejected-apps').textContent = rejectedCount;
+
+          // Update badges
+          document.getElementById('pending-counter-pill').innerHTML = `<i class="fas fa-clock"></i> ${pendingCount} Pending Approvals`;
+          const sideBadge = document.getElementById('sidebar-pending-badge');
+          const notifDot = document.getElementById('topbar-notif-dot');
+          if (sideBadge) {
+            sideBadge.textContent = pendingCount;
+            sideBadge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+          }
+          if (notifDot) {
+            notifDot.style.display = pendingCount > 0 ? 'block' : 'none';
+          }
+
+          filterApplications();
+        });
+    }
+
+    function filterApplications() {
+      const search = document.getElementById('search-apps').value.toLowerCase().trim();
+      const orgFilter = document.getElementById('filter-org').value;
+      const statusFilter = document.getElementById('filter-status').value;
+      const passTypeFilter = document.getElementById('filter-pass-type').value;
+
+      const filtered = applicationsList.filter(app => {
+        const matchesOrg = !orgFilter || app.organizationId === orgFilter;
+        const matchesStatus = !statusFilter || app.status === statusFilter;
+        const matchesType = !passTypeFilter || app.passType === passTypeFilter;
+        const matchesSearch = !search ||
+          (app.studentName && app.studentName.toLowerCase().includes(search)) ||
+          (app.transactionId && app.transactionId.toLowerCase().includes(search)) ||
+          (app.routeName && app.routeName.toLowerCase().includes(search));
+        return matchesOrg && matchesStatus && matchesType && matchesSearch;
+      });
+
+      renderApplicationsTable(filtered);
+    }
+
+    function renderApplicationsTable(apps) {
+      const tbody = document.getElementById('apps-table-body');
+      if (apps.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8">
+              <div class="state-container">
+                <div class="state-icon"><i class="fas fa-file-invoice"></i></div>
+                <h4 class="state-title">No Applications Found</h4>
+                <p class="state-desc">No student pass applications matching your filter criteria.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = apps.map(app => {
+        let statusBadge = '<span class="badge badge-warning"><span class="badge-dot"></span> Pending</span>';
+        if (app.status === 'Approved') statusBadge = '<span class="badge badge-success"><span class="badge-dot"></span> Approved</span>';
+        if (app.status === 'Rejected') statusBadge = '<span class="badge badge-danger"><span class="badge-dot"></span> Rejected</span>';
+
+        let payBadge = '<span class="badge badge-secondary">Pending</span>';
+        if (app.paymentStatus === 'PaidProofSubmitted') payBadge = '<span class="badge badge-warning">Proof Submitted</span>';
+        if (app.paymentStatus === 'Verified') payBadge = '<span class="badge badge-success"><i class="fas fa-check"></i> Verified</span>';
+        if (app.paymentStatus === 'Rejected') payBadge = '<span class="badge badge-danger"><i class="fas fa-times"></i> Invalid</span>';
+
+        return `
+          <tr>
+            <td>
+              <strong style="color: var(--text-primary); font-size: 0.95rem;">${app.studentName || 'Student'}</strong>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">${app.studentEmail || ''}</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">${app.studentPhone || ''}</div>
+            </td>
+            <td>
+              <span class="badge badge-primary">${app.organizationName || organizationsMap[app.organizationId] || 'Assigned Org'}</span>
+            </td>
+            <td>
+              <strong style="color: var(--text-primary);">${app.routeName}</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);"><i class="fas fa-map-marker-alt text-primary"></i> ${app.boardingStop}</div>
+            </td>
+            <td><span class="badge badge-secondary">${app.passType}</span></td>
+            <td><strong style="color: var(--text-primary); font-size: 0.95rem;">${formatCurrency(app.fee)}</strong></td>
+            <td>
+              <div>${payBadge}</div>
+              <div style="font-family: monospace; font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                ${app.transactionId ? 'Txn: ' + app.transactionId : 'No Txn ID'}
+              </div>
+            </td>
+            <td>${statusBadge}</td>
+            <td style="text-align: right;">
+              <button class="btn btn-secondary btn-sm" onclick="openReviewModal('${app.id}')" title="Review Submission">
+                <i class="fas fa-search-plus"></i> Review
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openReviewModal(appId) {
+      selectedApp = applicationsList.find(a => a.id === appId);
+      if (!selectedApp) return;
+
+      document.getElementById('review-app-id').value = selectedApp.id;
+      document.getElementById('modal-student-name').textContent = selectedApp.studentName || '-';
+      document.getElementById('modal-student-email').textContent = selectedApp.studentEmail || '-';
+      document.getElementById('modal-student-phone').textContent = selectedApp.studentPhone || '-';
+      document.getElementById('modal-org-name').textContent = selectedApp.organizationName || organizationsMap[selectedApp.organizationId] || '-';
+      document.getElementById('modal-route-name').textContent = selectedApp.routeName || '-';
+      document.getElementById('modal-stop-name').textContent = selectedApp.boardingStop || '-';
+      document.getElementById('modal-pass-type').textContent = selectedApp.passType || '-';
+      document.getElementById('modal-fee').textContent = formatCurrency(selectedApp.fee);
+      document.getElementById('modal-date').textContent = formatDate(selectedApp.createdAt);
+      document.getElementById('modal-txn-id').textContent = selectedApp.transactionId || 'None Provided';
+
+      // Payment Status Badge
+      let payBadge = '<span class="badge badge-secondary">Pending Payment</span>';
+      if (selectedApp.paymentStatus === 'PaidProofSubmitted') payBadge = '<span class="badge badge-warning">Proof Uploaded (Verification Required)</span>';
+      if (selectedApp.paymentStatus === 'Verified') payBadge = '<span class="badge badge-success"><i class="fas fa-check"></i> Payment Verified</span>';
+      if (selectedApp.paymentStatus === 'Rejected') payBadge = '<span class="badge badge-danger"><i class="fas fa-times"></i> Payment Rejected</span>';
+      document.getElementById('modal-pay-status-badge').innerHTML = payBadge;
+
+      // Render Proof Screenshot
+      const proofBox = document.getElementById('modal-proof-container');
+      if (selectedApp.paymentProofUrl) {
+        proofBox.innerHTML = `
+          <a href="${selectedApp.paymentProofUrl}" target="_blank" title="Click to view full image">
+            <img src="${selectedApp.paymentProofUrl}" alt="Proof" style="max-height: 180px; width: 100%; object-fit: contain;">
+          </a>
+        `;
+      } else {
+        proofBox.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">No payment screenshot uploaded</span>`;
+      }
+
+      // Populate Bus Select for this route
+      const busSelect = document.getElementById('assign-bus-select');
+      busSelect.innerHTML = '<option value="">Select bus for student route...</option>';
+      const candidateBuses = busesCache.filter(b => b.routeId === selectedApp.routeId && b.status === 'Active');
+      
+      if (candidateBuses.length > 0) {
+        candidateBuses.forEach(b => {
+          busSelect.innerHTML += `<option value="${b.id}">${b.busNumber} (${b.registrationNumber}) - Driver: ${b.driverName || 'Staff'}</option>`;
+        });
+      } else {
+        // Fallback: list all active buses of this organization
+        const orgBuses = busesCache.filter(b => b.organizationId === selectedApp.organizationId && b.status === 'Active');
+        orgBuses.forEach(b => {
+          busSelect.innerHTML += `<option value="${b.id}">${b.busNumber} (${b.registrationNumber}) [Other Route]</option>`;
+        });
+      }
+
+      document.getElementById('review-remarks').value = selectedApp.remarks || '';
+      openModal('review-modal');
+    }
+
+    // Set Payment Status directly from review modal
+    async function setPaymentStatus(status) {
+      if (!selectedApp) return;
+      try {
+        await db.collection('applications').doc(selectedApp.id).update({
+          paymentStatus: status,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast(`Payment marked as ${status}!`, "success");
+        selectedApp.paymentStatus = status;
+        openReviewModal(selectedApp.id);
+      } catch (err) {
+        showToast("Error updating payment: " + err.message, "danger");
+      }
+    }
+
+    // Approve Application and issue digital pass
+    async function approveCurrentApplication() {
+      if (!selectedApp) return;
+
+      const busId = document.getElementById('assign-bus-select').value;
+      if (!busId) {
+        showToast("Please assign a fleet bus before issuing the pass.", "warning");
+        return;
+      }
+
+      const assignedBus = busesCache.find(b => b.id === busId);
+      const approveBtn = document.getElementById('approve-pass-btn');
+
+      approveBtn.disabled = true;
+      approveBtn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Generating Pass...';
+
+      try {
+        // Compute Pass Validity Dates
+        const validFrom = new Date().toISOString().split('T')[0];
+        const validUntilDate = new Date();
+        if (selectedApp.passType === 'Semester') {
+          validUntilDate.setMonth(validUntilDate.getMonth() + 6);
+        } else {
+          validUntilDate.setFullYear(validUntilDate.getFullYear() + 1);
+        }
+        const validUntil = validUntilDate.toISOString().split('T')[0];
+
+        // Unique pass number (e.g. PASS-2026-A48F)
+        const randHex = Math.random().toString(16).substring(2, 6).toUpperCase();
+        const passNumber = `PASS-${validUntilDate.getFullYear()}-${randHex}`;
+
+        const remarks = document.getElementById('review-remarks').value.trim();
+
+        // Look up assigned Conductor contact info
+        let conductorName = '';
+        let conductorPhone = '';
+        let conductorId = '';
+        try {
+          const condSnap = await db.collection('conductors').where('busId', '==', busId).limit(1).get();
+          if (!condSnap.empty) {
+            const cond = condSnap.docs[0].data();
+            conductorName = cond.name || '';
+            conductorPhone = cond.phone || '';
+            conductorId = cond.conductorId || '';
+          }
+        } catch(cErr) {
+          console.warn("Could not retrieve conductor for pass attachment:", cErr);
+        }
+
+        // 1. Create Digital Pass Document in passes collection
+        const passDocData = {
+          applicationId: selectedApp.id,
+          studentId: selectedApp.studentId,
+          studentName: selectedApp.studentName || 'Student',
+          studentEmail: selectedApp.studentEmail || '',
+          studentPhone: selectedApp.studentPhone || '',
+          vendorId: currentVendorId,
+          organizationId: selectedApp.organizationId,
+          organizationName: selectedApp.organizationName || '',
+          routeId: selectedApp.routeId,
+          routeName: selectedApp.routeName || '',
+          boardingStop: selectedApp.boardingStop || '',
+          busId: busId,
+          busNumber: assignedBus ? assignedBus.busNumber : 'BUS-101',
+          registrationNumber: assignedBus ? assignedBus.registrationNumber : '',
+          driverName: assignedBus ? assignedBus.driverName : '',
+          morningTime: assignedBus ? assignedBus.morningTime : '07:30',
+          eveningTime: assignedBus ? assignedBus.eveningTime : '16:45',
+          conductorName: conductorName,
+          conductorPhone: conductorPhone,
+          conductorId: conductorId,
+          passNumber: passNumber,
+          passType: selectedApp.passType || 'Full Year',
+          fee: selectedApp.fee || 0,
+          validFrom: validFrom,
+          validUntil: validUntil,
+          status: 'Active',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        const passRef = await db.collection('passes').add(passDocData);
+
+        // Prepare secure QR payload and update pass
+        const qrPayload = createPassQRPayload({
+          passId: passRef.id,
+          studentId: selectedApp.studentId,
+          organizationId: selectedApp.organizationId,
+          routeId: selectedApp.routeId,
+          busNumber: passDocData.busNumber,
+          validUntil: validUntil
+        });
+
+        await db.collection('passes').doc(passRef.id).update({
+          qrData: qrPayload
+        });
+
+        // 2. Update Application Status to Approved
+        await db.collection('applications').doc(selectedApp.id).update({
+          status: 'Approved',
+          passId: passRef.id,
+          passNumber: passNumber,
+          busId: busId,
+          busNumber: passDocData.busNumber,
+          remarks: remarks,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // 3. Notify Student
+        await sendNotification(
+          selectedApp.studentId,
+          'pass',
+          'Bus Pass Approved & Issued!',
+          `Congratulations! Your bus pass (#${passNumber}) for ${selectedApp.routeName} has been issued and is active.`
+        );
+
+        showToast("Application approved! Digital pass generated with QR.", "success");
+        closeModal('review-modal');
+      } catch (err) {
+        console.error("Approve pass error:", err);
+        showToast("Error approving application: " + err.message, "danger");
+      } finally {
+        approveBtn.disabled = false;
+        approveBtn.innerHTML = '<i class="fas fa-id-card"></i> Approve & Issue Digital Pass';
+      }
+    }
+
+    // Reject Application
+    async function rejectCurrentApplication() {
+      if (!selectedApp) return;
+
+      const remarks = document.getElementById('review-remarks').value.trim() || 'Application rejected by transport admin.';
+
+      confirmAction(
+        "Reject Application",
+        `Are you sure you want to reject pass application from ${selectedApp.studentName}?`,
+        async () => {
+          try {
+            await db.collection('applications').doc(selectedApp.id).update({
+              status: 'Rejected',
+              remarks: remarks,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            await sendNotification(
+              selectedApp.studentId,
+              'application',
+              'Bus Pass Application Rejected',
+              `Your bus pass application was rejected. Reason: ${remarks}`
+            );
+
+            showToast("Application has been rejected.", "info");
+            closeModal('review-modal');
+          } catch (err) {
+            showToast("Error rejecting application: " + err.message, "danger");
+          }
+        },
+        "Reject Application",
+        true
+      );
+    }
+  </script>
+</body>
+</html>

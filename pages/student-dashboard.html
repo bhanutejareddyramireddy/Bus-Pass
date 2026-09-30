@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Portal | BusPass Pro</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop"></div>
+
+    <!-- Student Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fas fa-bus-alt" style="color: var(--accent);"></i>
+          <span>STUDENT<strong>PASS</strong></span>
+        </div>
+        <button class="sidebar-close-btn">&times;</button>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="sidebar-section-title">Commuter Menu</div>
+        <ul class="sidebar-menu">
+          <li><a href="student-dashboard.html" class="sidebar-link active" data-nav="student-dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a></li>
+          <li><a href="apply-pass.html" class="sidebar-link" data-nav="apply-pass"><i class="fas fa-id-card"></i><span>Apply for Pass</span></a></li>
+          <li><a href="my-applications.html" class="sidebar-link" data-nav="my-applications"><i class="fas fa-file-invoice"></i><span>My Applications</span></a></li>
+          <li><a href="my-bus-pass.html" class="sidebar-link" data-nav="my-bus-pass"><i class="fas fa-qrcode"></i><span>My Bus Pass</span></a></li>
+          <li><a href="renew-pass.html" class="sidebar-link" data-nav="renew-pass"><i class="fas fa-redo"></i><span>Renew Pass</span></a></li>
+          <li><a href="live-bus.html" class="sidebar-link" data-nav="live-bus"><i class="fas fa-satellite-dish"></i><span>Live Bus</span></a></li>
+          <li>
+            <a href="notifications.html" class="sidebar-link" data-nav="notifications">
+              <i class="fas fa-bell"></i>
+              <span>Notifications</span>
+              <span class="sidebar-badge" id="student-notif-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li><a href="profile.html" class="sidebar-link" data-nav="profile"><i class="fas fa-user"></i><span>Profile</span></a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar" style="background: var(--accent);">S</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name">Student Commuter</div>
+            <div class="sidebar-user-role">Student</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="logoutUser()" title="Logout">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle-btn"><i class="fas fa-bars"></i></button>
+          <div class="page-title-group">
+            <h1>Student Commuter Portal</h1>
+            <div class="page-breadcrumb">
+              <i class="fas fa-home"></i> <span>Student Portal</span> / <span>Dashboard</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <a href="notifications.html" class="topbar-action-btn" title="Notifications">
+            <i class="fas fa-bell"></i>
+            <span class="topbar-badge-dot" id="topbar-notif-dot" style="display: none;"></span>
+          </a>
+
+          <div class="topbar-user-pill" onclick="window.location.href='profile.html'">
+            <div class="avatar" style="background: var(--accent);">S</div>
+            <span class="topbar-user-name">Student</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="page-body">
+
+        <!-- Welcome & Quick Apply Banner -->
+        <div class="card" style="background: linear-gradient(135deg, #312E81 0%, #4338CA 50%, #6366F1 100%); color: #FFFFFF; border: none; padding: 1.75rem 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem;">
+            <div>
+              <span class="badge" style="background: rgba(255,255,255,0.2); color: #fff; margin-bottom: 0.5rem;">
+                <i class="fas fa-graduation-cap"></i> Verified Commuter
+              </span>
+              <h2 style="font-size: 1.6rem; font-weight: 800; color: #fff;" id="student-welcome-title">Hello, Student!</h2>
+              <p style="color: #E0E7FF; font-size: 0.95rem; margin-top: 0.25rem;">
+                Manage your digital bus pass, submit renewal requests, and track your route bus live.
+              </p>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem;">
+              <a href="apply-pass.html" class="btn btn-primary" style="background: #FFFFFF; color: var(--primary); font-weight: 700;">
+                <i class="fas fa-plus-circle"></i> Apply for Pass
+              </a>
+              <a href="live-bus.html" class="btn btn-secondary" style="background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3);">
+                <i class="fas fa-satellite-dish"></i> Live Bus
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Student Stats Grid -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon primary"><i class="fas fa-file-invoice"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Total Applications</div>
+              <div class="stat-value" id="stat-apps-count">0</div>
+              <div class="stat-desc">Historical requests</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon warning"><i class="fas fa-clock"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Pending Approvals</div>
+              <div class="stat-value" id="stat-pending-count">0</div>
+              <div class="stat-desc">Under vendor review</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon success"><i class="fas fa-id-card"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Active Bus Pass</div>
+              <div class="stat-value" id="stat-active-pass-badge" style="font-size: 1.25rem; font-weight: 700;">None</div>
+              <div class="stat-desc" id="stat-pass-validity">No active pass</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Dashboard Split: Active Digital Pass Preview + Recent Applications -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <!-- Active Pass Card Container -->
+          <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">My Active Digital Bus Pass</h3>
+                <p class="card-subtitle">Ready for conductor boarding scan</p>
+              </div>
+              <a href="my-bus-pass.html" class="btn btn-outline-primary btn-sm">Full Pass View</a>
+            </div>
+
+            <div id="active-pass-container">
+              <div class="state-container" style="padding: 2.5rem 1rem;">
+                <div class="spinner spinner-sm"></div>
+                <p style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.85rem;">Checking active passes...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Applications Table Card -->
+          <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Recent Pass Applications</h3>
+                <p class="card-subtitle">Track verification and issuance status</p>
+              </div>
+              <a href="my-applications.html" class="btn btn-secondary btn-sm">View All</a>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Route / Stop</th>
+                    <th>Pass Type</th>
+                    <th>Fee</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="student-recent-apps-tbody">
+                  <tr>
+                    <td colspan="5" style="text-align: center; padding: 2rem;">
+                      <div class="spinner spinner-sm"></div> Loading applications...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/common.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/utils.js"></script>
+
+  <script>
+    let currentStudent = null;
+
+    initAppShell('student-dashboard');
+
+    requireAuth('student', (user, userData) => {
+      currentStudent = user;
+      document.getElementById('student-welcome-title').textContent = `Hello, ${userData.name || 'Student'}!`;
+
+      loadStudentMetrics();
+      loadActivePass();
+      listenToStudentNotifications();
+    });
+
+    // Load Applications
+    function loadStudentMetrics() {
+      db.collection('applications')
+        .where('studentId', '==', currentStudent.uid)
+        .onSnapshot(snap => {
+          let pendingCount = 0;
+          const apps = [];
+
+          snap.forEach(doc => {
+            const data = { id: doc.id, ...doc.data() };
+            if (data.status === 'Pending') pendingCount++;
+            apps.push(data);
+          });
+
+          // Sort descending
+          apps.sort((a, b) => {
+            const timeA = a.createdAt ? (a.createdAt.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt).getTime()) : 0;
+            const timeB = b.createdAt ? (b.createdAt.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt).getTime()) : 0;
+            return timeB - timeA;
+          });
+
+          document.getElementById('stat-apps-count').textContent = apps.length;
+          document.getElementById('stat-pending-count').textContent = pendingCount;
+
+          renderRecentStudentApps(apps.slice(0, 5));
+        });
+    }
+
+    function renderRecentStudentApps(apps) {
+      const tbody = document.getElementById('student-recent-apps-tbody');
+      if (apps.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+              No applications submitted yet. <br>
+              <a href="apply-pass.html" class="btn btn-primary btn-sm" style="margin-top: 0.5rem;">Apply for First Pass</a>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = apps.map(app => {
+        let statusBadge = '<span class="badge badge-warning">Pending</span>';
+        if (app.status === 'Approved') statusBadge = '<span class="badge badge-success">Approved</span>';
+        if (app.status === 'Rejected') statusBadge = '<span class="badge badge-danger">Rejected</span>';
+
+        return `
+          <tr>
+            <td>
+              <strong>${app.routeName || 'Route'}</strong>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">${app.boardingStop || '-'}</div>
+            </td>
+            <td><span class="badge badge-secondary">${app.passType || 'Full Year'}</span></td>
+            <td><strong>${formatCurrency(app.fee)}</strong></td>
+            <td>${statusBadge}</td>
+            <td>
+              <a href="my-applications.html" class="action-btn" title="View Details">
+                <i class="fas fa-eye"></i>
+              </a>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Load Active Bus Pass
+    function loadActivePass() {
+      db.collection('passes')
+        .where('studentId', '==', currentStudent.uid)
+        .onSnapshot(snap => {
+          const container = document.getElementById('active-pass-container');
+
+          if (snap.empty) {
+            document.getElementById('stat-active-pass-badge').textContent = 'None';
+            document.getElementById('stat-pass-validity').textContent = 'No active pass';
+
+            container.innerHTML = `
+              <div class="state-container" style="padding: 2.5rem 1rem;">
+                <div class="state-icon"><i class="fas fa-id-card-alt"></i></div>
+                <h4 class="state-title">No Active Pass Issued</h4>
+                <p class="state-desc">You do not currently hold an active digital bus pass. Apply for a pass or track your application status.</p>
+                <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem;">
+                  <a href="apply-pass.html" class="btn btn-primary"><i class="fas fa-plus"></i> Apply for Pass</a>
+                  <a href="my-applications.html" class="btn btn-secondary"><i class="fas fa-file-invoice"></i> Track Status</a>
+                </div>
+              </div>
+            `;
+            return;
+          }
+
+          const passDoc = snap.docs.find(d => d.data().status === 'Active') || snap.docs[0];
+          const pass = { id: passDoc.id, ...passDoc.data() };
+
+          document.getElementById('stat-active-pass-badge').textContent = pass.passNumber || 'Active';
+          document.getElementById('stat-pass-validity').textContent = `Valid until ${pass.validUntil}`;
+
+          container.innerHTML = `
+            <div style="background: linear-gradient(135deg, #1E1B4B 0%, #312E81 100%); color: #fff; border-radius: var(--radius-lg); padding: 1.25rem; display: flex; gap: 1rem; align-items: center; position: relative;">
+              <div style="background: #fff; padding: 0.5rem; border-radius: var(--radius-md); text-align: center;">
+                <div id="mini-dash-qr" style="width: 100px; height: 100px;"></div>
+                <span style="font-size: 0.65rem; color: #475569; font-weight: 700; display: block; margin-top: 4px;">SCAN PASS</span>
+              </div>
+
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-family: monospace; font-size: 0.95rem; font-weight: 800; color: #818CF8;">${pass.passNumber}</div>
+                <div style="font-size: 1rem; font-weight: 700; color: #fff; margin-top: 2px;">${pass.routeName || 'Assigned Route'}</div>
+                <div style="font-size: 0.78rem; color: #CBD5E1; margin-top: 2px;">Stop: <strong>${pass.boardingStop || '-'}</strong></div>
+                <div style="font-size: 0.78rem; color: #CBD5E1;">Bus: <strong>${pass.busNumber || '-'}</strong></div>
+                <div style="font-size: 0.78rem; color: #A7F3D0; margin-top: 3px;" id="dash-conductor-box">
+                  <i class="fas fa-id-badge"></i> Conductor: <span id="dash-cond-name">${pass.conductorName || 'Assigned'}</span>
+                  <span id="dash-cond-phone">${pass.conductorPhone ? ` | <a href="tel:${pass.conductorPhone}" style="color: #6EE7B7; font-weight: 700; text-decoration: underline;"><i class="fas fa-phone-alt"></i> ${pass.conductorPhone}</a>` : ''}</span>
+                </div>
+                
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap;">
+                  <a href="my-bus-pass.html" class="btn btn-sm btn-primary" style="background: #FFFFFF; color: var(--primary);">View Pass</a>
+                  <a href="live-bus.html" class="btn btn-sm btn-secondary" style="background: rgba(255,255,255,0.2); color: #fff; border-color: rgba(255,255,255,0.3);">Track Bus</a>
+                  ${pass.conductorPhone ? `<a href="tel:${pass.conductorPhone}" class="btn btn-sm btn-success" style="background: #10B981; color: #fff; border: none;"><i class="fas fa-phone-alt"></i> Call</a>` : ''}
+                </div>
+              </div>
+            </div>
+          `;
+
+          // Generate Mini QR Code
+          setTimeout(() => {
+            const qrPayload = pass.qrData || pass.id;
+            generatePassQRCode('mini-dash-qr', qrPayload, 100, 100);
+          }, 100);
+
+          // Conductor dynamic contact lookup
+          if (!pass.conductorPhone && (pass.busId || pass.routeId)) {
+            const cq = pass.busId ? db.collection('conductors').where('busId', '==', pass.busId) : db.collection('conductors').where('routeId', '==', pass.routeId);
+            cq.limit(1).get().then(snap => {
+              if (!snap.empty) {
+                const c = snap.docs[0].data();
+                if (c.name) {
+                  const el = document.getElementById('dash-cond-name');
+                  if (el) el.textContent = c.name;
+                }
+                if (c.phone) {
+                  const pEl = document.getElementById('dash-cond-phone');
+                  if (pEl) pEl.innerHTML = ` | <a href="tel:${c.phone}" style="color: #6EE7B7; font-weight: 700; text-decoration: underline;"><i class="fas fa-phone-alt"></i> ${c.phone}</a>`;
+                }
+              }
+            }).catch(e => console.warn("Dashboard conductor lookup failed:", e));
+          }
+        });
+    }
+
+    // Real-time Notifications counter
+    function listenToStudentNotifications() {
+      db.collection('notifications')
+        .where('userId', '==', currentStudent.uid)
+        .where('read', '==', false)
+        .onSnapshot(snap => {
+          const count = snap.size;
+          const badge = document.getElementById('student-notif-badge');
+          const dot = document.getElementById('topbar-notif-dot');
+
+          if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'inline-block';
+            dot.style.display = 'block';
+          } else {
+            badge.style.display = 'none';
+            dot.style.display = 'none';
+          }
+        });
+    }
+  </script>
+</body>
+</html>

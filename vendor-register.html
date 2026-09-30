@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register Transport Vendor | BusPass</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="auth-page">
+
+  <div class="split-auth-container" style="max-width: 1060px;">
+    <!-- Left Hero Banner: Vendor Portal -->
+    <div class="split-auth-banner vendor-banner">
+      <div class="split-banner-content">
+        <a href="index.html" class="split-brand">
+          <div class="split-brand-icon">
+            <i class="fas fa-bus-alt"></i>
+          </div>
+          <span>BusPass</span>
+        </a>
+
+        <h1 class="split-title">Vendor Portal</h1>
+        <p class="split-subtitle">Manage your bus services efficiently</p>
+
+        <ul class="split-checklist">
+          <li class="split-check-item">
+            <span class="split-check-icon"><i class="fas fa-check"></i></span>
+            <span>Manage Organizations</span>
+          </li>
+          <li class="split-check-item">
+            <span class="split-check-icon"><i class="fas fa-check"></i></span>
+            <span>Handle Routes & Buses</span>
+          </li>
+          <li class="split-check-item">
+            <span class="split-check-icon"><i class="fas fa-check"></i></span>
+            <span>Track Applications</span>
+          </li>
+          <li class="split-check-item">
+            <span class="split-check-icon"><i class="fas fa-check"></i></span>
+            <span>View Fleet Analytics</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Bus Graphic at Bottom -->
+      <div class="split-bottom-art">
+        <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=700&q=80" alt="BusPass Transit Fleet">
+      </div>
+
+      <!-- Organic Wave Divider to Form -->
+      <div class="split-banner-curve">
+        <svg viewBox="0 0 100 600" preserveAspectRatio="none">
+          <path d="M100,0 C30,160 30,440 100,600 L100,0 Z" fill="#FFFFFF"></path>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Right Form Section: Vendor Agency Registration -->
+    <div class="split-auth-form-wrap" style="padding: 3rem 2.75rem;">
+      <div class="split-form-header">
+        <h2>Register Agency</h2>
+        <p>Set up your master vendor transportation account</p>
+      </div>
+
+      <form id="vendor-register-form" class="split-auth-form">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="name">Operator Full Name</label>
+            <input type="text" id="name" class="form-control" placeholder="John Doe" required autocomplete="name">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="business-name">Agency / Fleet Name</label>
+            <input type="text" id="business-name" class="form-control" placeholder="Metro Lines Transport" required>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="email">Official Email Address</label>
+            <input type="email" id="email" class="form-control" placeholder="admin@metrolines.com" required autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="phone">Contact Phone</label>
+            <input type="tel" id="phone" class="form-control" placeholder="9876543210" required autocomplete="tel">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="password">Admin Password</label>
+            <input type="password" id="password" class="form-control" placeholder="Min. 6 chars" minlength="6" required autocomplete="new-password">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="confirm-password">Confirm Password</label>
+            <input type="password" id="confirm-password" class="form-control" placeholder="Re-enter password" minlength="6" required autocomplete="new-password">
+          </div>
+        </div>
+
+        <button type="submit" id="register-btn" class="split-btn-primary" style="margin-top: 1rem;">
+          Register Transport Agency
+        </button>
+      </form>
+
+      <div class="split-auth-footer">
+        Already have a vendor account? <a href="vendor-login.html">Sign in here</a>
+      </div>
+
+      <div class="split-role-switches">
+        <a href="login.html"><i class="fas fa-graduation-cap"></i> Student Portal</a>
+        <a href="conductor-login.html"><i class="fas fa-id-badge"></i> Conductor Duty</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    const form = document.getElementById('vendor-register-form');
+    const btn = document.getElementById('register-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const businessName = document.getElementById('business-name').value;
+      const email = document.getElementById('email').value;
+      const phone = document.getElementById('phone').value;
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirm-password').value;
+
+      if (password !== confirmPassword) {
+        showToast("Passwords do not match.", "warning");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Registering agency...';
+
+      try {
+        await registerVendor(name, email, password, phone, businessName);
+        showToast("Vendor account created successfully!", "success");
+        setTimeout(() => {
+          window.location.href = 'vendor-dashboard.html';
+        }, 1000);
+      } catch (error) {
+        showToast(error.message, "danger", "Registration Error");
+        btn.disabled = false;
+        btn.innerHTML = 'Register Transport Agency';
+      }
+    });
+  </script>
+</body>
+</html>

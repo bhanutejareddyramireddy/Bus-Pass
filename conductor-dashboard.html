@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conductor Duty Portal | BusPass Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- HTML5 QR Code Scanner Library via CDN -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop"></div>
+
+    <!-- Conductor Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fas fa-bus-alt" style="color: var(--success);"></i>
+          <span>CONDUCTOR<strong>DUTY</strong></span>
+        </div>
+        <button class="sidebar-close-btn">&times;</button>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="sidebar-section-title">Active Duty</div>
+        <ul class="sidebar-menu">
+          <li><a href="conductor-dashboard.html" class="sidebar-link active" data-nav="duty"><i class="fas fa-id-card-alt"></i><span>Duty Dashboard</span></a></li>
+        </ul>
+
+        <div class="sidebar-section-title">Quick Actions</div>
+        <div style="padding: 0 0.85rem; display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem;">
+          <button class="btn btn-success btn-block btn-lg" onclick="openScannerModal()">
+            <i class="fas fa-camera"></i> Scan Student QR
+          </button>
+          <button class="btn btn-primary btn-block" id="sidebar-live-toggle" onclick="toggleLiveDuty()">
+            <i class="fas fa-satellite-dish"></i> Start Live Duty
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar" style="background: var(--success);">C</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebar-cond-name">Conductor</div>
+            <div class="sidebar-user-role" id="sidebar-cond-id" style="font-family: monospace; color: #86EFAC;">CON-XXXXXX</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="logoutUser()" title="End Shift & Logout">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <!-- Master Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle-btn"><i class="fas fa-bars"></i></button>
+          <div class="page-title-group">
+            <h1>Conductor Duty & Boarding Terminal</h1>
+            <div class="page-breadcrumb">
+              <i class="fas fa-home"></i> <span>Conductor Portal</span> / <span>Active Route</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div id="live-duty-status-pill" style="display: flex; align-items: center; gap: 0.5rem; background: var(--bg-surface); padding: 0.4rem 0.95rem; border-radius: 9999px; border: 1px solid var(--border-color); font-size: 0.82rem; box-shadow: var(--shadow-xs);">
+            <span class="badge-dot" id="live-status-dot" style="background: var(--text-muted);"></span>
+            <span id="live-status-label" style="font-weight: 700; color: var(--text-muted);">Duty Offline</span>
+          </div>
+
+          <button class="btn btn-success btn-sm" onclick="openScannerModal()">
+            <i class="fas fa-qrcode"></i> Scan QR
+          </button>
+
+          <div class="topbar-user-pill">
+            <div class="avatar" style="background: var(--success);">C</div>
+            <span class="topbar-user-name" id="topbar-cond-name">Duty Staff</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-body">
+
+        <!-- Assigned Duty Banner -->
+        <div class="card" style="background: linear-gradient(135deg, #064E3B 0%, #065F46 50%, #047857 100%); color: #FFFFFF; border: none; padding: 1.5rem 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem;">
+            <div>
+              <span class="badge" style="background: rgba(255,255,255,0.2); color: #fff; margin-bottom: 0.5rem;">
+                <i class="fas fa-bus"></i> Official Bus Duty
+              </span>
+              <h2 style="font-size: 1.5rem; font-weight: 800; color: #fff;" id="banner-bus-number">Loading Assigned Bus...</h2>
+              <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.4rem; font-size: 0.9rem; color: #A7F3D0;">
+                <div><i class="fas fa-building"></i> <span id="banner-org-name">-</span></div>
+                <div><i class="fas fa-route"></i> <span id="banner-route-name">-</span></div>
+                <div><i class="fas fa-id-card"></i> ID: <strong id="banner-cond-id" style="font-family: monospace;">-</strong></div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem;">
+              <button class="btn btn-success btn-lg" onclick="openScannerModal()" style="background: #FFFFFF; color: var(--success); font-weight: 700; box-shadow: var(--shadow-lg);">
+                <i class="fas fa-camera"></i> SCAN STUDENT QR
+              </button>
+              <button class="btn btn-secondary btn-lg" id="duty-toggle-btn" onclick="toggleLiveDuty()" style="background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3);">
+                <i class="fas fa-play"></i> Start Live Duty
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Conductor Stats KPI Grid -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon success"><i class="fas fa-user-check"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Allowed Today</div>
+              <div class="stat-value" id="kpi-allowed-count" style="color: var(--success);">0</div>
+              <div class="stat-desc">Boarded passengers</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon danger"><i class="fas fa-user-times"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Denied Today</div>
+              <div class="stat-value" id="kpi-denied-count" style="color: var(--danger);">0</div>
+              <div class="stat-desc">Invalid or expired passes</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon primary"><i class="fas fa-qrcode"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Total Scans</div>
+              <div class="stat-value" id="kpi-total-scans">0</div>
+              <div class="stat-desc">QR validations processed</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon info"><i class="fas fa-users"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Registered on Route</div>
+              <div class="stat-value" id="kpi-route-students">-</div>
+              <div class="stat-desc">Active passes issued</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's Boarding Activity Card -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Today's Boarding Logs</h3>
+              <p class="card-subtitle">Real-time scan logs recorded by your terminal</p>
+            </div>
+
+            <div class="table-filters">
+              <input type="text" id="search-boarding" class="form-control" placeholder="Search student name, stop..." oninput="filterBoardingRecords()" style="font-size: 0.85rem;">
+              <select id="filter-result" class="form-control" onchange="filterBoardingRecords()" style="width: auto; font-size: 0.85rem;">
+                <option value="">All Results</option>
+                <option value="Allowed">Allowed</option>
+                <option value="Denied">Denied</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Student Name</th>
+                  <th>Boarding Stop</th>
+                  <th>Result</th>
+                  <th>Pass Identifier</th>
+                  <th>Bus / Route</th>
+                </tr>
+              </thead>
+              <tbody id="boarding-table-body">
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 2rem;">
+                    <div class="spinner spinner-sm"></div> Loading boarding records...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- QR SCANNER MODAL -->
+  <div class="modal-backdrop" id="scanner-modal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fas fa-camera" style="color: var(--success);"></i> Scan Student QR Pass</h3>
+        <button class="modal-close-btn" onclick="closeScannerModal()">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 1.25rem;">
+        <!-- Scanner Viewport with Laser -->
+        <div class="scanner-container">
+          <div id="qr-reader"></div>
+          <div class="scan-laser-line"></div>
+        </div>
+
+        <div style="text-align: center; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Point the mobile camera at the student's digital bus pass QR code.
+        </div>
+
+        <!-- Live Scan Result Card -->
+        <div id="scan-result-wrapper" style="display: none;">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeScannerModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/utils.js"></script>
+
+  <script>
+    let currentConductor = null;
+    let conductorDoc = null;
+    let html5QrScanner = null;
+    let boardingList = [];
+    let isLiveDutyActive = false;
+    let lastScannedStudentTime = {}; // Anti-passback cache
+
+    initAppShell('duty');
+
+    requireAuth('conductor', async (user, userData) => {
+      currentConductor = user;
+      conductorDoc = userData;
+
+      // Update sidebar & banner
+      document.getElementById('sidebar-cond-name').textContent = userData.name || 'Conductor';
+      document.getElementById('sidebar-cond-id').textContent = userData.conductorId || 'CON-XXXX';
+      document.getElementById('banner-cond-id').textContent = userData.conductorId || 'CON-XXXX';
+      const topbarName = document.getElementById('topbar-cond-name');
+      if (topbarName) topbarName.textContent = userData.name || 'Conductor';
+
+      await loadConductorDetails();
+      listenToTodayBoarding();
+    });
+
+    async function loadConductorDetails() {
+      try {
+        const snap = await db.collection('conductors').where('uid', '==', currentConductor.uid).get();
+        if (!snap.empty) {
+          conductorDoc = { id: snap.docs[0].id, ...snap.docs[0].data() };
+        }
+
+        document.getElementById('banner-bus-number').textContent = `${conductorDoc.busNumber || 'BUS-101'} (${conductorDoc.registrationNumber || 'Assigned Bus'})`;
+        document.getElementById('banner-org-name').textContent = conductorDoc.organizationName || 'Assigned Organization';
+        document.getElementById('banner-route-name').textContent = conductorDoc.routeName || 'Assigned Route';
+
+        if (conductorDoc.routeId) {
+          const passSnap = await db.collection('passes')
+            .where('routeId', '==', conductorDoc.routeId)
+            .where('status', '==', 'Active')
+            .get();
+          document.getElementById('kpi-route-students').textContent = passSnap.size;
+        }
+
+        if (conductorDoc.busId) {
+          const locDoc = await db.collection('liveBusLocations').doc(conductorDoc.busId).get();
+          if (locDoc.exists && locDoc.data().isLive) {
+            setLiveDutyUI(true);
+          }
+        }
+      } catch (err) {
+        console.error("Conductor load error:", err);
+      }
+    }
+
+    function toggleLiveDuty() {
+      if (!conductorDoc.busId) {
+        showToast("No bus assigned to your account. Contact your vendor.", "warning");
+        return;
+      }
+
+      if (isLiveDutyActive) {
+        globalBusTracker.stop(conductorDoc.busId);
+        setLiveDutyUI(false);
+        showToast("Live duty stopped. Bus location is now offline.", "info");
+      } else {
+        const success = globalBusTracker.start(
+          conductorDoc,
+          (pos) => {},
+          (err) => {
+            console.error("GPS Error:", err);
+            showToast("GPS Error: " + err.message, "danger");
+            setLiveDutyUI(false);
+          }
+        );
+
+        if (success) {
+          setLiveDutyUI(true);
+          showToast("Live duty started! GPS location streaming to Vendor and Students.", "success");
+        }
+      }
+    }
+
+    function setLiveDutyUI(isActive) {
+      isLiveDutyActive = isActive;
+      const dot = document.getElementById('live-status-dot');
+      const label = document.getElementById('live-status-label');
+      const sidebarBtn = document.getElementById('sidebar-live-toggle');
+      const bannerBtn = document.getElementById('duty-toggle-btn');
+
+      if (isActive) {
+        dot.className = 'pulse-dot';
+        dot.style.position = 'static';
+        dot.style.display = 'inline-block';
+        label.textContent = 'Live on Duty';
+        label.style.color = 'var(--success)';
+
+        sidebarBtn.innerHTML = '<i class="fas fa-stop"></i> Stop Live Duty';
+        sidebarBtn.className = 'btn btn-danger btn-block';
+
+        bannerBtn.innerHTML = '<i class="fas fa-stop"></i> Stop Live Duty';
+        bannerBtn.className = 'btn btn-danger btn-lg';
+      } else {
+        dot.className = 'badge-dot';
+        dot.style.background = 'var(--text-muted)';
+        label.textContent = 'Duty Offline';
+        label.style.color = 'var(--text-muted)';
+
+        sidebarBtn.innerHTML = '<i class="fas fa-satellite-dish"></i> Start Live Duty';
+        sidebarBtn.className = 'btn btn-primary btn-block';
+
+        bannerBtn.innerHTML = '<i class="fas fa-play"></i> Start Live Duty';
+        bannerBtn.className = 'btn btn-secondary btn-lg';
+        bannerBtn.style.background = 'rgba(255,255,255,0.15)';
+      }
+    }
+
+    function listenToTodayBoarding() {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      db.collection('boardingRecords')
+        .where('conductorId', '==', conductorDoc.conductorId || currentConductor.uid)
+        .onSnapshot(snap => {
+          boardingList = [];
+          let allowed = 0;
+          let denied = 0;
+
+          snap.forEach(doc => {
+            const data = { id: doc.id, ...doc.data() };
+            if (data.result === 'Allowed') allowed++;
+            else denied++;
+            boardingList.push(data);
+          });
+
+          boardingList.sort((a, b) => {
+            const timeA = a.timestamp ? (a.timestamp.toMillis ? a.timestamp.toMillis() : new Date(a.timestamp).getTime()) : 0;
+            const timeB = b.timestamp ? (b.timestamp.toMillis ? b.timestamp.toMillis() : new Date(b.timestamp).getTime()) : 0;
+            return timeB - timeA;
+          });
+
+          document.getElementById('kpi-allowed-count').textContent = allowed;
+          document.getElementById('kpi-denied-count').textContent = denied;
+          document.getElementById('kpi-total-scans').textContent = boardingList.length;
+
+          filterBoardingRecords();
+        });
+    }
+
+    function filterBoardingRecords() {
+      const search = document.getElementById('search-boarding').value.toLowerCase().trim();
+      const resFilter = document.getElementById('filter-result').value;
+
+      const filtered = boardingList.filter(b => {
+        const matchesRes = !resFilter || b.result === resFilter;
+        const matchesSearch = !search ||
+          (b.studentName && b.studentName.toLowerCase().includes(search)) ||
+          (b.boardingStop && b.boardingStop.toLowerCase().includes(search)) ||
+          (b.passId && b.passId.toLowerCase().includes(search));
+        return matchesRes && matchesSearch;
+      });
+
+      renderBoardingTable(filtered);
+    }
+
+    function renderBoardingTable(records) {
+      const tbody = document.getElementById('boarding-table-body');
+      if (records.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+              No boarding records found for today.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = records.map(r => {
+        const isAllow = r.result === 'Allowed';
+        return `
+          <tr>
+            <td><strong>${formatDateTime(r.timestamp)}</strong></td>
+            <td><strong>${r.studentName}</strong></td>
+            <td><i class="fas fa-map-marker-alt text-muted"></i> ${r.boardingStop || '-'}</td>
+            <td>
+              <span class="badge ${isAllow ? 'badge-success' : 'badge-danger'}">
+                <i class="fas ${isAllow ? 'fa-check' : 'fa-times'}"></i> ${r.result}
+              </span>
+            </td>
+            <td><span style="font-family: monospace; font-size: 0.8rem; color: var(--text-muted);">${r.passId ? r.passId.substring(0, 10) + '...' : '-'}</span></td>
+            <td>${r.busNumber || '-'} <small>(${r.routeName || ''})</small></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openScannerModal() {
+      openModal('scanner-modal');
+      document.getElementById('scan-result-wrapper').style.display = 'none';
+
+      setTimeout(() => {
+        if (!html5QrScanner) {
+          html5QrScanner = new Html5Qrcode("qr-reader");
+        }
+
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+        html5QrScanner.start(
+          { facingMode: "environment" },
+          config,
+          onScanSuccess,
+          (err) => {}
+        ).catch(err => {
+          console.error("Camera start error:", err);
+          showToast("Camera error: " + err, "danger");
+        });
+      }, 300);
+    }
+
+    function closeScannerModal() {
+      if (html5QrScanner) {
+        html5QrScanner.stop().then(() => {
+          html5QrScanner.clear();
+          closeModal('scanner-modal');
+        }).catch(() => {
+          closeModal('scanner-modal');
+        });
+      } else {
+        closeModal('scanner-modal');
+      }
+    }
+
+    async function onScanSuccess(decodedText) {
+      if (html5QrScanner) {
+        html5QrScanner.pause(true);
+      }
+
+      await validateStudentPass(decodedText);
+
+      setTimeout(() => {
+        if (html5QrScanner) {
+          html5QrScanner.resume();
+        }
+      }, 3500);
+    }
+
+    async function validateStudentPass(qrString) {
+      const resultBox = document.getElementById('scan-result-wrapper');
+      resultBox.style.display = 'block';
+      resultBox.innerHTML = `
+        <div style="text-align: center; padding: 1.5rem; background: var(--bg-page); border-radius: var(--radius-md);">
+          <div class="spinner spinner-sm"></div>
+          <p style="margin-top: 0.5rem; color: var(--text-muted);">Validating pass in cloud database...</p>
+        </div>
+      `;
+
+      try {
+        const payload = parsePassQRPayload(qrString);
+
+        if (!payload || !payload.passId) {
+          showScanResult(false, "Invalid QR Format", "This QR code does not belong to the BusPass system.");
+          await logBoardingRecord(null, 'Unknown Passenger', 'Unknown Stop', 'Denied', 'Invalid QR code structure');
+          return;
+        }
+
+        const passDocSnap = await db.collection('passes').doc(payload.passId).get();
+        if (!passDocSnap.exists) {
+          showScanResult(false, "Pass Not Found", "No pass record exists for this QR code in database.");
+          await logBoardingRecord(payload.passId, 'Unknown', 'Unknown', 'Denied', 'Pass not found');
+          return;
+        }
+
+        const pass = passDocSnap.data();
+
+        if (pass.status !== 'Active') {
+          showScanResult(false, `Pass is ${pass.status}`, "This pass is not marked active in database.", pass);
+          await logBoardingRecord(passDocSnap.id, pass.studentName, pass.boardingStop, 'Denied', `Status: ${pass.status}`);
+          return;
+        }
+
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (pass.validUntil && pass.validUntil < todayStr) {
+          showScanResult(false, "Pass Expired", `Validity expired on ${pass.validUntil}. Renewal required.`, pass);
+          await logBoardingRecord(passDocSnap.id, pass.studentName, pass.boardingStop, 'Denied', `Expired on ${pass.validUntil}`);
+          return;
+        }
+
+        if (conductorDoc.busId && pass.busId && pass.busId !== conductorDoc.busId) {
+          const isOrgMatch = pass.organizationId === conductorDoc.organizationId;
+          if (!isOrgMatch) {
+            showScanResult(false, "Different Organization Bus", `Passenger belongs to ${pass.organizationName || 'another institution'}.`, pass);
+            await logBoardingRecord(passDocSnap.id, pass.studentName, pass.boardingStop, 'Denied', 'Organization mismatch');
+            return;
+          }
+        }
+
+        const lastScan = lastScannedStudentTime[passDocSnap.id];
+        const now = Date.now();
+        if (lastScan && (now - lastScan) < 2 * 60 * 1000) {
+          showScanResult(true, "Boarding Already Logged", "Pass already verified within the last 2 minutes.", pass);
+          return;
+        }
+        lastScannedStudentTime[passDocSnap.id] = now;
+
+        showScanResult(true, "Boarding Allowed", "Digital Pass is 100% Valid & Active!", pass);
+        await logBoardingRecord(passDocSnap.id, pass.studentName, pass.boardingStop, 'Allowed', 'Valid QR scan');
+
+        showToast(`Allowed: ${pass.studentName} boarded!`, "success");
+
+      } catch (err) {
+        console.error("Scan validation error:", err);
+        showScanResult(false, "Validation Error", err.message);
+      }
+    }
+
+    function showScanResult(isAllowed, title, reason, passData = null) {
+      const wrapper = document.getElementById('scan-result-wrapper');
+      wrapper.style.display = 'block';
+
+      const bg = isAllowed ? 'var(--success-light)' : 'var(--danger-light)';
+      const border = isAllowed ? '#86EFAC' : '#FECACA';
+      const icon = isAllowed ? 'fa-check-circle text-success' : 'fa-times-circle text-danger';
+
+      wrapper.innerHTML = `
+        <div style="background: ${bg}; border: 2px solid ${border}; border-radius: var(--radius-md); padding: 1.25rem; text-align: center; animation: fadeIn 0.3s ease;">
+          <i class="fas ${icon}" style="font-size: 2.75rem; margin-bottom: 0.5rem; display: block;"></i>
+          <h3 style="font-size: 1.25rem; font-weight: 800; color: ${isAllowed ? 'var(--success-text)' : 'var(--danger-text)'};">${title}</h3>
+          <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 0.75rem;">${reason}</p>
+
+          ${passData ? `
+            <div style="background: #FFFFFF; border-radius: var(--radius-sm); padding: 0.75rem; text-align: left; font-size: 0.85rem; border: 1px solid rgba(0,0,0,0.06);">
+              <div><strong>Passenger:</strong> ${passData.studentName}</div>
+              <div><strong>Route:</strong> ${passData.routeName} (${passData.boardingStop})</div>
+              <div><strong>Pass #:</strong> <span style="font-family: monospace;">${passData.passNumber || passData.id || '-'}</span></div>
+              <div><strong>Valid Until:</strong> ${passData.validUntil || '-'}</div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    async function logBoardingRecord(passId, studentName, stop, result, reason) {
+      try {
+        const record = {
+          vendorId: conductorDoc.vendorId || '',
+          conductorId: conductorDoc.conductorId || currentConductor.uid,
+          conductorName: conductorDoc.name || 'Conductor',
+          busId: conductorDoc.busId || '',
+          busNumber: conductorDoc.busNumber || 'BUS',
+          routeId: conductorDoc.routeId || '',
+          routeName: conductorDoc.routeName || '',
+          passId: passId || '',
+          studentName: studentName || 'Passenger',
+          boardingStop: stop || '',
+          result: result,
+          reason: reason || '',
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        await db.collection('boardingRecords').add(record);
+      } catch (err) {
+        console.error("Error logging boarding record:", err);
+      }
+    }
+  </script>
+</body>
+</html>

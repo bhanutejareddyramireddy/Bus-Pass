@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Students | BusPass Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop"></div>
+
+    <!-- Master Vendor Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fas fa-bus-alt"></i>
+          <span>BUSPASS<strong>PRO</strong></span>
+        </div>
+        <button class="sidebar-close-btn">&times;</button>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="sidebar-section-title">Main Menu</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-dashboard.html" class="sidebar-link" data-nav="dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a></li>
+          <li><a href="vendor-organizations.html" class="sidebar-link" data-nav="organizations"><i class="fas fa-sitemap"></i><span>Organizations</span></a></li>
+          <li><a href="vendor-routes.html" class="sidebar-link" data-nav="routes"><i class="fas fa-route"></i><span>Routes & Stops</span></a></li>
+          <li><a href="vendor-buses.html" class="sidebar-link" data-nav="buses"><i class="fas fa-bus"></i><span>Bus Fleet</span></a></li>
+          <li><a href="vendor-conductors.html" class="sidebar-link" data-nav="conductors"><i class="fas fa-id-badge"></i><span>Conductors</span></a></li>
+          <li>
+            <a href="vendor-applications.html" class="sidebar-link" data-nav="applications">
+              <i class="fas fa-file-invoice"></i>
+              <span>Applications</span>
+              <span class="sidebar-badge" id="sidebar-pending-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li><a href="vendor-students.html" class="sidebar-link" data-nav="students"><i class="fas fa-user-graduate"></i><span>Students</span></a></li>
+        </ul>
+
+        <div class="sidebar-section-title">Operations & Fleet</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-live-tracking.html" class="sidebar-link" data-nav="live-tracking"><i class="fas fa-map-marked-alt"></i><span>Live Tracking</span></a></li>
+          <li><a href="vendor-analytics.html" class="sidebar-link" data-nav="analytics"><i class="fas fa-chart-pie"></i><span>Analytics</span></a></li>
+          <li><a href="vendor-payment-settings.html" class="sidebar-link" data-nav="payment-settings"><i class="fas fa-qrcode"></i><span>Payment Settings</span></a></li>
+          <li><a href="vendor-settings.html" class="sidebar-link" data-nav="settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar">V</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name">Vendor Admin</div>
+            <div class="sidebar-user-role">Transport Vendor</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="logoutUser()" title="Sign Out">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <!-- Master Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle-btn"><i class="fas fa-bars"></i></button>
+          <div class="page-title-group">
+            <h1>Enrolled Students & Commuters</h1>
+            <div class="page-breadcrumb">
+              <i class="fas fa-home"></i> <span>Vendor Portal</span> / <span>Students</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-live-tracking.html'" title="Live Tracking">
+            <i class="fas fa-satellite-dish"></i>
+          </button>
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-applications.html'" title="Pending Applications">
+            <i class="fas fa-bell"></i>
+            <span class="topbar-badge-dot" id="topbar-notif-dot" style="display: none;"></span>
+          </button>
+
+          <div class="topbar-user-pill" onclick="window.location.href='vendor-settings.html'">
+            <div class="avatar">V</div>
+            <span class="topbar-user-name">Vendor Admin</span>
+            <i class="fas fa-chevron-right" style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.35rem;"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-body">
+
+        <!-- Page Header & Action -->
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-header-title">Commuter Directory & Pass Register</h2>
+            <p class="page-header-desc">Search and monitor enrolled students across all institutions, active bus passes, boarding routes, and validity expirations.</p>
+          </div>
+          <div class="page-header-actions">
+            <a href="vendor-applications.html" class="btn btn-outline-primary">
+              <i class="fas fa-clipboard-list"></i> View Pass Applications
+            </a>
+          </div>
+        </div>
+
+        <!-- Master KPI Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon primary"><i class="fas fa-user-graduate"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Total Commuters</div>
+              <div class="stat-value" id="stat-total-students">0</div>
+              <div class="stat-desc">Across all your organizations</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon success"><i class="fas fa-id-card"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Active Passes</div>
+              <div class="stat-value" id="stat-active-passes" style="color: var(--success);">0</div>
+              <div class="stat-desc">Valid passes currently in circulation</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon warning"><i class="fas fa-hourglass-half"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Pending Pass Requests</div>
+              <div class="stat-value" id="stat-pending-apps">0</div>
+              <div class="stat-desc">Awaiting verification</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon danger"><i class="fas fa-calendar-times"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Expired / Inactive</div>
+              <div class="stat-value" id="stat-expired-passes">0</div>
+              <div class="stat-desc">Renewal required</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toolbar: Search & Filters -->
+        <div class="table-toolbar">
+          <div class="table-search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-students" class="form-control" placeholder="Search by student name or email..." oninput="filterStudents()">
+          </div>
+
+          <div class="table-filters">
+            <select id="filter-org" class="form-control" onchange="filterStudents()" style="min-width: 180px;">
+              <option value="">All Organizations</option>
+            </select>
+
+            <select id="filter-status" class="form-control" onchange="filterStudents()" style="width: auto;">
+              <option value="">All Pass Statuses</option>
+              <option value="Active">Active Passes</option>
+              <option value="Expired">Expired</option>
+              <option value="Inactive">Inactive</option>
+              <option value="Pending">Pending Application</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Students Directory Table Card -->
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student Details</th>
+                  <th>Organization</th>
+                  <th>Route & Boarding Stop</th>
+                  <th>Assigned Bus</th>
+                  <th>Pass Type</th>
+                  <th>Pass Status</th>
+                  <th>Validity Dates</th>
+                  <th>Pass Fee</th>
+                </tr>
+              </thead>
+              <tbody id="students-table-body">
+                <tr>
+                  <td colspan="8" style="text-align: center; padding: 2.5rem;">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 0.5rem; color: var(--text-muted);">Loading student commuters...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    let currentVendorId = null;
+    let organizationsMap = {};
+    let passesList = [];
+    let applicationsList = [];
+
+    initAppShell('students');
+
+    requireAuth('vendor', async (user) => {
+      currentVendorId = user.uid;
+      await loadOrganizations();
+      loadPassesAndStudents();
+      listenToPendingBadge();
+    });
+
+    // Real-time listener for pending badge
+    function listenToPendingBadge() {
+      db.collection('applications')
+        .where('vendorId', '==', currentVendorId)
+        .where('status', '==', 'Pending')
+        .onSnapshot(snap => {
+          const count = snap.size;
+          const badge = document.getElementById('sidebar-pending-badge');
+          const dot = document.getElementById('topbar-notif-dot');
+          if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+          }
+          if (dot) {
+            dot.style.display = count > 0 ? 'block' : 'none';
+          }
+        }, err => console.error("Badge listener error:", err));
+    }
+
+    async function loadOrganizations() {
+      const snap = await db.collection('organizations').where('vendorId', '==', currentVendorId).get();
+      const filterOrg = document.getElementById('filter-org');
+      filterOrg.innerHTML = '<option value="">All Organizations</option>';
+
+      snap.forEach(doc => {
+        const d = doc.data();
+        organizationsMap[doc.id] = d.name;
+        filterOrg.innerHTML += `<option value="${doc.id}">${d.name}</option>`;
+      });
+    }
+
+    async function loadPassesAndStudents() {
+      // 1. Get passes
+      db.collection('passes')
+        .where('vendorId', '==', currentVendorId)
+        .onSnapshot(async snap => {
+          passesList = [];
+          const nowStr = new Date().toISOString().split('T')[0];
+          let activeCount = 0;
+          let expiredCount = 0;
+
+          snap.forEach(doc => {
+            const data = { id: doc.id, ...doc.data() };
+            if (data.validUntil && data.validUntil < nowStr) {
+              data.computedStatus = 'Expired';
+              expiredCount++;
+            } else if (data.status === 'Active') {
+              data.computedStatus = 'Active';
+              activeCount++;
+            } else {
+              data.computedStatus = 'Inactive';
+              expiredCount++;
+            }
+            passesList.push(data);
+          });
+
+          document.getElementById('stat-active-passes').textContent = activeCount;
+          document.getElementById('stat-expired-passes').textContent = expiredCount;
+
+          // 2. Also fetch applications for pending commuters count
+          const appsSnap = await db.collection('applications').where('vendorId', '==', currentVendorId).get();
+          applicationsList = [];
+          let pendingCount = 0;
+          const studentIds = new Set();
+
+          appsSnap.forEach(doc => {
+            const app = { id: doc.id, ...doc.data() };
+            if (app.status === 'Pending') pendingCount++;
+            studentIds.add(app.studentId);
+            applicationsList.push(app);
+          });
+
+          passesList.forEach(p => studentIds.add(p.studentId));
+
+          document.getElementById('stat-total-students').textContent = studentIds.size;
+          document.getElementById('stat-pending-apps').textContent = pendingCount;
+
+          filterStudents();
+        });
+    }
+
+    function filterStudents() {
+      const search = document.getElementById('search-students').value.toLowerCase().trim();
+      const orgFilter = document.getElementById('filter-org').value;
+      const statusFilter = document.getElementById('filter-status').value;
+
+      const combinedRecords = [...passesList];
+
+      applicationsList.filter(a => a.status === 'Pending').forEach(a => {
+        combinedRecords.push({
+          id: 'app-' + a.id,
+          studentName: a.studentName || 'Student',
+          studentEmail: a.studentEmail || '',
+          studentPhone: a.studentPhone || '',
+          organizationId: a.organizationId,
+          organizationName: a.organizationName,
+          routeName: a.routeName,
+          boardingStop: a.boardingStop,
+          busNumber: 'Unassigned',
+          passType: a.passType,
+          computedStatus: 'Pending',
+          validFrom: '-',
+          validUntil: '-',
+          fee: a.fee
+        });
+      });
+
+      const filtered = combinedRecords.filter(item => {
+        const matchesOrg = !orgFilter || item.organizationId === orgFilter;
+        const matchesStatus = !statusFilter || item.computedStatus === statusFilter;
+        const matchesSearch = !search ||
+          (item.studentName && item.studentName.toLowerCase().includes(search)) ||
+          (item.studentEmail && item.studentEmail.toLowerCase().includes(search));
+        return matchesOrg && matchesStatus && matchesSearch;
+      });
+
+      renderStudentsTable(filtered);
+    }
+
+    function renderStudentsTable(records) {
+      const tbody = document.getElementById('students-table-body');
+      if (records.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8">
+              <div class="state-container">
+                <div class="state-icon"><i class="fas fa-user-graduate"></i></div>
+                <h4 class="state-title">No Commuter Records</h4>
+                <p class="state-desc">No students found matching your search and filter criteria.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = records.map(r => {
+        let badge = '<span class="badge badge-success"><span class="badge-dot"></span> Active</span>';
+        if (r.computedStatus === 'Expired') badge = '<span class="badge badge-danger">Expired</span>';
+        if (r.computedStatus === 'Inactive') badge = '<span class="badge badge-secondary">Inactive</span>';
+        if (r.computedStatus === 'Pending') badge = '<span class="badge badge-warning">Pending App</span>';
+
+        return `
+          <tr>
+            <td>
+              <strong style="color: var(--text-primary); font-size: 0.95rem;">${r.studentName}</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">${r.studentEmail || r.studentPhone || ''}</div>
+            </td>
+            <td><span class="badge badge-primary">${r.organizationName || organizationsMap[r.organizationId] || 'Assigned Org'}</span></td>
+            <td>
+              <strong>${r.routeName || '-'}</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);"><i class="fas fa-map-marker-alt text-primary"></i> ${r.boardingStop || '-'}</div>
+            </td>
+            <td><strong>${r.busNumber || 'Unassigned'}</strong></td>
+            <td><span class="badge badge-secondary">${r.passType || 'Full Year'}</span></td>
+            <td>${badge}</td>
+            <td>
+              <div style="font-size: 0.78rem;">
+                <div>From: <strong>${r.validFrom}</strong></div>
+                <div>Until: <strong>${r.validUntil}</strong></div>
+              </div>
+            </td>
+            <td><strong>${formatCurrency(r.fee)}</strong></td>
+          </tr>
+        `;
+      }).join('');
+    }
+  </script>
+</body>
+</html>

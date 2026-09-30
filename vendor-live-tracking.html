@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Fleet Tracking | BusPass Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Leaflet CSS & JS via CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop"></div>
+
+    <!-- Master Vendor Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fas fa-bus-alt"></i>
+          <span>BUSPASS<strong>PRO</strong></span>
+        </div>
+        <button class="sidebar-close-btn">&times;</button>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="sidebar-section-title">Main Menu</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-dashboard.html" class="sidebar-link" data-nav="dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a></li>
+          <li><a href="vendor-organizations.html" class="sidebar-link" data-nav="organizations"><i class="fas fa-sitemap"></i><span>Organizations</span></a></li>
+          <li><a href="vendor-routes.html" class="sidebar-link" data-nav="routes"><i class="fas fa-route"></i><span>Routes & Stops</span></a></li>
+          <li><a href="vendor-buses.html" class="sidebar-link" data-nav="buses"><i class="fas fa-bus"></i><span>Bus Fleet</span></a></li>
+          <li><a href="vendor-conductors.html" class="sidebar-link" data-nav="conductors"><i class="fas fa-id-badge"></i><span>Conductors</span></a></li>
+          <li>
+            <a href="vendor-applications.html" class="sidebar-link" data-nav="applications">
+              <i class="fas fa-file-invoice"></i>
+              <span>Applications</span>
+              <span class="sidebar-badge" id="sidebar-pending-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li><a href="vendor-students.html" class="sidebar-link" data-nav="students"><i class="fas fa-user-graduate"></i><span>Students</span></a></li>
+        </ul>
+
+        <div class="sidebar-section-title">Operations & Fleet</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-live-tracking.html" class="sidebar-link" data-nav="live-tracking"><i class="fas fa-map-marked-alt"></i><span>Live Tracking</span></a></li>
+          <li><a href="vendor-analytics.html" class="sidebar-link" data-nav="analytics"><i class="fas fa-chart-pie"></i><span>Analytics</span></a></li>
+          <li><a href="vendor-payment-settings.html" class="sidebar-link" data-nav="payment-settings"><i class="fas fa-qrcode"></i><span>Payment Settings</span></a></li>
+          <li><a href="vendor-settings.html" class="sidebar-link" data-nav="settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar">V</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name">Vendor Admin</div>
+            <div class="sidebar-user-role">Transport Vendor</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="logoutUser()" title="Sign Out">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <!-- Master Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle-btn"><i class="fas fa-bars"></i></button>
+          <div class="page-title-group">
+            <h1>Live Fleet GPS Tracking</h1>
+            <div class="page-breadcrumb">
+              <i class="fas fa-home"></i> <span>Vendor Portal</span> / <span>Live Tracking</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-live-tracking.html'" title="Live Tracking">
+            <i class="fas fa-satellite-dish"></i>
+          </button>
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-applications.html'" title="Pending Applications">
+            <i class="fas fa-bell"></i>
+            <span class="topbar-badge-dot" id="topbar-notif-dot" style="display: none;"></span>
+          </button>
+
+          <div class="topbar-user-pill" onclick="window.location.href='vendor-settings.html'">
+            <div class="avatar">V</div>
+            <span class="topbar-user-name">Vendor Admin</span>
+            <i class="fas fa-chevron-right" style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.35rem;"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-body">
+
+        <!-- Page Header & Action -->
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-header-title">Real-Time Fleet Radar</h2>
+            <p class="page-header-desc">Monitor live coordinates, route progression, and active duty status streamed by bus conductors.</p>
+          </div>
+          <div class="page-header-actions">
+            <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--bg-surface); padding: 0.45rem 1rem; border-radius: 9999px; border: 1px solid var(--border-color); font-size: 0.82rem; box-shadow: var(--shadow-xs);">
+              <span class="pulse-dot" style="position: static; display: inline-block;"></span>
+              <span style="font-weight: 700; color: var(--success);" id="live-indicator-text">Real-time Stream Connected</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metrics Row -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon primary"><i class="fas fa-bus"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Fleet Vehicles</div>
+              <div class="stat-value" id="count-total-fleet">0</div>
+              <div class="stat-desc">Total fleet units</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon success"><i class="fas fa-satellite-dish"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Live on Duty</div>
+              <div class="stat-value" id="count-live-fleet" style="color: var(--success);">0</div>
+              <div class="stat-desc">Streaming live telemetry</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon warning"><i class="fas fa-power-off"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Offline / Idle</div>
+              <div class="stat-value" id="count-offline-fleet">0</div>
+              <div class="stat-desc">Not broadcasting</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon info"><i class="fas fa-building"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Organizations</div>
+              <div class="stat-value" id="count-orgs-fleet">0</div>
+              <div class="stat-desc">Transit network campuses</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Tracking Workspace: Sidebar Fleet List + Interactive Map -->
+        <div style="display: grid; grid-template-columns: 340px 1fr; gap: 1.5rem; min-height: 560px;">
+          <!-- Left Fleet List -->
+          <div class="card" style="display: flex; flex-direction: column; padding: 1.25rem; margin-bottom: 0;">
+            <div class="card-header" style="margin-bottom: 0.75rem;">
+              <h3 class="card-title" style="font-size: 1rem;">Fleet Units</h3>
+              <span class="badge badge-secondary" id="fleet-list-badge">0 Buses</span>
+            </div>
+
+            <!-- Mini Filters -->
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem;">
+              <input type="text" id="fleet-search" class="form-control" placeholder="Search bus, route, conductor..." oninput="filterFleetList()">
+              <div style="display: flex; gap: 0.5rem;">
+                <select id="fleet-status-filter" class="form-control" onchange="filterFleetList()" style="font-size: 0.8rem;">
+                  <option value="">All Statuses</option>
+                  <option value="live">Live Only</option>
+                  <option value="offline">Offline Only</option>
+                </select>
+                <select id="fleet-org-filter" class="form-control" onchange="filterFleetList()" style="font-size: 0.8rem;">
+                  <option value="">All Orgs</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Scrollable Bus Cards List -->
+            <div id="fleet-cards-container" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; max-height: 440px;">
+              <div class="state-container" style="padding: 1.5rem;"><div class="spinner spinner-sm"></div></div>
+            </div>
+          </div>
+
+          <!-- Right Large Leaflet Map -->
+          <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 0; position: relative;">
+            <div id="vendor-leaflet-map" class="map-container" style="height: 100%; min-height: 560px; border-radius: 0;"></div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/utils.js"></script>
+
+  <script>
+    let currentVendorId = null;
+    let map = null;
+    let busMarkers = {};
+    let fleetDataList = [];
+    let organizationsMap = {};
+
+    initAppShell('live-tracking');
+
+    requireAuth('vendor', async (user) => {
+      currentVendorId = user.uid;
+      initLeafletMap();
+      await loadOrganizations();
+      listenToFleetLiveLocations();
+      listenToPendingBadge();
+    });
+
+    // Real-time listener for pending badge
+    function listenToPendingBadge() {
+      db.collection('applications')
+        .where('vendorId', '==', currentVendorId)
+        .where('status', '==', 'Pending')
+        .onSnapshot(snap => {
+          const count = snap.size;
+          const badge = document.getElementById('sidebar-pending-badge');
+          const dot = document.getElementById('topbar-notif-dot');
+          if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+          }
+          if (dot) {
+            dot.style.display = count > 0 ? 'block' : 'none';
+          }
+        }, err => console.error("Badge listener error:", err));
+    }
+
+    function initLeafletMap() {
+      // Default center (Hyderabad coordinates or India center)
+      map = L.map('vendor-leaflet-map').setView([17.3850, 78.4867], 11);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+    }
+
+    async function loadOrganizations() {
+      const snap = await db.collection('organizations').where('vendorId', '==', currentVendorId).get();
+      document.getElementById('count-orgs-fleet').textContent = snap.size;
+      const orgFilter = document.getElementById('fleet-org-filter');
+
+      snap.forEach(doc => {
+        const d = doc.data();
+        organizationsMap[doc.id] = d.name;
+        orgFilter.innerHTML += `<option value="${doc.id}">${d.name}</option>`;
+      });
+    }
+
+    // Real-time listener on liveBusLocations
+    function listenToFleetLiveLocations() {
+      db.collection('liveBusLocations')
+        .where('vendorId', '==', currentVendorId)
+        .onSnapshot(snap => {
+          fleetDataList = [];
+          let liveCount = 0;
+
+          snap.forEach(doc => {
+            const data = { id: doc.id, ...doc.data() };
+            if (data.isLive) liveCount++;
+            fleetDataList.push(data);
+          });
+
+          document.getElementById('count-total-fleet').textContent = snap.size;
+          document.getElementById('count-live-fleet').textContent = liveCount;
+          document.getElementById('count-offline-fleet').textContent = Math.max(0, snap.size - liveCount);
+
+          updateMapMarkers();
+          filterFleetList();
+        });
+    }
+
+    function updateMapMarkers() {
+      if (!map) return;
+
+      const currentMarkerIds = Object.keys(busMarkers);
+      const incomingBusIds = fleetDataList.map(b => b.busId);
+
+      // Remove stale markers
+      currentMarkerIds.forEach(id => {
+        if (!incomingBusIds.includes(id)) {
+          map.removeLayer(busMarkers[id]);
+          delete busMarkers[id];
+        }
+      });
+
+      // Add or update markers
+      fleetDataList.forEach(bus => {
+        if (bus.isLive && bus.latitude && bus.longitude) {
+          const lat = bus.latitude;
+          const lng = bus.longitude;
+
+          const popupContent = `
+            <div style="font-family: 'Inter', sans-serif; padding: 4px;">
+              <strong style="color: #4F46E5; font-size: 1rem;">${bus.busNumber}</strong><br>
+              <span style="font-size: 0.8rem; color: #6B7280;">Route: ${bus.routeName || 'Assigned'}</span><br>
+              <span style="font-size: 0.8rem; color: #16A34A; font-weight: 700;"><i class="fas fa-signal"></i> Live Duty</span><br>
+              <small style="color: #9CA3AF;">Conductor: ${bus.conductorName || 'Staff'}</small>
+            </div>
+          `;
+
+          if (busMarkers[bus.busId]) {
+            busMarkers[bus.busId].setLatLng([lat, lng]);
+            busMarkers[bus.busId].setPopupContent(popupContent);
+          } else {
+            // Create custom animated icon
+            const customIcon = L.divIcon({
+              className: 'custom-bus-marker',
+              html: `
+                <div style="position: relative;">
+                  <span class="pulse-dot" style="position: absolute; top: -4px; right: -4px; width: 10px; height: 10px;"></span>
+                  <div style="width: 38px; height: 38px; background: #4F46E5; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(79,70,229,0.5); border: 2px solid #fff;">
+                    <i class="fas fa-bus" style="font-size: 1rem;"></i>
+                  </div>
+                </div>
+              `,
+              iconSize: [38, 38],
+              iconAnchor: [19, 19]
+            });
+
+            const marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
+            marker.bindPopup(popupContent);
+            busMarkers[bus.busId] = marker;
+          }
+        } else if (busMarkers[bus.busId]) {
+          // Bus went offline, remove marker from live view
+          map.removeLayer(busMarkers[bus.busId]);
+          delete busMarkers[bus.busId];
+        }
+      });
+    }
+
+    function filterFleetList() {
+      const search = document.getElementById('fleet-search').value.toLowerCase().trim();
+      const status = document.getElementById('fleet-status-filter').value;
+      const org = document.getElementById('fleet-org-filter').value;
+
+      const filtered = fleetDataList.filter(b => {
+        const matchesSearch = !search ||
+          (b.busNumber && b.busNumber.toLowerCase().includes(search)) ||
+          (b.routeName && b.routeName.toLowerCase().includes(search)) ||
+          (b.conductorName && b.conductorName.toLowerCase().includes(search));
+        const matchesStatus = !status || (status === 'live' ? b.isLive : !b.isLive);
+        const matchesOrg = !org || b.organizationId === org;
+        return matchesSearch && matchesStatus && matchesOrg;
+      });
+
+      renderFleetList(filtered);
+    }
+
+    function renderFleetList(buses) {
+      const container = document.getElementById('fleet-cards-container');
+      document.getElementById('fleet-list-badge').textContent = `${buses.length} Buses`;
+
+      if (buses.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; color: var(--text-muted); padding: 2rem 1rem; font-size: 0.85rem;">
+            <i class="fas fa-bus-alt" style="font-size: 2rem; color: #CBD5E1; margin-bottom: 0.5rem; display: block;"></i>
+            No fleet vehicles match this filter.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = buses.map(b => {
+        const isLive = b.isLive;
+        return `
+          <div class="card" style="margin-bottom: 0; padding: 0.85rem 1rem; cursor: pointer; border-left: 4px solid ${isLive ? 'var(--success)' : 'var(--border-color)'}; transition: var(--transition);" onclick="focusBusOnMap('${b.busId}', ${b.latitude || 0}, ${b.longitude || 0}, ${isLive})">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <strong style="color: var(--text-primary); font-size: 0.95rem;">${b.busNumber || 'Bus Unit'}</strong>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">${b.routeName || 'Unassigned'}</div>
+                <div style="font-size: 0.72rem; color: var(--primary); font-weight: 600; margin-top: 2px;">${b.organizationName || organizationsMap[b.organizationId] || ''}</div>
+              </div>
+              <span class="badge ${isLive ? 'badge-success' : 'badge-secondary'}">
+                <span class="badge-dot"></span> ${isLive ? 'Live' : 'Offline'}
+              </span>
+            </div>
+            <div style="margin-top: 0.5rem; font-size: 0.72rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
+              <span><i class="fas fa-id-badge"></i> ${b.conductorName || 'Duty Staff'}</span>
+              <span>${b.lastUpdated ? formatDateTime(b.lastUpdated) : 'No telemetry'}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function focusBusOnMap(busId, lat, lng, isLive) {
+      if (!isLive || !lat || !lng) {
+        showToast("This bus is currently offline. No live GPS location stream available.", "warning");
+        return;
+      }
+      map.setView([lat, lng], 15);
+      if (busMarkers[busId]) {
+        busMarkers[busId].openPopup();
+      }
+    }
+  </script>
+</body>
+</html>

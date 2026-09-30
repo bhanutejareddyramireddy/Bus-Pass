@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Organizations | BusPass Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop"></div>
+
+    <!-- Master Vendor Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fas fa-bus-alt"></i>
+          <span>BUSPASS<strong>PRO</strong></span>
+        </div>
+        <button class="sidebar-close-btn">&times;</button>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="sidebar-section-title">Main Menu</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-dashboard.html" class="sidebar-link" data-nav="dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a></li>
+          <li><a href="vendor-organizations.html" class="sidebar-link" data-nav="organizations"><i class="fas fa-sitemap"></i><span>Organizations</span></a></li>
+          <li><a href="vendor-routes.html" class="sidebar-link" data-nav="routes"><i class="fas fa-route"></i><span>Routes & Stops</span></a></li>
+          <li><a href="vendor-buses.html" class="sidebar-link" data-nav="buses"><i class="fas fa-bus"></i><span>Bus Fleet</span></a></li>
+          <li><a href="vendor-conductors.html" class="sidebar-link" data-nav="conductors"><i class="fas fa-id-badge"></i><span>Conductors</span></a></li>
+          <li>
+            <a href="vendor-applications.html" class="sidebar-link" data-nav="applications">
+              <i class="fas fa-file-invoice"></i>
+              <span>Applications</span>
+              <span class="sidebar-badge" id="sidebar-pending-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li><a href="vendor-students.html" class="sidebar-link" data-nav="students"><i class="fas fa-user-graduate"></i><span>Students</span></a></li>
+        </ul>
+
+        <div class="sidebar-section-title">Operations & Fleet</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-live-tracking.html" class="sidebar-link" data-nav="live-tracking"><i class="fas fa-map-marked-alt"></i><span>Live Tracking</span></a></li>
+          <li><a href="vendor-analytics.html" class="sidebar-link" data-nav="analytics"><i class="fas fa-chart-pie"></i><span>Analytics</span></a></li>
+          <li><a href="vendor-payment-settings.html" class="sidebar-link" data-nav="payment-settings"><i class="fas fa-qrcode"></i><span>Payment Settings</span></a></li>
+          <li><a href="vendor-settings.html" class="sidebar-link" data-nav="settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar">V</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name">Vendor Admin</div>
+            <div class="sidebar-user-role">Transport Vendor</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="logoutUser()" title="Sign Out">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <!-- Master Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle-btn"><i class="fas fa-bars"></i></button>
+          <div class="page-title-group">
+            <h1>Organization Management</h1>
+            <div class="page-breadcrumb">
+              <i class="fas fa-home"></i> <span>Vendor Portal</span> / <span>Organizations</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-live-tracking.html'" title="Live Tracking">
+            <i class="fas fa-satellite-dish"></i>
+          </button>
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-applications.html'" title="Pending Applications">
+            <i class="fas fa-bell"></i>
+            <span class="topbar-badge-dot" id="topbar-notif-dot" style="display: none;"></span>
+          </button>
+
+          <div class="topbar-user-pill" onclick="window.location.href='vendor-settings.html'">
+            <div class="avatar">V</div>
+            <span class="topbar-user-name">Vendor Admin</span>
+            <i class="fas fa-chevron-right" style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.35rem;"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-body">
+
+        <!-- Page Header & Action -->
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-header-title">Partner Institutions</h2>
+            <p class="page-header-desc">Manage colleges, universities, schools, and corporate institutions affiliated with your transit fleet.</p>
+          </div>
+          <div class="page-header-actions">
+            <button class="btn btn-primary" onclick="openCreateOrgModal()">
+              <i class="fas fa-plus-circle"></i> Create Organization
+            </button>
+          </div>
+        </div>
+
+        <!-- Master KPI Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon primary"><i class="fas fa-sitemap"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Total Organizations</div>
+              <div class="stat-value" id="stat-total-orgs">0</div>
+              <div class="stat-desc">Registered partner institutions</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon success"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Active Status</div>
+              <div class="stat-value" id="stat-active-orgs" style="color: var(--success);">0</div>
+              <div class="stat-desc">Accepting pass applications</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon warning"><i class="fas fa-pause-circle"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Inactive / Paused</div>
+              <div class="stat-value" id="stat-inactive-orgs">0</div>
+              <div class="stat-desc">Temporarily disabled</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon info"><i class="fas fa-university"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Colleges & Schools</div>
+              <div class="stat-value" id="stat-education-orgs">0</div>
+              <div class="stat-desc">Educational campuses</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toolbar: Search & Filters -->
+        <div class="table-toolbar">
+          <div class="table-search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-orgs" class="form-control" placeholder="Search by name, location..." oninput="filterOrganizations()">
+          </div>
+
+          <div class="table-filters">
+            <select id="filter-type" class="form-control" onchange="filterOrganizations()" style="width: auto;">
+              <option value="">All Types</option>
+              <option value="College">College</option>
+              <option value="School">School</option>
+              <option value="University">University</option>
+              <option value="Company">Company</option>
+              <option value="Other">Other</option>
+            </select>
+
+            <select id="filter-status" class="form-control" onchange="filterOrganizations()" style="width: auto;">
+              <option value="">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Organizations Table Card -->
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Organization Name</th>
+                  <th>Type</th>
+                  <th>Location</th>
+                  <th>Contact Info</th>
+                  <th>Status</th>
+                  <th>Created Date</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="orgs-table-body">
+                <tr>
+                  <td colspan="7" style="text-align: center; padding: 2.5rem;">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 0.5rem; color: var(--text-muted);">Loading organizations...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Create / Edit Organization Modal -->
+  <div class="modal-backdrop" id="org-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="org-modal-title">Create New Organization</h3>
+        <button class="modal-close-btn" onclick="closeModal('org-modal')">&times;</button>
+      </div>
+      <form id="org-form">
+        <div class="modal-body">
+          <input type="hidden" id="org-doc-id">
+
+          <div class="form-group">
+            <label class="form-label" for="org-name">Organization Name <span class="required">*</span></label>
+            <input type="text" id="org-name" class="form-control" placeholder="e.g. ABC College of Engineering" required>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="org-type">Organization Type <span class="required">*</span></label>
+              <select id="org-type" class="form-control" required>
+                <option value="College">College</option>
+                <option value="School">School</option>
+                <option value="University">University</option>
+                <option value="Company">Company</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="org-location">Location / City <span class="required">*</span></label>
+              <input type="text" id="org-location" class="form-control" placeholder="e.g. Hyderabad" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="org-address">Full Address <span class="required">*</span></label>
+            <textarea id="org-address" class="form-control" placeholder="Campus address, street, landmark..." required></textarea>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="org-contact">Contact Phone <span class="required">*</span></label>
+              <input type="tel" id="org-contact" class="form-control" placeholder="e.g. 040-12345678" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="org-status">Operational Status <span class="required">*</span></label>
+              <select id="org-status" class="form-control" required>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="org-desc">Description & Transport Notes</label>
+            <textarea id="org-desc" class="form-control" placeholder="Details regarding college transport policy, shifts, etc."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('org-modal')">Cancel</button>
+          <button type="submit" id="save-org-btn" class="btn btn-primary">
+            <i class="fas fa-plus-circle"></i> <span>Create Organization</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    let currentVendorId = null;
+    let organizationsList = [];
+
+    initAppShell('organizations');
+
+    requireAuth('vendor', (user) => {
+      currentVendorId = user.uid;
+      loadOrganizations();
+      listenToPendingBadge();
+    });
+
+    // Real-time listener for pending badge
+    function listenToPendingBadge() {
+      db.collection('applications')
+        .where('vendorId', '==', currentVendorId)
+        .where('status', '==', 'Pending')
+        .onSnapshot(snap => {
+          const count = snap.size;
+          const badge = document.getElementById('sidebar-pending-badge');
+          const dot = document.getElementById('topbar-notif-dot');
+          if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+          }
+          if (dot) {
+            dot.style.display = count > 0 ? 'block' : 'none';
+          }
+        }, err => console.error("Badge listener error:", err));
+    }
+
+    // Real-time listener for Vendor's Organizations
+    function loadOrganizations() {
+      db.collection('organizations')
+        .where('vendorId', '==', currentVendorId)
+        .onSnapshot((snapshot) => {
+          organizationsList = [];
+          snapshot.forEach(doc => {
+            organizationsList.push({ id: doc.id, ...doc.data() });
+          });
+          updateOrgKPIs(organizationsList);
+          filterOrganizations();
+        }, (error) => {
+          console.error("Error loading organizations:", error);
+          showToast("Failed to load organizations.", "danger");
+        });
+    }
+
+    function updateOrgKPIs(orgs) {
+      const total = orgs.length;
+      const active = orgs.filter(o => o.status === 'Active').length;
+      const inactive = orgs.filter(o => o.status === 'Inactive').length;
+      const edu = orgs.filter(o => ['College', 'School', 'University'].includes(o.type)).length;
+
+      document.getElementById('stat-total-orgs').textContent = total;
+      document.getElementById('stat-active-orgs').textContent = active;
+      document.getElementById('stat-inactive-orgs').textContent = inactive;
+      document.getElementById('stat-education-orgs').textContent = edu;
+    }
+
+    function filterOrganizations() {
+      const search = document.getElementById('search-orgs').value.toLowerCase().trim();
+      const typeFilter = document.getElementById('filter-type').value;
+      const statusFilter = document.getElementById('filter-status').value;
+
+      const filtered = organizationsList.filter(org => {
+        const matchesSearch = !search || 
+          (org.name && org.name.toLowerCase().includes(search)) ||
+          (org.location && org.location.toLowerCase().includes(search));
+        const matchesType = !typeFilter || org.type === typeFilter;
+        const matchesStatus = !statusFilter || org.status === statusFilter;
+        return matchesSearch && matchesType && matchesStatus;
+      });
+
+      renderOrganizationsTable(filtered);
+    }
+
+    function renderOrganizationsTable(orgs) {
+      const tbody = document.getElementById('orgs-table-body');
+      if (orgs.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7">
+              <div class="state-container">
+                <div class="state-icon"><i class="fas fa-building"></i></div>
+                <h4 class="state-title">No Organizations Found</h4>
+                <p class="state-desc">You have not created any institutions yet, or no matches found.</p>
+                <button class="btn btn-primary" onclick="openCreateOrgModal()"><i class="fas fa-plus"></i> Add First Organization</button>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = orgs.map(org => {
+        const isAct = org.status === 'Active';
+        return `
+          <tr>
+            <td>
+              <strong style="color: var(--text-primary); font-size: 0.95rem;">${org.name}</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">${org.address || ''}</div>
+            </td>
+            <td><span class="badge badge-primary">${org.type || 'College'}</span></td>
+            <td><i class="fas fa-map-marker-alt text-muted" style="margin-right: 4px;"></i> ${org.location}</td>
+            <td><i class="fas fa-phone text-muted" style="margin-right: 4px;"></i> ${org.contact}</td>
+            <td>
+              <span class="badge ${isAct ? 'badge-success' : 'badge-secondary'}">
+                <span class="badge-dot"></span> ${org.status}
+              </span>
+            </td>
+            <td>${formatDate(org.createdAt)}</td>
+            <td style="text-align: right;">
+              <div class="action-btn-group" style="justify-content: flex-end;">
+                <button class="action-btn" title="Toggle Active / Inactive" onclick="toggleOrgStatus('${org.id}', '${org.status}')">
+                  <i class="fas ${isAct ? 'fa-toggle-on text-success' : 'fa-toggle-off text-muted'}"></i>
+                </button>
+                <button class="action-btn" title="Edit Organization" onclick="openEditOrgModal('${org.id}')">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="action-btn delete" title="Delete Organization" onclick="deleteOrganization('${org.id}', '${org.name.replace(/'/g, "\\'")}')">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openCreateOrgModal() {
+      document.getElementById('org-doc-id').value = '';
+      document.getElementById('org-form').reset();
+      document.getElementById('org-modal-title').textContent = 'Create New Organization';
+      document.getElementById('save-org-btn').innerHTML = '<i class="fas fa-plus-circle"></i> <span>Create Organization</span>';
+      openModal('org-modal');
+    }
+
+    function openEditOrgModal(id) {
+      const org = organizationsList.find(o => o.id === id);
+      if (!org) return;
+
+      document.getElementById('org-doc-id').value = org.id;
+      document.getElementById('org-name').value = org.name || '';
+      document.getElementById('org-type').value = org.type || 'College';
+      document.getElementById('org-location').value = org.location || '';
+      document.getElementById('org-address').value = org.address || '';
+      document.getElementById('org-contact').value = org.contact || '';
+      document.getElementById('org-status').value = org.status || 'Active';
+      document.getElementById('org-desc').value = org.description || '';
+
+      document.getElementById('org-modal-title').textContent = 'Edit Organization';
+      document.getElementById('save-org-btn').innerHTML = '<i class="fas fa-save"></i> <span>Update Organization</span>';
+      openModal('org-modal');
+    }
+
+    // Save (Create or Update)
+    document.getElementById('org-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const docId = document.getElementById('org-doc-id').value;
+      const saveBtn = document.getElementById('save-org-btn');
+
+      const orgData = {
+        vendorId: currentVendorId,
+        name: document.getElementById('org-name').value.trim(),
+        type: document.getElementById('org-type').value,
+        location: document.getElementById('org-location').value.trim(),
+        address: document.getElementById('org-address').value.trim(),
+        contact: document.getElementById('org-contact').value.trim(),
+        status: document.getElementById('org-status').value,
+        description: document.getElementById('org-desc').value.trim(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Saving...';
+
+      try {
+        if (docId) {
+          await db.collection('organizations').doc(docId).update(orgData);
+          showToast("Organization updated successfully!", "success");
+        } else {
+          orgData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+          await db.collection('organizations').add(orgData);
+          showToast("Organization created successfully!", "success");
+        }
+        closeModal('org-modal');
+      } catch (error) {
+        console.error("Save org error:", error);
+        showToast("Error saving organization: " + error.message, "danger");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = docId 
+          ? '<i class="fas fa-save"></i> <span>Update Organization</span>' 
+          : '<i class="fas fa-plus-circle"></i> <span>Create Organization</span>';
+      }
+    });
+
+    async function toggleOrgStatus(id, currentStatus) {
+      const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+      try {
+        await db.collection('organizations').doc(id).update({
+          status: newStatus,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast(`Organization status set to ${newStatus}`, "info");
+      } catch (err) {
+        showToast("Failed to update status", "danger");
+      }
+    }
+
+    function deleteOrganization(id, name) {
+      confirmAction(
+        "Delete Organization",
+        `Are you sure you want to permanently delete "${name}"? All associated routes and buses will be affected.`,
+        async () => {
+          try {
+            await db.collection('organizations').doc(id).delete();
+            showToast("Organization deleted successfully.", "success");
+          } catch (e) {
+            showToast("Error deleting organization: " + e.message, "danger");
+          }
+        },
+        "Delete Organization",
+        true
+      );
+    }
+  </script>
+</body>
+</html>

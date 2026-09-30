@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Settings | BusPass Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- QRCode.js Library via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop"></div>
+
+    <!-- Master Vendor Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fas fa-bus-alt"></i>
+          <span>BUSPASS<strong>PRO</strong></span>
+        </div>
+        <button class="sidebar-close-btn">&times;</button>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="sidebar-section-title">Main Menu</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-dashboard.html" class="sidebar-link" data-nav="dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a></li>
+          <li><a href="vendor-organizations.html" class="sidebar-link" data-nav="organizations"><i class="fas fa-sitemap"></i><span>Organizations</span></a></li>
+          <li><a href="vendor-routes.html" class="sidebar-link" data-nav="routes"><i class="fas fa-route"></i><span>Routes & Stops</span></a></li>
+          <li><a href="vendor-buses.html" class="sidebar-link" data-nav="buses"><i class="fas fa-bus"></i><span>Bus Fleet</span></a></li>
+          <li><a href="vendor-conductors.html" class="sidebar-link" data-nav="conductors"><i class="fas fa-id-badge"></i><span>Conductors</span></a></li>
+          <li>
+            <a href="vendor-applications.html" class="sidebar-link" data-nav="applications">
+              <i class="fas fa-file-invoice"></i>
+              <span>Applications</span>
+              <span class="sidebar-badge" id="sidebar-pending-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li><a href="vendor-students.html" class="sidebar-link" data-nav="students"><i class="fas fa-user-graduate"></i><span>Students</span></a></li>
+        </ul>
+
+        <div class="sidebar-section-title">Operations & Fleet</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-live-tracking.html" class="sidebar-link" data-nav="live-tracking"><i class="fas fa-map-marked-alt"></i><span>Live Tracking</span></a></li>
+          <li><a href="vendor-analytics.html" class="sidebar-link" data-nav="analytics"><i class="fas fa-chart-pie"></i><span>Analytics</span></a></li>
+          <li><a href="vendor-payment-settings.html" class="sidebar-link" data-nav="payment-settings"><i class="fas fa-qrcode"></i><span>Payment Settings</span></a></li>
+          <li><a href="vendor-settings.html" class="sidebar-link" data-nav="settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar">V</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name">Vendor Admin</div>
+            <div class="sidebar-user-role">Transport Vendor</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="logoutUser()" title="Sign Out">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <!-- Master Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle-btn"><i class="fas fa-bars"></i></button>
+          <div class="page-title-group">
+            <h1>Organization Payment Configuration</h1>
+            <div class="page-breadcrumb">
+              <i class="fas fa-home"></i> <span>Vendor Portal</span> / <span>Payment Settings</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-live-tracking.html'" title="Live Tracking">
+            <i class="fas fa-satellite-dish"></i>
+          </button>
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-applications.html'" title="Pending Applications">
+            <i class="fas fa-bell"></i>
+            <span class="topbar-badge-dot" id="topbar-notif-dot" style="display: none;"></span>
+          </button>
+
+          <div class="topbar-user-pill" onclick="window.location.href='vendor-settings.html'">
+            <div class="avatar">V</div>
+            <span class="topbar-user-name">Vendor Admin</span>
+            <i class="fas fa-chevron-right" style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.35rem;"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-body">
+
+        <!-- Page Header & Action -->
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-header-title">UPI & Fee Collection Settings</h2>
+            <p class="page-header-desc">Configure institution-specific UPI IDs and merchant payee accounts to enable dynamic payment QR code generation during pass applications.</p>
+          </div>
+        </div>
+
+        <!-- Master KPI Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon primary"><i class="fas fa-university"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Configured Institutions</div>
+              <div class="stat-value" id="stat-total-pay-orgs">0</div>
+              <div class="stat-desc">Organizations registered</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon success"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">UPI Enabled</div>
+              <div class="stat-value" id="stat-enabled-pay-orgs" style="color: var(--success);">0</div>
+              <div class="stat-desc">Accepting online payments</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon warning"><i class="fas fa-pause-circle"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Payments Paused</div>
+              <div class="stat-value" id="stat-paused-pay-orgs">0</div>
+              <div class="stat-desc">Disabled institutions</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon info"><i class="fas fa-qrcode"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Settlement Mode</div>
+              <div class="stat-value" style="font-size: 1.15rem; font-weight: 700;">Direct UPI</div>
+              <div class="stat-desc">Zero platform fees</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 1000px;">
+          <!-- Payment Settings Form -->
+          <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Institution UPI Gateway</h3>
+                <p class="card-subtitle">Select organization to edit merchant credentials</p>
+              </div>
+            </div>
+
+            <form id="payment-settings-form">
+              <div class="form-group">
+                <label class="form-label" for="pay-org-select">Select Organization <span class="required">*</span></label>
+                <select id="pay-org-select" class="form-control" required onchange="onPaymentOrgChange()">
+                  <option value="">Choose organization to configure...</option>
+                </select>
+                <div class="form-text">Payment configurations are isolated per institution.</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="upi-id">Merchant / Official UPI ID <span class="required">*</span></label>
+                <div class="input-icon-group">
+                  <i class="fas fa-at input-icon"></i>
+                  <input type="text" id="upi-id" class="form-control" placeholder="e.g. abccollege@sbi or transport@okaxis" required oninput="updateQrPreview()">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="payee-name">Payee Account Holder Name <span class="required">*</span></label>
+                <div class="input-icon-group">
+                  <i class="fas fa-building input-icon"></i>
+                  <input type="text" id="payee-name" class="form-control" placeholder="e.g. ABC College Transport Dept" required oninput="updateQrPreview()">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="payment-enabled">Enable In-App Fee Payments</label>
+                <select id="payment-enabled" class="form-control" onchange="updateQrPreview()">
+                  <option value="true">Enabled (Students see UPI QR on application)</option>
+                  <option value="false">Disabled (Payments paused)</option>
+                </select>
+              </div>
+
+              <button type="submit" id="save-pay-btn" class="btn btn-primary btn-block btn-lg" style="margin-top: 1.25rem;">
+                <i class="fas fa-save"></i> Save Payment Configuration
+              </button>
+            </form>
+          </div>
+
+          <!-- Dynamic UPI QR Live Preview Card -->
+          <div class="card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2.5rem 1.5rem; margin-bottom: 0;">
+            <div class="badge badge-primary" style="margin-bottom: 1rem;">
+              <i class="fas fa-eye"></i> Student Payment Screen Preview
+            </div>
+
+            <h4 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;" id="preview-payee-display">
+              Select an Organization
+            </h4>
+            <div style="font-family: monospace; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;" id="preview-upi-display">
+              UPI: -
+            </div>
+
+            <div style="background: #FFFFFF; padding: 1.25rem; border-radius: var(--radius-lg); border: 2px dashed var(--border-color); box-shadow: var(--shadow-sm); margin-bottom: 1.25rem;">
+              <div id="upi-qr-preview-box"></div>
+            </div>
+
+            <div style="font-size: 0.82rem; color: var(--text-secondary); max-width: 320px;">
+              <i class="fas fa-mobile-alt text-primary"></i> Students will scan this dynamic UPI QR code with GPay, PhonePe, Paytm, or BHIM during pass application.
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/utils.js"></script>
+
+  <script>
+    let currentVendorId = null;
+    let organizationsMap = {};
+    let organizationsList = [];
+
+    initAppShell('payment-settings');
+
+    requireAuth('vendor', async (user) => {
+      currentVendorId = user.uid;
+      await loadOrganizations();
+      listenToPendingBadge();
+    });
+
+    // Real-time listener for pending badge
+    function listenToPendingBadge() {
+      db.collection('applications')
+        .where('vendorId', '==', currentVendorId)
+        .where('status', '==', 'Pending')
+        .onSnapshot(snap => {
+          const count = snap.size;
+          const badge = document.getElementById('sidebar-pending-badge');
+          const dot = document.getElementById('topbar-notif-dot');
+          if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+          }
+          if (dot) {
+            dot.style.display = count > 0 ? 'block' : 'none';
+          }
+        }, err => console.error("Badge listener error:", err));
+    }
+
+    async function loadOrganizations() {
+      const snap = await db.collection('organizations').where('vendorId', '==', currentVendorId).get();
+      const orgSelect = document.getElementById('pay-org-select');
+      orgSelect.innerHTML = '<option value="">Choose organization to configure...</option>';
+      organizationsList = [];
+
+      let enabledCount = 0;
+      let pausedCount = 0;
+
+      snap.forEach(doc => {
+        const d = { id: doc.id, ...doc.data() };
+        organizationsList.push(d);
+        organizationsMap[doc.id] = d;
+        orgSelect.innerHTML += `<option value="${doc.id}">${d.name}</option>`;
+
+        if (d.paymentEnabled !== false && d.upiId) {
+          enabledCount++;
+        } else {
+          pausedCount++;
+        }
+      });
+
+      document.getElementById('stat-total-pay-orgs').textContent = organizationsList.length;
+      document.getElementById('stat-enabled-pay-orgs').textContent = enabledCount;
+      document.getElementById('stat-paused-pay-orgs').textContent = pausedCount;
+
+      // Select first if available
+      if (organizationsList.length > 0) {
+        orgSelect.value = organizationsList[0].id;
+        onPaymentOrgChange();
+      }
+    }
+
+    function onPaymentOrgChange() {
+      const orgId = document.getElementById('pay-org-select').value;
+      if (!orgId) return;
+
+      const org = organizationsMap[orgId];
+      if (org) {
+        document.getElementById('upi-id').value = org.upiId || '';
+        document.getElementById('payee-name').value = org.payeeName || org.name || '';
+        document.getElementById('payment-enabled').value = org.paymentEnabled !== false ? 'true' : 'false';
+        updateQrPreview();
+      }
+    }
+
+    function updateQrPreview() {
+      const orgId = document.getElementById('pay-org-select').value;
+      const upiId = document.getElementById('upi-id').value.trim();
+      const payeeName = document.getElementById('payee-name').value.trim();
+      const enabled = document.getElementById('payment-enabled').value === 'true';
+
+      const previewPayee = document.getElementById('preview-payee-display');
+      const previewUpi = document.getElementById('preview-upi-display');
+      const qrBox = document.getElementById('upi-qr-preview-box');
+
+      if (!orgId || !upiId) {
+        previewPayee.textContent = payeeName || 'No Organization Selected';
+        previewUpi.textContent = 'UPI: Enter UPI ID';
+        qrBox.innerHTML = '<div style="width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.8rem;">QR Preview</div>';
+        return;
+      }
+
+      previewPayee.textContent = payeeName || 'Payee Name';
+      previewUpi.textContent = `UPI: ${upiId}`;
+
+      // Build UPI URI standard string
+      const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&cu=INR`;
+      generatePassQRCode('upi-qr-preview-box', upiUri, 160, 160);
+    }
+
+    // Save configuration to organization document
+    document.getElementById('payment-settings-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const orgId = document.getElementById('pay-org-select').value;
+      const upiId = document.getElementById('upi-id').value.trim();
+      const payeeName = document.getElementById('payee-name').value.trim();
+      const paymentEnabled = document.getElementById('payment-enabled').value === 'true';
+
+      const btn = document.getElementById('save-pay-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Saving...';
+
+      try {
+        await db.collection('organizations').doc(orgId).update({
+          upiId: upiId,
+          payeeName: payeeName,
+          paymentEnabled: paymentEnabled,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Update local cache
+        if (organizationsMap[orgId]) {
+          organizationsMap[orgId].upiId = upiId;
+          organizationsMap[orgId].payeeName = payeeName;
+          organizationsMap[orgId].paymentEnabled = paymentEnabled;
+        }
+
+        showToast("Payment configuration saved successfully for this organization!", "success");
+      } catch (err) {
+        console.error("Save payment config error:", err);
+        showToast("Error saving payment configuration: " + err.message, "danger");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Save Payment Configuration';
+      }
+    });
+  </script>
+</body>
+</html>

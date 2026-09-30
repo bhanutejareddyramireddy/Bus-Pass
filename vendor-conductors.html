@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Conductors | BusPass Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop"></div>
+
+    <!-- Master Vendor Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fas fa-bus-alt"></i>
+          <span>BUSPASS<strong>PRO</strong></span>
+        </div>
+        <button class="sidebar-close-btn">&times;</button>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="sidebar-section-title">Main Menu</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-dashboard.html" class="sidebar-link" data-nav="dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a></li>
+          <li><a href="vendor-organizations.html" class="sidebar-link" data-nav="organizations"><i class="fas fa-sitemap"></i><span>Organizations</span></a></li>
+          <li><a href="vendor-routes.html" class="sidebar-link" data-nav="routes"><i class="fas fa-route"></i><span>Routes & Stops</span></a></li>
+          <li><a href="vendor-buses.html" class="sidebar-link" data-nav="buses"><i class="fas fa-bus"></i><span>Bus Fleet</span></a></li>
+          <li><a href="vendor-conductors.html" class="sidebar-link" data-nav="conductors"><i class="fas fa-id-badge"></i><span>Conductors</span></a></li>
+          <li>
+            <a href="vendor-applications.html" class="sidebar-link" data-nav="applications">
+              <i class="fas fa-file-invoice"></i>
+              <span>Applications</span>
+              <span class="sidebar-badge" id="sidebar-pending-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li><a href="vendor-students.html" class="sidebar-link" data-nav="students"><i class="fas fa-user-graduate"></i><span>Students</span></a></li>
+        </ul>
+
+        <div class="sidebar-section-title">Operations & Fleet</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-live-tracking.html" class="sidebar-link" data-nav="live-tracking"><i class="fas fa-map-marked-alt"></i><span>Live Tracking</span></a></li>
+          <li><a href="vendor-analytics.html" class="sidebar-link" data-nav="analytics"><i class="fas fa-chart-pie"></i><span>Analytics</span></a></li>
+          <li><a href="vendor-payment-settings.html" class="sidebar-link" data-nav="payment-settings"><i class="fas fa-qrcode"></i><span>Payment Settings</span></a></li>
+          <li><a href="vendor-settings.html" class="sidebar-link" data-nav="settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar">V</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name">Vendor Admin</div>
+            <div class="sidebar-user-role">Transport Vendor</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="logoutUser()" title="Sign Out">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <!-- Master Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle-btn"><i class="fas fa-bars"></i></button>
+          <div class="page-title-group">
+            <h1>Conductor Duty Staff</h1>
+            <div class="page-breadcrumb">
+              <i class="fas fa-home"></i> <span>Vendor Portal</span> / <span>Conductors</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-live-tracking.html'" title="Live Tracking">
+            <i class="fas fa-satellite-dish"></i>
+          </button>
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-applications.html'" title="Pending Applications">
+            <i class="fas fa-bell"></i>
+            <span class="topbar-badge-dot" id="topbar-notif-dot" style="display: none;"></span>
+          </button>
+
+          <div class="topbar-user-pill" onclick="window.location.href='vendor-settings.html'">
+            <div class="avatar">V</div>
+            <span class="topbar-user-name">Vendor Admin</span>
+            <i class="fas fa-chevron-right" style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.35rem;"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-body">
+
+        <!-- Page Header & Action -->
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-header-title">Conductor Staff & Duty Credentials</h2>
+            <p class="page-header-desc">Provision conductor accounts with unique duty IDs, assign them to bus fleet routes, and manage duty passwords.</p>
+          </div>
+          <div class="page-header-actions">
+            <button class="btn btn-primary" onclick="openCreateConductorModal()">
+              <i class="fas fa-user-plus"></i> Create Conductor Account
+            </button>
+          </div>
+        </div>
+
+        <!-- Master KPI Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon purple"><i class="fas fa-id-badge"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Total Conductors</div>
+              <div class="stat-value" id="stat-total-conductors">0</div>
+              <div class="stat-desc">Provisioned staff accounts</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon success"><i class="fas fa-user-check"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Active Duty Staff</div>
+              <div class="stat-value" id="stat-active-conductors" style="color: var(--success);">0</div>
+              <div class="stat-desc">Authorized to scan & operate</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon info"><i class="fas fa-bus"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Assigned to Bus</div>
+              <div class="stat-value" id="stat-assigned-conductors">0</div>
+              <div class="stat-desc">Linked to active fleet vehicles</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon warning"><i class="fas fa-pause-circle"></i></div>
+            <div class="stat-info">
+              <div class="stat-title">Inactive / Off Duty</div>
+              <div class="stat-value" id="stat-inactive-conductors">0</div>
+              <div class="stat-desc">Duty suspended or reserve</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="table-toolbar">
+          <div class="table-search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-conductors" class="form-control" placeholder="Search conductor name, ID, employee #..." oninput="filterConductors()">
+          </div>
+
+          <div class="table-filters">
+            <select id="filter-org" class="form-control" onchange="filterConductors()" style="min-width: 200px;">
+              <option value="">All Organizations</option>
+            </select>
+
+            <select id="filter-status" class="form-control" onchange="filterConductors()" style="width: auto;">
+              <option value="">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Conductor Table Card -->
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Conductor ID</th>
+                  <th>Staff Name</th>
+                  <th>Employee ID</th>
+                  <th>Organization</th>
+                  <th>Assigned Bus</th>
+                  <th>Assigned Route</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="conductors-table-body">
+                <tr>
+                  <td colspan="8" style="text-align: center; padding: 2.5rem;">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 0.5rem; color: var(--text-muted);">Loading conductors...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Create / Edit Conductor Modal -->
+  <div class="modal-backdrop" id="conductor-modal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title" id="conductor-modal-title">Create Conductor Account</h3>
+        <button class="modal-close-btn" onclick="closeModal('conductor-modal')">&times;</button>
+      </div>
+      <form id="conductor-form">
+        <div class="modal-body">
+          <input type="hidden" id="conductor-doc-id">
+
+          <!-- Auto-generated Unique Conductor ID Banner -->
+          <div style="background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%); border: 1px solid #C7D2FE; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 0.78rem; text-transform: uppercase; font-weight: 700; color: var(--primary); letter-spacing: 0.05em;">
+                Vendor-Issued Conductor Duty ID
+              </div>
+              <div style="font-size: 1.6rem; font-weight: 800; font-family: monospace; color: var(--text-primary); letter-spacing: 0.06em;" id="gen-conductor-id">
+                CON-XXXXXX
+              </div>
+              <div style="font-size: 0.78rem; color: var(--text-muted);">The conductor logs in with this unique ID directly (no personal email needed).</div>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="refresh-id-btn" onclick="generateNewConductorId()" title="Generate Another ID">
+              <i class="fas fa-sync-alt"></i> Regenerate
+            </button>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="cond-name">Conductor Full Name <span class="required">*</span></label>
+              <input type="text" id="cond-name" class="form-control" placeholder="e.g. Anand Varma" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="cond-emp-id">Employee ID / Badge # <span class="required">*</span></label>
+              <input type="text" id="cond-emp-id" class="form-control" placeholder="e.g. EMP-9921" required>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="cond-phone">Contact Phone Number <span class="required">*</span></label>
+              <input type="tel" id="cond-phone" class="form-control" placeholder="e.g. 9876543210" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="cond-org">Organization <span class="required">*</span></label>
+              <select id="cond-org" class="form-control" required onchange="onConductorOrgChange()">
+                <option value="">Select Organization</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="cond-bus">Assigned Fleet Bus <span class="required">*</span></label>
+              <select id="cond-bus" class="form-control" required onchange="onConductorBusChange()">
+                <option value="">Select Bus</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="cond-route-name">Assigned Route</label>
+              <input type="text" id="cond-route-name" class="form-control" placeholder="Auto-populated from bus selection" readonly style="background-color: var(--bg-page); color: var(--text-secondary);">
+              <input type="hidden" id="cond-route-id">
+            </div>
+          </div>
+
+          <!-- Password Setup Section (Shown during creation) -->
+          <div class="form-grid" id="password-section" style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; margin-top: 0.5rem;">
+            <div class="form-group">
+              <label class="form-label" for="cond-password">Duty Password <span class="required">*</span></label>
+              <input type="password" id="cond-password" class="form-control" placeholder="Min. 6 chars (e.g. Duty@123)" minlength="6">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="cond-confirm-password">Confirm Password <span class="required">*</span></label>
+              <input type="password" id="cond-confirm-password" class="form-control" placeholder="Re-enter password" minlength="6">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('conductor-modal')">Cancel</button>
+          <button type="submit" id="save-conductor-btn" class="btn btn-primary">
+            <span>Create Conductor</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Credentials Success Modal -->
+  <div class="modal-backdrop" id="creds-success-modal">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fas fa-check-circle text-success"></i> Account Provisioned</h3>
+        <button class="modal-close-btn" onclick="closeModal('creds-success-modal')">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align: center;">
+        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+          Provide these credentials to the conductor. They will log in using this Conductor ID at the Conductor Duty Portal.
+        </p>
+        <div style="background: var(--bg-page); border: 1px dashed var(--primary); border-radius: var(--radius-md); padding: 1.25rem; text-align: left; margin-bottom: 1.25rem;">
+          <div style="margin-bottom: 0.75rem;">
+            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; font-weight: 600;">LOGIN CONDUCTOR ID:</span>
+            <strong style="font-family: monospace; font-size: 1.25rem; color: var(--primary);" id="copy-creds-id">CON-XXXXXX</strong>
+          </div>
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; font-weight: 600;">PASSWORD:</span>
+            <strong style="font-family: monospace; font-size: 1.1rem; color: var(--text-primary);" id="copy-creds-pass">••••••••</strong>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="copyCredentials()">
+          <i class="fas fa-copy"></i> Copy Credentials
+        </button>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('creds-success-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Conductor Password Modal -->
+  <div class="modal-backdrop" id="change-password-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fas fa-key text-warning" style="margin-right: 0.4rem;"></i> Change Conductor Password</h3>
+        <button class="modal-close-btn" onclick="closeModal('change-password-modal')">&times;</button>
+      </div>
+      <form id="change-password-form">
+        <div class="modal-body">
+          <input type="hidden" id="cp-conductor-doc-id">
+          <input type="hidden" id="cp-conductor-id">
+          <input type="hidden" id="cp-stored-password">
+
+          <div style="background: var(--bg-page); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); letter-spacing: 0.05em;">Duty Staff Account</div>
+              <strong style="font-size: 1.05rem; color: var(--text-primary);" id="cp-conductor-title">Conductor</strong>
+              <div style="font-family: monospace; font-weight: 700; color: var(--primary); font-size: 0.88rem;" id="cp-conductor-id-badge">CON-XXXXXX</div>
+            </div>
+            <div id="cp-known-pass-badge"></div>
+          </div>
+
+          <div class="form-group" id="cp-current-password-group" style="display: none;">
+            <label class="form-label" for="cp-current-password">Current Duty Password <span class="required">*</span></label>
+            <div class="input-icon-group" style="position: relative;">
+              <i class="fas fa-lock input-icon"></i>
+              <input type="password" id="cp-current-password" class="form-control" placeholder="Enter conductor's current password" style="padding-right: 2.75rem;">
+              <button type="button" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer;" onclick="togglePassVisibility('cp-current-password', this)">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+            <div class="form-text">Required to verify the credential change with Firebase Authentication.</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="cp-new-password">New Password <span class="required">*</span></label>
+            <div class="input-icon-group" style="position: relative;">
+              <i class="fas fa-key input-icon"></i>
+              <input type="password" id="cp-new-password" class="form-control" placeholder="Min. 6 characters" minlength="6" required style="padding-right: 2.75rem;">
+              <button type="button" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer;" onclick="togglePassVisibility('cp-new-password', this)">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="cp-confirm-new-password">Confirm New Password <span class="required">*</span></label>
+            <div class="input-icon-group" style="position: relative;">
+              <i class="fas fa-check-double input-icon"></i>
+              <input type="password" id="cp-confirm-new-password" class="form-control" placeholder="Re-enter new password" minlength="6" required style="padding-right: 2.75rem;">
+              <button type="button" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer;" onclick="togglePassVisibility('cp-confirm-new-password', this)">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('change-password-modal')">Cancel</button>
+          <button type="submit" id="cp-save-btn" class="btn btn-primary">
+            <span><i class="fas fa-key"></i> Update Password</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    let currentVendorId = null;
+    let organizationsMap = {};
+    let busesCache = [];
+    let conductorsList = [];
+    let activeConductorId = '';
+    let lastCreatedPassword = '';
+
+    initAppShell('conductors');
+
+    requireAuth('vendor', async (user) => {
+      currentVendorId = user.uid;
+      await loadOrganizations();
+      await loadBusesCache();
+      loadConductors();
+      listenToPendingBadge();
+    });
+
+    // Real-time listener for pending badge
+    function listenToPendingBadge() {
+      db.collection('applications')
+        .where('vendorId', '==', currentVendorId)
+        .where('status', '==', 'Pending')
+        .onSnapshot(snap => {
+          const count = snap.size;
+          const badge = document.getElementById('sidebar-pending-badge');
+          const dot = document.getElementById('topbar-notif-dot');
+          if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+          }
+          if (dot) {
+            dot.style.display = count > 0 ? 'block' : 'none';
+          }
+        }, err => console.error("Badge listener error:", err));
+    }
+
+    async function loadOrganizations() {
+      const snap = await db.collection('organizations').where('vendorId', '==', currentVendorId).get();
+      const orgSelect = document.getElementById('cond-org');
+      const filterOrg = document.getElementById('filter-org');
+
+      orgSelect.innerHTML = '<option value="">Select Organization</option>';
+      filterOrg.innerHTML = '<option value="">All Organizations</option>';
+
+      snap.forEach(doc => {
+        const d = doc.data();
+        organizationsMap[doc.id] = d.name;
+        orgSelect.innerHTML += `<option value="${doc.id}">${d.name}</option>`;
+        filterOrg.innerHTML += `<option value="${doc.id}">${d.name}</option>`;
+      });
+    }
+
+    async function loadBusesCache() {
+      const snap = await db.collection('buses').where('vendorId', '==', currentVendorId).get();
+      busesCache = [];
+      snap.forEach(doc => {
+        busesCache.push({ id: doc.id, ...doc.data() });
+      });
+    }
+
+    function generateNewConductorId() {
+      const randHex = Math.random().toString(16).substring(2, 8).toUpperCase();
+      activeConductorId = `CON-${randHex}`;
+      document.getElementById('gen-conductor-id').textContent = activeConductorId;
+    }
+
+    function onConductorOrgChange() {
+      const orgId = document.getElementById('cond-org').value;
+      const busSelect = document.getElementById('cond-bus');
+      busSelect.innerHTML = '<option value="">Select Bus</option>';
+
+      const matchedBuses = busesCache.filter(b => b.organizationId === orgId && b.status === 'Active');
+      matchedBuses.forEach(b => {
+        busSelect.innerHTML += `<option value="${b.id}">${b.busNumber} (${b.registrationNumber})</option>`;
+      });
+
+      document.getElementById('cond-route-name').value = '';
+      document.getElementById('cond-route-id').value = '';
+    }
+
+    function onConductorBusChange() {
+      const busId = document.getElementById('cond-bus').value;
+      const bus = busesCache.find(b => b.id === busId);
+      if (bus) {
+        document.getElementById('cond-route-name').value = bus.routeName || 'Assigned';
+        document.getElementById('cond-route-id').value = bus.routeId || '';
+      } else {
+        document.getElementById('cond-route-name').value = '';
+        document.getElementById('cond-route-id').value = '';
+      }
+    }
+
+    function loadConductors() {
+      db.collection('conductors')
+        .where('vendorId', '==', currentVendorId)
+        .onSnapshot(snap => {
+          conductorsList = [];
+          snap.forEach(doc => {
+            conductorsList.push({ id: doc.id, ...doc.data() });
+          });
+          updateConductorKPIs(conductorsList);
+          filterConductors();
+        });
+    }
+
+    function updateConductorKPIs(conductors) {
+      const total = conductors.length;
+      const active = conductors.filter(c => c.status === 'Active').length;
+      const inactive = conductors.filter(c => c.status === 'Inactive').length;
+      const assigned = conductors.filter(c => c.busId && c.busId !== 'Unassigned').length;
+
+      document.getElementById('stat-total-conductors').textContent = total;
+      document.getElementById('stat-active-conductors').textContent = active;
+      document.getElementById('stat-assigned-conductors').textContent = assigned;
+      document.getElementById('stat-inactive-conductors').textContent = inactive;
+    }
+
+    function filterConductors() {
+      const search = document.getElementById('search-conductors').value.toLowerCase().trim();
+      const orgFilter = document.getElementById('filter-org').value;
+      const statusFilter = document.getElementById('filter-status').value;
+
+      const filtered = conductorsList.filter(c => {
+        const matchesOrg = !orgFilter || c.organizationId === orgFilter;
+        const matchesStatus = !statusFilter || c.status === statusFilter;
+        const matchesSearch = !search ||
+          (c.name && c.name.toLowerCase().includes(search)) ||
+          (c.conductorId && c.conductorId.toLowerCase().includes(search)) ||
+          (c.employeeId && c.employeeId.toLowerCase().includes(search)) ||
+          (c.phone && c.phone.includes(search));
+        return matchesOrg && matchesStatus && matchesSearch;
+      });
+
+      renderConductorsTable(filtered);
+    }
+
+    function renderConductorsTable(conductors) {
+      const tbody = document.getElementById('conductors-table-body');
+      if (conductors.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8">
+              <div class="state-container">
+                <div class="state-icon"><i class="fas fa-id-badge"></i></div>
+                <h4 class="state-title">No Conductors Found</h4>
+                <p class="state-desc">Create duty conductor staff accounts and provision their passwords.</p>
+                <button class="btn btn-primary" onclick="openCreateConductorModal()"><i class="fas fa-plus"></i> Create Conductor Account</button>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = conductors.map(c => {
+        const isAct = c.status === 'Active';
+        return `
+          <tr>
+            <td>
+              <strong style="font-family: monospace; font-size: 0.95rem; color: var(--primary);">${c.conductorId}</strong>
+            </td>
+            <td>
+              <strong style="color: var(--text-primary);">${c.name}</strong>
+              <div style="font-size: 0.72rem; color: var(--text-muted);"><i class="fas fa-phone"></i> ${c.phone || '-'}</div>
+            </td>
+            <td>${c.employeeId}</td>
+            <td>
+              <span class="badge badge-primary">${organizationsMap[c.organizationId] || c.organizationName || 'Assigned Org'}</span>
+            </td>
+            <td>
+              <strong style="color: var(--text-primary);">${c.busNumber || 'Unassigned'}</strong>
+            </td>
+            <td>
+              <span style="font-size: 0.85rem; color: var(--text-secondary);">${c.routeName || 'Unassigned'}</span>
+            </td>
+            <td>
+              <span class="badge ${isAct ? 'badge-success' : 'badge-secondary'}">
+                <span class="badge-dot"></span> ${c.status}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <div class="action-btn-group" style="justify-content: flex-end;">
+                <button class="action-btn" title="Toggle Active / Inactive" onclick="toggleConductorStatus('${c.id}', '${c.status}')">
+                  <i class="fas ${isAct ? 'fa-toggle-on text-success' : 'fa-toggle-off text-muted'}"></i>
+                </button>
+                <button class="action-btn" title="Edit Conductor Assignment" onclick="openEditConductorModal('${c.id}')">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="action-btn" title="Change Duty Password" style="color: var(--warning);" onclick="openChangePasswordModal('${c.id}')">
+                  <i class="fas fa-key"></i>
+                </button>
+                <button class="action-btn delete" title="Delete Conductor" onclick="deleteConductor('${c.id}', '${c.conductorId}')">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openCreateConductorModal() {
+      document.getElementById('conductor-doc-id').value = '';
+      document.getElementById('conductor-form').reset();
+      generateNewConductorId();
+      document.getElementById('refresh-id-btn').style.display = 'inline-block';
+      document.getElementById('password-section').style.display = 'grid';
+      document.getElementById('cond-password').required = true;
+      document.getElementById('cond-confirm-password').required = true;
+      document.getElementById('cond-bus').innerHTML = '<option value="">Select Bus</option>';
+      document.getElementById('cond-route-name').value = '';
+      document.getElementById('cond-route-id').value = '';
+      document.getElementById('conductor-modal-title').textContent = 'Create Conductor Account';
+      openModal('conductor-modal');
+    }
+
+    function openEditConductorModal(id) {
+      const c = conductorsList.find(x => x.id === id);
+      if (!c) return;
+
+      document.getElementById('conductor-doc-id').value = c.id;
+      activeConductorId = c.conductorId;
+      document.getElementById('gen-conductor-id').textContent = c.conductorId;
+      document.getElementById('refresh-id-btn').style.display = 'none';
+
+      document.getElementById('cond-name').value = c.name || '';
+      document.getElementById('cond-emp-id').value = c.employeeId || '';
+      document.getElementById('cond-phone').value = c.phone || '';
+      document.getElementById('cond-org').value = c.organizationId || '';
+      onConductorOrgChange();
+      document.getElementById('cond-bus').value = c.busId || '';
+      onConductorBusChange();
+
+      document.getElementById('password-section').style.display = 'none';
+      document.getElementById('cond-password').required = false;
+      document.getElementById('cond-confirm-password').required = false;
+
+      document.getElementById('conductor-modal-title').textContent = 'Edit Conductor Assignment';
+      openModal('conductor-modal');
+    }
+
+    // Submit Handler
+    document.getElementById('conductor-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const docId = document.getElementById('conductor-doc-id').value;
+      const saveBtn = document.getElementById('save-conductor-btn');
+
+      const orgId = document.getElementById('cond-org').value;
+      const busId = document.getElementById('cond-bus').value;
+      const matchedBus = busesCache.find(b => b.id === busId);
+
+      const conductorData = {
+        conductorId: activeConductorId,
+        vendorId: currentVendorId,
+        organizationId: orgId,
+        organizationName: organizationsMap[orgId] || '',
+        busId: busId,
+        busNumber: matchedBus ? matchedBus.busNumber : 'Unassigned',
+        registrationNumber: matchedBus ? matchedBus.registrationNumber : '',
+        routeId: document.getElementById('cond-route-id').value,
+        routeName: document.getElementById('cond-route-name').value,
+        name: document.getElementById('cond-name').value.trim(),
+        employeeId: document.getElementById('cond-emp-id').value.trim(),
+        phone: document.getElementById('cond-phone').value.trim()
+      };
+
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Processing...';
+
+      try {
+        if (docId) {
+          conductorData.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+          await db.collection('conductors').doc(docId).update(conductorData);
+          showToast("Conductor assignment updated!", "success");
+          closeModal('conductor-modal');
+        } else {
+          const password = document.getElementById('cond-password').value;
+          const confirmPassword = document.getElementById('cond-confirm-password').value;
+
+          if (password !== confirmPassword) {
+            showToast("Passwords do not match.", "warning");
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<span>Create Conductor</span>';
+            return;
+          }
+
+          lastCreatedPassword = password;
+          await createConductorAccount(conductorData, password);
+
+          closeModal('conductor-modal');
+
+          document.getElementById('copy-creds-id').textContent = activeConductorId;
+          document.getElementById('copy-creds-pass').textContent = password;
+          openModal('creds-success-modal');
+
+          showToast("Conductor account successfully provisioned!", "success");
+        }
+      } catch (err) {
+        console.error("Conductor save error:", err);
+        showToast("Error saving conductor: " + err.message, "danger");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<span>Create Conductor</span>';
+      }
+    });
+
+    function copyCredentials() {
+      const text = `BusPass Conductor Duty Login:\nConductor ID: ${activeConductorId}\nPassword: ${lastCreatedPassword}\nLogin Portal: ${window.location.origin}/conductor-login.html`;
+      navigator.clipboard.writeText(text);
+      showToast("Credentials copied to clipboard!", "success");
+    }
+
+    async function toggleConductorStatus(id, currentStatus) {
+      const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+      try {
+        await db.collection('conductors').doc(id).update({
+          status: newStatus,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast(`Conductor status set to ${newStatus}`, "info");
+      } catch (e) {
+        showToast("Failed to toggle status", "danger");
+      }
+    }
+
+    function deleteConductor(id, conductorId) {
+      confirmAction(
+        "Delete Conductor",
+        `Are you sure you want to delete conductor "${conductorId}"? They will no longer be able to log in to conduct duty.`,
+        async () => {
+          try {
+            await db.collection('conductors').doc(id).delete();
+            showToast("Conductor deleted.", "success");
+          } catch (e) {
+            showToast("Error deleting conductor: " + e.message, "danger");
+          }
+        },
+        "Delete Conductor",
+        true
+      );
+    }
+
+    // ==========================================
+    // CHANGE CONDUCTOR PASSWORD HANDLERS
+    // ==========================================
+    function openChangePasswordModal(id) {
+      const c = conductorsList.find(x => x.id === id);
+      if (!c) return;
+
+      document.getElementById('cp-conductor-doc-id').value = c.id;
+      document.getElementById('cp-conductor-id').value = c.conductorId;
+      document.getElementById('cp-conductor-title').textContent = `${c.name} (${c.employeeId || 'Conductor'})`;
+      document.getElementById('cp-conductor-id-badge').textContent = c.conductorId;
+      document.getElementById('cp-new-password').value = '';
+      document.getElementById('cp-confirm-new-password').value = '';
+
+      const storedPass = c.dutyPassword || '';
+      document.getElementById('cp-stored-password').value = storedPass;
+
+      const currentPassGroup = document.getElementById('cp-current-password-group');
+      const knownBadge = document.getElementById('cp-known-pass-badge');
+
+      if (storedPass) {
+        currentPassGroup.style.display = 'none';
+        document.getElementById('cp-current-password').required = false;
+        knownBadge.innerHTML = `<span class="badge badge-success"><i class="fas fa-check-circle"></i> Password on file</span>`;
+      } else {
+        currentPassGroup.style.display = 'block';
+        document.getElementById('cp-current-password').required = true;
+        document.getElementById('cp-current-password').value = '';
+        knownBadge.innerHTML = `<span class="badge badge-secondary">Enter current password</span>`;
+      }
+
+      openModal('change-password-modal');
+    }
+
+    function togglePassVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      const icon = btn.querySelector('i');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+      } else {
+        input.type = 'password';
+        icon.className = 'fas fa-eye';
+      }
+    }
+
+    document.getElementById('change-password-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const docId = document.getElementById('cp-conductor-doc-id').value;
+      const conductorId = document.getElementById('cp-conductor-id').value;
+      const storedPass = document.getElementById('cp-stored-password').value;
+      const currentPass = storedPass || document.getElementById('cp-current-password').value;
+      const newPass = document.getElementById('cp-new-password').value;
+      const confirmNewPass = document.getElementById('cp-confirm-new-password').value;
+      const saveBtn = document.getElementById('cp-save-btn');
+
+      if (newPass !== confirmNewPass) {
+        showToast("New passwords do not match.", "warning");
+        return;
+      }
+
+      if (newPass.length < 6) {
+        showToast("Password must be at least 6 characters.", "warning");
+        return;
+      }
+
+      if (!currentPass) {
+        showToast("Current password is required to authorize the change.", "warning");
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Updating...';
+
+      try {
+        await updateConductorPassword(docId, conductorId, currentPass, newPass);
+        closeModal('change-password-modal');
+        showToast(`Password successfully updated for ${conductorId}! The conductor can now log in with the new password.`, "success");
+      } catch (err) {
+        console.error("Password update error:", err);
+        showToast("Error updating password: " + err.message, "danger");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<span><i class="fas fa-key"></i> Update Password</span>';
+      }
+    });
+  </script>
+</body>
+</html>

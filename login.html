@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Login | BusPass</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="auth-page">
+
+  <div class="split-auth-container">
+    <!-- Left Hero Banner: Student Portal -->
+    <div class="split-auth-banner student-banner">
+      <div class="split-banner-content">
+        <a href="index.html" class="split-brand">
+          <div class="split-brand-icon">
+            <i class="fas fa-bus-alt"></i>
+          </div>
+          <span>BusPass</span>
+        </a>
+
+        <h1 class="split-title">Student Portal</h1>
+        <p class="split-subtitle">Your journey, our priority</p>
+
+        <ul class="split-checklist">
+          <li class="split-check-item">
+            <span class="split-check-icon"><i class="fas fa-id-card"></i></span>
+            <span>Apply for Bus Pass</span>
+          </li>
+          <li class="split-check-item">
+            <span class="split-check-icon"><i class="fas fa-satellite-dish"></i></span>
+            <span>Track Live Bus</span>
+          </li>
+          <li class="split-check-item">
+            <span class="split-check-icon"><i class="fas fa-qrcode"></i></span>
+            <span>Manage Your Pass</span>
+          </li>
+          <li class="split-check-item">
+            <span class="split-check-icon"><i class="fas fa-bell"></i></span>
+            <span>Get Notifications</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Commuter & Bus Graphic at Bottom -->
+      <div class="split-bottom-art">
+        <img src="https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&w=700&q=80" alt="Student Commuter Bus">
+      </div>
+
+      <!-- Organic Wave Divider to Form -->
+      <div class="split-banner-curve">
+        <svg viewBox="0 0 100 600" preserveAspectRatio="none">
+          <path d="M100,0 C30,160 30,440 100,600 L100,0 Z" fill="#FFFFFF"></path>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Right Form Section: Student Login -->
+    <div class="split-auth-form-wrap">
+      <div class="split-form-header">
+        <h2>Student Login</h2>
+        <p>Sign in to your account</p>
+      </div>
+
+      <form id="student-login-form" class="split-auth-form">
+        <div class="form-group">
+          <label class="form-label" for="email">Email / Mobile</label>
+          <input type="email" id="email" class="form-control" placeholder="Enter your email" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="split-input-password">
+            <input type="password" id="password" class="form-control" placeholder="Enter your password" required autocomplete="current-password">
+            <button type="button" id="toggle-password-btn" class="split-eye-btn" title="Toggle password visibility">
+              <i class="fas fa-eye" id="toggle-password-icon"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="split-form-row">
+          <a href="#" onclick="showToast('Please contact your campus transport administrator to reset password.', 'info'); return false;" class="split-forgot-link">Forgot Password?</a>
+        </div>
+
+        <button type="submit" id="login-btn" class="split-btn-primary">
+          Login
+        </button>
+      </form>
+
+      <div class="split-auth-footer">
+        New here? <a href="register.html">Create an account</a>
+      </div>
+
+      <div class="split-role-switches">
+        <a href="vendor-login.html"><i class="fas fa-user-shield"></i> Vendor Portal</a>
+        <a href="conductor-login.html"><i class="fas fa-id-badge"></i> Conductor Duty</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    const form = document.getElementById('student-login-form');
+    const btn = document.getElementById('login-btn');
+    const passInput = document.getElementById('password');
+    const toggleBtn = document.getElementById('toggle-password-btn');
+    const toggleIcon = document.getElementById('toggle-password-icon');
+
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        const isPass = passInput.type === 'password';
+        passInput.type = isPass ? 'text' : 'password';
+        toggleIcon.className = isPass ? 'fas fa-eye-slash' : 'fas fa-eye';
+      });
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Authenticating...';
+
+      try {
+        await loginStudent(email, password);
+        showToast("Login successful! Redirecting to student portal...", "success");
+        setTimeout(() => {
+          window.location.href = 'pages/student-dashboard.html';
+        }, 800);
+      } catch (error) {
+        showToast(error.message, "danger", "Login Failed");
+        btn.disabled = false;
+        btn.innerHTML = 'Login';
+      }
+    });
+
+    // Check if already logged in as student
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        try {
+          const userDoc = await db.collection('users').doc(user.uid).get();
+          if (userDoc.exists && userDoc.data().role === 'student') {
+            window.location.href = 'pages/student-dashboard.html';
+          }
+        } catch(e) {}
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vendor Settings | BusPass Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop"></div>
+
+    <!-- Master Vendor Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fas fa-bus-alt"></i>
+          <span>BUSPASS<strong>PRO</strong></span>
+        </div>
+        <button class="sidebar-close-btn">&times;</button>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="sidebar-section-title">Main Menu</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-dashboard.html" class="sidebar-link" data-nav="dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a></li>
+          <li><a href="vendor-organizations.html" class="sidebar-link" data-nav="organizations"><i class="fas fa-sitemap"></i><span>Organizations</span></a></li>
+          <li><a href="vendor-routes.html" class="sidebar-link" data-nav="routes"><i class="fas fa-route"></i><span>Routes & Stops</span></a></li>
+          <li><a href="vendor-buses.html" class="sidebar-link" data-nav="buses"><i class="fas fa-bus"></i><span>Bus Fleet</span></a></li>
+          <li><a href="vendor-conductors.html" class="sidebar-link" data-nav="conductors"><i class="fas fa-id-badge"></i><span>Conductors</span></a></li>
+          <li>
+            <a href="vendor-applications.html" class="sidebar-link" data-nav="applications">
+              <i class="fas fa-file-invoice"></i>
+              <span>Applications</span>
+              <span class="sidebar-badge" id="sidebar-pending-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li><a href="vendor-students.html" class="sidebar-link" data-nav="students"><i class="fas fa-user-graduate"></i><span>Students</span></a></li>
+        </ul>
+
+        <div class="sidebar-section-title">Operations & Fleet</div>
+        <ul class="sidebar-menu">
+          <li><a href="vendor-live-tracking.html" class="sidebar-link" data-nav="live-tracking"><i class="fas fa-map-marked-alt"></i><span>Live Tracking</span></a></li>
+          <li><a href="vendor-analytics.html" class="sidebar-link" data-nav="analytics"><i class="fas fa-chart-pie"></i><span>Analytics</span></a></li>
+          <li><a href="vendor-payment-settings.html" class="sidebar-link" data-nav="payment-settings"><i class="fas fa-qrcode"></i><span>Payment Settings</span></a></li>
+          <li><a href="vendor-settings.html" class="sidebar-link" data-nav="settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar">V</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name">Vendor Admin</div>
+            <div class="sidebar-user-role">Transport Vendor</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="logoutUser()" title="Sign Out">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <!-- Master Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle-btn"><i class="fas fa-bars"></i></button>
+          <div class="page-title-group">
+            <h1>Vendor Account Settings</h1>
+            <div class="page-breadcrumb">
+              <i class="fas fa-home"></i> <span>Vendor Portal</span> / <span>Settings</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-live-tracking.html'" title="Live Tracking">
+            <i class="fas fa-satellite-dish"></i>
+          </button>
+          <button class="topbar-action-btn" onclick="window.location.href='vendor-applications.html'" title="Pending Applications">
+            <i class="fas fa-bell"></i>
+            <span class="topbar-badge-dot" id="topbar-notif-dot" style="display: none;"></span>
+          </button>
+
+          <div class="topbar-user-pill" onclick="window.location.href='vendor-settings.html'">
+            <div class="avatar">V</div>
+            <span class="topbar-user-name">Vendor Admin</span>
+            <i class="fas fa-chevron-right" style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.35rem;"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-body">
+
+        <!-- Page Header & Action -->
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-header-title">Operator Profile & Agency Configuration</h2>
+            <p class="page-header-desc">Manage your transportation business identity, contact channels, cloud database credentials, and security tokens.</p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; max-width: 1100px;">
+          <!-- Left: Profile Form -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Operator Profile & Agency Details</h3>
+                <p class="card-subtitle">Manage company identity and communication channels</p>
+              </div>
+            </div>
+
+            <form id="vendor-profile-form">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label" for="v-name">Admin Name <span class="required">*</span></label>
+                  <input type="text" id="v-name" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="v-phone">Contact Phone <span class="required">*</span></label>
+                  <input type="tel" id="v-phone" class="form-control" required>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label" for="v-biz-name">Transport Business Name <span class="required">*</span></label>
+                  <input type="text" id="v-biz-name" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="v-biz-type">Business Type</label>
+                  <select id="v-biz-type" class="form-control">
+                    <option value="Commercial Transport Agency">Commercial Transport Agency</option>
+                    <option value="Institutional Fleet Operator">Institutional Fleet Operator</option>
+                    <option value="College In-House Fleet">College In-House Fleet</option>
+                    <option value="Government Contractor">Government Contractor</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label" for="v-city">Operating City / HQ <span class="required">*</span></label>
+                  <input type="text" id="v-city" class="form-control" placeholder="e.g. Hyderabad, Telangana" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="v-address">Head Office Address</label>
+                  <input type="text" id="v-address" class="form-control" placeholder="Street, landmark, suite...">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="v-desc">Business Description & Terms</label>
+                <textarea id="v-desc" class="form-control" placeholder="Brief description of transport operations, bus terms, customer support details..."></textarea>
+              </div>
+
+              <button type="submit" id="save-profile-btn" class="btn btn-primary btn-lg" style="margin-top: 1rem;">
+                <i class="fas fa-save"></i> Save Profile Changes
+              </button>
+            </form>
+          </div>
+
+          <!-- Right: Account & System Security Info -->
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Account Security</h3>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 0.85rem; font-size: 0.88rem;">
+                <div>
+                  <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Registered Email (Read-Only)</span>
+                  <div style="font-weight: 600; color: var(--text-primary); margin-top: 2px;" id="disp-email">-</div>
+                </div>
+
+                <div>
+                  <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Firebase User ID (UID)</span>
+                  <div style="font-family: monospace; font-size: 0.82rem; color: var(--text-secondary); word-break: break-all; margin-top: 2px;" id="disp-uid">-</div>
+                </div>
+
+                <div>
+                  <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Assigned System Role</span>
+                  <div style="margin-top: 2px;"><span class="badge badge-primary">vendor / transport admin</span></div>
+                </div>
+
+                <div style="border-top: 1px solid var(--border-color); padding-top: 0.85rem; margin-top: 0.5rem;">
+                  <button class="btn btn-secondary btn-block" onclick="logoutUser()">
+                    <i class="fas fa-sign-out-alt"></i> Logout Session
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Firebase Config Editor -->
+            <div class="card" style="border-color: #C7D2FE; background: #FAFAFF;">
+              <div class="card-header">
+                <h3 class="card-title" style="font-size: 0.95rem; color: var(--primary);">
+                  <i class="fas fa-plug"></i> Firebase Project Setup
+                </h3>
+              </div>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                Running on active Firebase configuration. If you have your own Firebase project credentials, update them here anytime.
+              </p>
+              <button class="btn btn-outline-primary btn-sm btn-block" onclick="openFirebaseConfigModal()">
+                <i class="fas fa-sliders-h"></i> Configure Firebase Credentials
+              </button>
+            </div>
+
+            <!-- Optional Demo Data Seeder Card -->
+            <div class="card" style="border-color: #86EFAC; background: #F0FDF4;">
+              <div class="card-header">
+                <h3 class="card-title" style="font-size: 0.95rem; color: var(--success);">
+                  <i class="fas fa-magic"></i> Demo Data Seeder
+                </h3>
+              </div>
+              <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                Instantly populate sample College Organization, Route with 5 stops and fees, and assigned Fleet Bus for testing and demonstration.
+              </p>
+              <button class="btn btn-success btn-sm btn-block" id="seed-data-btn" onclick="triggerSeedData()">
+                <i class="fas fa-database"></i> Seed Sample Transport Network
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Firebase Config Modal -->
+  <div class="modal-backdrop" id="firebase-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Firebase Credentials Setup</h3>
+        <button class="modal-close-btn" onclick="closeModal('firebase-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+          Paste your <code>firebaseConfig</code> JSON object from Firebase Console (Project Settings &gt; General &gt; Your apps &gt; Web):
+        </p>
+        <textarea id="custom-fb-json" class="form-control" style="font-family: monospace; min-height: 160px;" placeholder='{\n  "apiKey": "AIzaSy...",\n  "authDomain": "your-app.firebaseapp.com",\n  "projectId": "your-app",\n  "storageBucket": "your-app.appspot.com",\n  "messagingSenderId": "...",\n  "appId": "..."\n}'></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('firebase-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveCustomConfig()">Save & Reload</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/utils.js"></script>
+
+  <script>
+    let currentVendorId = null;
+
+    initAppShell('settings');
+
+    requireAuth('vendor', (user, userData) => {
+      currentVendorId = user.uid;
+
+      // Populate form
+      document.getElementById('v-name').value = userData.name || '';
+      document.getElementById('v-phone').value = userData.phone || '';
+      document.getElementById('v-biz-name').value = userData.businessName || '';
+      document.getElementById('v-biz-type').value = userData.businessType || 'Commercial Transport Agency';
+      document.getElementById('v-city').value = userData.city || '';
+      document.getElementById('v-address').value = userData.address || '';
+      document.getElementById('v-desc').value = userData.description || '';
+
+      document.getElementById('disp-email').textContent = user.email || userData.email || '-';
+      document.getElementById('disp-uid').textContent = user.uid;
+
+      listenToPendingBadge();
+    });
+
+    // Real-time listener for pending badge
+    function listenToPendingBadge() {
+      db.collection('applications')
+        .where('vendorId', '==', currentVendorId)
+        .where('status', '==', 'Pending')
+        .onSnapshot(snap => {
+          const count = snap.size;
+          const badge = document.getElementById('sidebar-pending-badge');
+          const dot = document.getElementById('topbar-notif-dot');
+          if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+          }
+          if (dot) {
+            dot.style.display = count > 0 ? 'block' : 'none';
+          }
+        }, err => console.error("Badge listener error:", err));
+    }
+
+    document.getElementById('vendor-profile-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('save-profile-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Saving...';
+
+      const updateData = {
+        name: document.getElementById('v-name').value.trim(),
+        phone: document.getElementById('v-phone').value.trim(),
+        businessName: document.getElementById('v-biz-name').value.trim(),
+        businessType: document.getElementById('v-biz-type').value,
+        city: document.getElementById('v-city').value.trim(),
+        address: document.getElementById('v-address').value.trim(),
+        description: document.getElementById('v-desc').value.trim(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      try {
+        await db.collection('users').doc(currentVendorId).update(updateData);
+        showToast("Vendor profile updated successfully!", "success");
+        updateLayoutUserInfo(updateData);
+      } catch (err) {
+        console.error("Profile save error:", err);
+        showToast("Error updating profile: " + err.message, "danger");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Save Profile Changes';
+      }
+    });
+
+    function openFirebaseConfigModal() {
+      const stored = localStorage.getItem("BUSPASS_FIREBASE_CONFIG");
+      document.getElementById('custom-fb-json').value = stored || JSON.stringify(firebaseConfig, null, 2);
+      openModal('firebase-modal');
+    }
+
+    function saveCustomConfig() {
+      try {
+        const text = document.getElementById('custom-fb-json').value.trim();
+        const parsed = JSON.parse(text);
+        if (!parsed.apiKey || !parsed.projectId) {
+          throw new Error("Config must contain at least apiKey and projectId");
+        }
+        saveCustomFirebaseConfig(parsed);
+      } catch (e) {
+        showToast("Invalid JSON config: " + e.message, "danger");
+      }
+    }
+
+    async function triggerSeedData() {
+      const btn = document.getElementById('seed-data-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Seeding sample fleet...';
+
+      try {
+        await seedSampleVendorData(currentVendorId);
+        showToast("Sample Organization, Route, Stops & Bus created successfully!", "success");
+        setTimeout(() => {
+          window.location.href = 'vendor-dashboard.html';
+        }, 1200);
+      } catch (e) {
+        showToast("Error seeding data: " + e.message, "danger");
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-database"></i> Seed Sample Transport Network';
+      }
+    }
+  </script>
+</body>
+</html>

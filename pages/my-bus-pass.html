@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Bus Pass | BusPass Pro</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- QRCode.js Library via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop"></div>
+
+    <!-- Student Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <i class="fas fa-bus-alt" style="color: var(--accent);"></i>
+          <span>STUDENT<strong>PASS</strong></span>
+        </div>
+        <button class="sidebar-close-btn">&times;</button>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="sidebar-section-title">Commuter Menu</div>
+        <ul class="sidebar-menu">
+          <li><a href="student-dashboard.html" class="sidebar-link" data-nav="student-dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a></li>
+          <li><a href="apply-pass.html" class="sidebar-link" data-nav="apply-pass"><i class="fas fa-id-card"></i><span>Apply for Pass</span></a></li>
+          <li><a href="my-applications.html" class="sidebar-link" data-nav="my-applications"><i class="fas fa-file-invoice"></i><span>My Applications</span></a></li>
+          <li><a href="my-bus-pass.html" class="sidebar-link active" data-nav="my-bus-pass"><i class="fas fa-qrcode"></i><span>My Bus Pass</span></a></li>
+          <li><a href="renew-pass.html" class="sidebar-link" data-nav="renew-pass"><i class="fas fa-redo"></i><span>Renew Pass</span></a></li>
+          <li><a href="live-bus.html" class="sidebar-link" data-nav="live-bus"><i class="fas fa-satellite-dish"></i><span>Live Bus</span></a></li>
+          <li>
+            <a href="notifications.html" class="sidebar-link" data-nav="notifications">
+              <i class="fas fa-bell"></i>
+              <span>Notifications</span>
+              <span class="sidebar-badge" id="student-notif-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li><a href="profile.html" class="sidebar-link" data-nav="profile"><i class="fas fa-user"></i><span>Profile</span></a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar" style="background: var(--accent);">S</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebar-student-name">Student Commuter</div>
+            <div class="sidebar-user-role">Student</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="logoutUser()" title="Logout">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      <!-- Master Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle-btn"><i class="fas fa-bars"></i></button>
+          <div class="page-title-group">
+            <h1>Official Digital Bus Pass</h1>
+            <div class="page-breadcrumb">
+              <i class="fas fa-home"></i> <span>Student Portal</span> / <span>Digital Pass</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="btn btn-secondary btn-sm" onclick="window.print()" title="Print Pass">
+            <i class="fas fa-print"></i> Print / PDF
+          </button>
+
+          <a href="notifications.html" class="topbar-action-btn" title="Notifications">
+            <i class="fas fa-bell"></i>
+            <span class="topbar-badge-dot" id="topbar-notif-dot" style="display: none;"></span>
+          </a>
+
+          <div class="topbar-user-pill" onclick="window.location.href='profile.html'">
+            <div class="avatar" style="background: var(--accent);">S</div>
+            <span class="topbar-user-name" id="topbar-student-name">Student</span>
+            <i class="fas fa-chevron-right" style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.35rem;"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-body">
+
+        <!-- Page Header & Action -->
+        <div class="page-header-row" style="max-width: 680px; margin: 0 auto 1.5rem;">
+          <div>
+            <h2 class="page-header-title">Digital Commuter Boarding Pass</h2>
+            <p class="page-header-desc">Present this official encrypted QR pass to your bus conductor terminal upon boarding.</p>
+          </div>
+        </div>
+
+        <!-- Container for Digital Pass or Empty State -->
+        <div id="pass-content-area">
+          <div class="state-container">
+            <div class="spinner"></div>
+            <p style="margin-top: 1rem; color: var(--text-muted);">Fetching your digital pass...</p>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/common.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/utils.js"></script>
+
+  <script>
+    let currentStudent = null;
+
+    initAppShell('my-bus-pass');
+
+    requireAuth('student', (user, userData) => {
+      currentStudent = user;
+      const sName = userData.name || 'Student';
+      const sideName = document.getElementById('sidebar-student-name');
+      const topName = document.getElementById('topbar-student-name');
+      if (sideName) sideName.textContent = sName;
+      if (topName) topName.textContent = sName;
+
+      loadDigitalPass();
+      listenToStudentNotifications();
+    });
+
+    function listenToStudentNotifications() {
+      db.collection('notifications')
+        .where('userId', '==', currentStudent.uid)
+        .where('read', '==', false)
+        .onSnapshot(snap => {
+          const count = snap.size;
+          const badge = document.getElementById('student-notif-badge');
+          const dot = document.getElementById('topbar-notif-dot');
+          if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+          }
+          if (dot) {
+            dot.style.display = count > 0 ? 'block' : 'none';
+          }
+        });
+    }
+
+    function loadDigitalPass() {
+      db.collection('passes')
+        .where('studentId', '==', currentStudent.uid)
+        .onSnapshot(async snap => {
+          const container = document.getElementById('pass-content-area');
+
+          if (!snap.empty) {
+            let passDoc = snap.docs.find(d => d.data().status === 'Active') || snap.docs[0];
+            const pass = { id: passDoc.id, ...passDoc.data() };
+            renderPassCard(pass);
+            return;
+          }
+
+          // Check if there is an application pending vendor approval
+          try {
+            const appSnap = await db.collection('applications')
+              .where('studentId', '==', currentStudent.uid)
+              .get();
+
+            if (!appSnap.empty) {
+              const pendingApp = appSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+                .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))[0];
+
+              if (pendingApp.status === 'Pending' || pendingApp.status === 'Payment Submitted') {
+                container.innerHTML = `
+                  <div class="card" style="max-width: 600px; margin: 2rem auto; text-align: center; border-top: 4px solid var(--warning);">
+                    <div class="state-container">
+                      <div class="state-icon" style="color: var(--warning);"><i class="fas fa-clock"></i></div>
+                      <h4 class="state-title">Application Under Verification</h4>
+                      <p class="state-desc">
+                        Your pass application for <strong>${pendingApp.routeName || 'selected route'}</strong> has been submitted.
+                        The Transport Vendor is verifying your payment. Once approved, your official digital QR pass will be displayed here immediately.
+                      </p>
+                      <div style="display: flex; gap: 0.75rem; justify-content: center; margin-top: 1rem;">
+                        <a href="my-applications.html" class="btn btn-primary"><i class="fas fa-file-invoice"></i> View Application Status</a>
+                      </div>
+                    </div>
+                  </div>
+                `;
+                return;
+              }
+            }
+          } catch(e) {}
+
+          // Default Empty State
+          container.innerHTML = `
+            <div class="card" style="max-width: 600px; margin: 2rem auto; text-align: center;">
+              <div class="state-container">
+                <div class="state-icon"><i class="fas fa-id-card"></i></div>
+                <h4 class="state-title">No Active Pass Issued</h4>
+                <p class="state-desc">You do not have an approved and active bus pass. Apply for a pass or check your application status.</p>
+                <div style="display: flex; gap: 0.75rem; justify-content: center; margin-top: 1rem;">
+                  <a href="apply-pass.html" class="btn btn-primary"><i class="fas fa-plus"></i> Apply for Pass</a>
+                  <a href="my-applications.html" class="btn btn-secondary"><i class="fas fa-file-invoice"></i> Track Application</a>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+    }
+
+    function renderPassCard(pass) {
+      const container = document.getElementById('pass-content-area');
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      const isExpired = pass.validUntil && pass.validUntil < todayStr;
+
+      container.innerHTML = `
+        <div class="bus-pass-card">
+          <!-- Pass Top Header -->
+          <div class="bus-pass-header">
+            <div class="bus-pass-brand">
+              <div class="bus-pass-org">${pass.organizationName || 'INSTITUTIONAL TRANSPORT'}</div>
+              <div class="bus-pass-badge">${pass.passType || 'Full Year'}</div>
+            </div>
+            <div class="bus-pass-title">OFFICIAL STUDENT COMMUTER BUS PASS</div>
+            <div class="bus-pass-number">${pass.passNumber || pass.id}</div>
+          </div>
+
+          <!-- Pass Body -->
+          <div class="bus-pass-body">
+            <!-- QR Box with encrypted identifier -->
+            <div class="bus-pass-qr-box">
+              <div id="pass-qrcode"></div>
+              <div class="bus-pass-qr-caption">Scan for Boarding</div>
+            </div>
+
+            <!-- Commuter & Transit Info Grid -->
+            <div class="bus-pass-details">
+              <div>
+                <div class="pass-field-label">Student Name</div>
+                <div class="pass-field-value">${pass.studentName}</div>
+              </div>
+              <div>
+                <div class="pass-field-label">Boarding Station</div>
+                <div class="pass-field-value" style="color: var(--primary); font-weight: 700;">${pass.boardingStop || '-'}</div>
+              </div>
+              <div>
+                <div class="pass-field-label">Transit Route</div>
+                <div class="pass-field-value">${pass.routeName || '-'}</div>
+              </div>
+              <div>
+                <div class="pass-field-label">Assigned Vehicle</div>
+                <div class="pass-field-value">${pass.busNumber || '-'} <small>(${pass.registrationNumber || ''})</small></div>
+              </div>
+              <div>
+                <div class="pass-field-label">Valid From</div>
+                <div class="pass-field-value">${formatDate(pass.validFrom)}</div>
+              </div>
+              <div>
+                <div class="pass-field-label">Valid Until</div>
+                <div class="pass-field-value" style="color: ${isExpired ? 'var(--danger)' : 'var(--success)'}; font-weight: 700;">
+                  ${formatDate(pass.validUntil)} ${isExpired ? '(EXPIRED)' : ''}
+                </div>
+              </div>
+              <div>
+                <div class="pass-field-label">Schedule Timings</div>
+                <div class="pass-field-value" style="font-size: 0.8rem;">
+                  <i class="fas fa-sun text-warning"></i> ${pass.morningTime || '07:30'} | <i class="fas fa-moon text-info"></i> ${pass.eveningTime || '16:45'}
+                </div>
+              </div>
+              <div>
+                <div class="pass-field-label">Assigned Conductor</div>
+                <div class="pass-field-value" style="font-size: 0.82rem;" id="conductor-info-cell">
+                  <span id="cond-name-display">${pass.conductorName || 'Duty Staff'}</span>
+                  ${pass.conductorPhone ? `<br><a href="tel:${pass.conductorPhone}" style="color: var(--success); font-weight: 700;"><i class="fas fa-phone-alt"></i> ${pass.conductorPhone}</a>` : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pass Footer -->
+          <div class="bus-pass-footer">
+            <div style="font-size: 0.72rem; color: var(--text-muted);">
+              <i class="fas fa-shield-alt text-primary"></i> Tamper-evident digital token. Anti-passback validation enforced on conductor scanner.
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <span id="call-conductor-btn-container">
+                ${pass.conductorPhone ? `
+                  <a href="tel:${pass.conductorPhone}" class="btn btn-sm btn-success" style="font-size: 0.75rem;">
+                    <i class="fas fa-phone-alt"></i> Call Conductor (${pass.conductorPhone})
+                  </a>
+                ` : ''}
+              </span>
+              <a href="live-bus.html" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">
+                <i class="fas fa-satellite-dish"></i> Live Bus
+              </a>
+              ${isExpired ? `
+                <a href="renew-pass.html" class="btn btn-primary btn-sm" style="font-size: 0.75rem;">
+                  <i class="fas fa-redo"></i> Renew Pass
+                </a>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Generate High-Reliability QR Code with automatic fallbacks
+      setTimeout(() => {
+        const qrPayload = pass.qrData || pass.id;
+        generatePassQRCode('pass-qrcode', qrPayload, 140, 140);
+      }, 100);
+
+      // If conductor phone isn't directly on pass, dynamically resolve from conductors collection
+      if (!pass.conductorPhone && (pass.busId || pass.routeId)) {
+        const condQuery = pass.busId
+          ? db.collection('conductors').where('busId', '==', pass.busId)
+          : db.collection('conductors').where('routeId', '==', pass.routeId);
+
+        condQuery.limit(1).get().then(snap => {
+          if (!snap.empty) {
+            const cond = snap.docs[0].data();
+            if (cond.name) {
+              const nameEl = document.getElementById('cond-name-display');
+              if (nameEl) nameEl.textContent = cond.name;
+            }
+            if (cond.phone) {
+              const cell = document.getElementById('conductor-info-cell');
+              if (cell && !cell.querySelector('a')) {
+                const phoneLink = document.createElement('div');
+                phoneLink.innerHTML = `<a href="tel:${cond.phone}" style="color: var(--success); font-weight: 700;"><i class="fas fa-phone-alt"></i> ${cond.phone}</a>`;
+                cell.appendChild(phoneLink);
+              }
+              const callContainer = document.getElementById('call-conductor-btn-container');
+              if (callContainer) {
+                callContainer.innerHTML = `
+                  <a href="tel:${cond.phone}" class="btn btn-sm btn-success" style="font-size: 0.75rem;">
+                    <i class="fas fa-phone-alt"></i> Call Conductor (${cond.phone})
+                  </a>
+                `;
+              }
+            }
+          }
+        }).catch(err => console.warn("Could not dynamically resolve conductor phone:", err));
+      }
+    }
+  </script>
+</body>
+</html>

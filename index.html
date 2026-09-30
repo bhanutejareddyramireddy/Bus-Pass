@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BusPass | Your Journey Our Priority</title>
+  <meta name="description" content="A modern bus pass management system for students, vendors, and conductors. Apply, track, and manage everything in one place.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body style="background: #FFFFFF;">
+
+  <!-- Master Landing Navbar -->
+  <nav class="landing-navbar">
+    <a href="index.html" class="split-brand" style="margin-bottom: 0; color: #1E293B;">
+      <div class="split-brand-icon" style="background: #4F46E5; color: #FFFFFF;">
+        <i class="fas fa-bus-alt"></i>
+      </div>
+      <span>BusPass</span>
+    </a>
+
+    <div style="display: flex; align-items: center; gap: 1.75rem;">
+      <a href="index.html" style="color: #4F46E5; font-weight: 700; text-decoration: none; font-size: 0.92rem;">Home</a>
+      <a href="#features" style="color: #475569; font-weight: 600; text-decoration: none; font-size: 0.92rem;">Features</a>
+      <a href="login.html" style="color: #475569; font-weight: 600; text-decoration: none; font-size: 0.92rem;">For Students</a>
+      <a href="vendor-login.html" style="color: #475569; font-weight: 600; text-decoration: none; font-size: 0.92rem;">For Vendors</a>
+      <a href="conductor-login.html" style="color: #475569; font-weight: 600; text-decoration: none; font-size: 0.92rem;">For Conductors</a>
+      <a href="#how-it-works" style="color: #475569; font-weight: 600; text-decoration: none; font-size: 0.92rem;">Contact</a>
+    </div>
+
+    <div>
+      <a href="register.html" class="btn btn-primary" style="padding: 0.65rem 1.4rem; border-radius: 10px; font-weight: 700;">Get Started</a>
+    </div>
+  </nav>
+
+  <!-- Hero Section (Matches Screen 3) -->
+  <header class="landing-hero-container">
+    <div class="landing-hero-grid">
+      <!-- Left Column: Copy & Actions -->
+      <div>
+        <div class="hero-pill">
+          <i class="fas fa-shield-alt" style="color: #4F46E5;"></i>
+          <span>Safe • Smart • Reliable</span>
+        </div>
+
+        <h1 class="hero-title">
+          Your Journey<br>
+          <span style="color: #4F46E5;">Our Priority</span>
+        </h1>
+
+        <p class="hero-desc">
+          A modern bus pass management system for students, vendors, and conductors. Apply, track, and manage everything in one place.
+        </p>
+
+        <div class="hero-buttons">
+          <a href="register.html" class="btn btn-primary btn-lg" style="border-radius: 12px; padding: 0.85rem 1.75rem; font-weight: 700;">
+            Get Started
+          </a>
+          <a href="#features" class="btn btn-secondary btn-lg" style="border-radius: 12px; padding: 0.85rem 1.75rem; font-weight: 600; background: #FFFFFF; border: 1.5px solid #CBD5E1; color: #1E293B;">
+            Learn More
+          </a>
+        </div>
+      </div>
+
+      <!-- Right Column: Modern Blue Transit Coach Bus Graphic -->
+      <div class="hero-bus-graphic">
+        <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1000&q=80" alt="Modern BusPass Coach Fleet">
+      </div>
+    </div>
+  </header>
+
+  <!-- 3 Roles Architecture Overview -->
+  <section style="background: #F8FAFC; padding: 5rem 2rem; border-top: 1px solid #E2E8F0; border-bottom: 1px solid #E2E8F0;">
+    <div class="section-header">
+      <h2>One Platform, Three Tailored Experiences</h2>
+      <p>Seamlessly connected across transport operators, students, and active bus conductors.</p>
+    </div>
+
+    <div class="role-cards-grid" style="margin-top: 0;">
+      <div class="role-card">
+        <div class="role-icon" style="background: var(--primary-light); color: var(--primary);">
+          <i class="fas fa-user-shield"></i>
+        </div>
+        <h3>Transport Vendor & Admin</h3>
+        <p>Manage multi-tier organizations (colleges, universities, companies), routes, stops with custom pricing, bus fleet, conductors, payment verification, and fleet-wide live analytics.</p>
+        <div style="display: flex; gap: 0.5rem; margin-top: auto;">
+          <a href="vendor-login.html" class="btn btn-primary btn-block">Vendor Dashboard</a>
+          <a href="vendor-register.html" class="btn btn-secondary" title="Register Vendor Agency"><i class="fas fa-plus"></i></a>
+        </div>
+      </div>
+
+      <div class="role-card" style="border-color: #C7D2FE;">
+        <div class="role-icon" style="background: #F3E8FF; color: var(--accent);">
+          <i class="fas fa-user-graduate"></i>
+        </div>
+        <h3>Students & Commuters</h3>
+        <p>Select your college or organization, choose routes and stops with transparent pricing, pay securely via dynamic UPI QR, download digital passes with secure QR, and track your bus live on GPS.</p>
+        <div style="display: flex; gap: 0.5rem; margin-top: auto;">
+          <a href="login.html" class="btn btn-primary btn-block" style="background: var(--accent); border-color: var(--accent);">Student Portal</a>
+          <a href="register.html" class="btn btn-secondary" title="Register Student"><i class="fas fa-user-plus"></i></a>
+        </div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-icon" style="background: var(--success-light); color: var(--success);">
+          <i class="fas fa-id-card-alt"></i>
+        </div>
+        <h3>Bus Conductors</h3>
+        <p>Login effortlessly with your unique Conductor ID (no email required). Scan student QR passes with your mobile camera, validate passes instantly, log boarding records, and broadcast live GPS location.</p>
+        <div style="margin-top: auto;">
+          <a href="conductor-login.html" class="btn btn-success btn-block"><i class="fas fa-camera"></i> Conductor QR Scan</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section" id="features">
+    <div class="section-header">
+      <h2>Engineered for Modern Fleet Operations</h2>
+      <p>Built with enterprise security, responsive components, and real-time cloud sync.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-box">
+        <i class="fas fa-sitemap"></i>
+        <h4>Multi-Tenant Organizations</h4>
+        <p>Vendors can register and isolate operations across multiple schools, colleges, universities, and corporate clients.</p>
+      </div>
+
+      <div class="feature-box">
+        <i class="fas fa-route"></i>
+        <h4>Route & Stop-Wise Pricing</h4>
+        <p>Configure start and destination points, stops with customized Full Year and Semester fee structures, and bus schedules.</p>
+      </div>
+
+      <div class="feature-box">
+        <i class="fas fa-qrcode"></i>
+        <h4>Digital Hologram QR Pass</h4>
+        <p>Generates high-security digital boarding passes with encrypted identifiers, student details, validity dates, and print-ready PDF styling.</p>
+      </div>
+
+      <div class="feature-box">
+        <i class="fas fa-camera"></i>
+        <h4>Instant Conductor QR Scanner</h4>
+        <p>Conductor mobile camera scanner validates passes in real-time, verifying organization, route, bus, dates, and logging boarding.</p>
+      </div>
+
+      <div class="feature-box">
+        <i class="fas fa-map-marked-alt"></i>
+        <h4>Live GPS Bus Tracking</h4>
+        <p>Conductors toggle live duty to stream real-time coordinates. Vendors view their whole fleet on Leaflet maps while students track their assigned bus.</p>
+      </div>
+
+      <div class="feature-box">
+        <i class="fas fa-wallet"></i>
+        <h4>Dynamic UPI QR Payments</h4>
+        <p>Organization-specific UPI configurations dynamically render payment QR codes with transaction verification before pass issuance.</p>
+      </div>
+
+      <div class="feature-box">
+        <i class="fas fa-history"></i>
+        <h4>Boarding Records & Anti-Passback</h4>
+        <p>Every scan produces an audit trail with timestamp, stop, conductor, and result (Allowed/Denied), preventing unauthorized re-use.</p>
+      </div>
+
+      <div class="feature-box">
+        <i class="fas fa-chart-line"></i>
+        <h4>Real-Time Analytics & Reports</h4>
+        <p>Comprehensive dashboard charts tracking application pipelines, revenue, daily passenger volume, and route capacity utilization.</p>
+      </div>
+
+      <div class="feature-box">
+        <i class="fas fa-bell"></i>
+        <h4>Instant Notifications</h4>
+        <p>Automated real-time alerts for application status changes, payment verifications, pass generation, and renewals.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Flow -->
+  <section class="features-section" id="how-it-works" style="background: var(--bg-page);">
+    <div class="section-header">
+      <h2>How The Ecosystem Works</h2>
+      <p>A closed-loop, verifiable flow from setup to daily bus boarding</p>
+    </div>
+
+    <div style="max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem;">
+      <div class="card" style="display: flex; align-items: center; gap: 1.5rem; margin: 0;">
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; flex-shrink: 0; box-shadow: var(--shadow-sm);">1</div>
+        <div>
+          <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">Vendor Configures Transport Network</h4>
+          <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.45; margin: 0;">Vendor creates Organizations, sets up Routes with stop fees, adds Buses with capacities, and creates Conductors with auto-generated IDs.</p>
+        </div>
+      </div>
+
+      <div class="card" style="display: flex; align-items: center; gap: 1.5rem; margin: 0;">
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; flex-shrink: 0; box-shadow: var(--shadow-sm);">2</div>
+        <div>
+          <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">Student Applies & Pays Securely</h4>
+          <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.45; margin: 0;">Student selects organization, route, and stop, reviews fee, scans vendor UPI QR, and submits transaction reference with receipt screenshot proof.</p>
+        </div>
+      </div>
+
+      <div class="card" style="display: flex; align-items: center; gap: 1.5rem; margin: 0;">
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; flex-shrink: 0; box-shadow: var(--shadow-sm);">3</div>
+        <div>
+          <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">Vendor Verifies & Issues Digital Pass</h4>
+          <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.45; margin: 0;">Vendor verifies payment screenshot, approves application, and the system automatically generates an encrypted Digital Bus Pass with dynamic QR code.</p>
+        </div>
+      </div>
+
+      <div class="card" style="display: flex; align-items: center; gap: 1.5rem; margin: 0;">
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; flex-shrink: 0; box-shadow: var(--shadow-sm);">4</div>
+        <div>
+          <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">Conductor Validates Boarding & Streams GPS</h4>
+          <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.45; margin: 0;">Conductor starts live duty on mobile, broadcasting live GPS to student & vendor maps. Conductor scans student QR code on boarding for instant verification.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Master Footer -->
+  <footer style="background: #0F172A; color: #94A3B8; padding: 3.5rem 2rem 2rem; border-top: 1px solid #1E293B;">
+    <div style="max-width: 1180px; margin: 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 2rem;">
+      <div>
+        <div class="split-brand" style="color: #FFFFFF; font-size: 1.35rem; margin-bottom: 0.75rem;">
+          <div class="split-brand-icon" style="background: #4F46E5; color: #FFFFFF;">
+            <i class="fas fa-bus-alt"></i>
+          </div>
+          <span>BusPass</span>
+        </div>
+        <p style="font-size: 0.88rem; max-width: 340px; line-height: 1.5; color: #94A3B8;">
+          The all-in-one cloud transport management ecosystem for institutions, transport vendors, conductors, and commuters.
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 3.5rem; flex-wrap: wrap;">
+        <div>
+          <h5 style="color: #FFFFFF; font-size: 0.95rem; margin-bottom: 0.85rem; font-weight: 700;">Vendor Solutions</h5>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; padding: 0; margin: 0;">
+            <li><a href="vendor-login.html" style="color: #94A3B8; text-decoration: none;">Vendor Login</a></li>
+            <li><a href="vendor-register.html" style="color: #94A3B8; text-decoration: none;">Vendor Registration</a></li>
+            <li><a href="vendor-dashboard.html" style="color: #94A3B8; text-decoration: none;">Fleet Dashboard</a></li>
+          </ul>
+        </div>
+        <div>
+          <h5 style="color: #FFFFFF; font-size: 0.95rem; margin-bottom: 0.85rem; font-weight: 700;">Commuter Portal</h5>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; padding: 0; margin: 0;">
+            <li><a href="login.html" style="color: #94A3B8; text-decoration: none;">Student Login</a></li>
+            <li><a href="register.html" style="color: #94A3B8; text-decoration: none;">Apply for Pass</a></li>
+            <li><a href="pages/my-bus-pass.html" style="color: #94A3B8; text-decoration: none;">Digital Pass</a></li>
+          </ul>
+        </div>
+        <div>
+          <h5 style="color: #FFFFFF; font-size: 0.95rem; margin-bottom: 0.85rem; font-weight: 700;">Operations</h5>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; padding: 0; margin: 0;">
+            <li><a href="conductor-login.html" style="color: #94A3B8; text-decoration: none;">Conductor Login</a></li>
+            <li><a href="conductor-dashboard.html" style="color: #94A3B8; text-decoration: none;">QR Boarding Scanner</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div style="max-width: 1180px; margin: 2.5rem auto 0; padding-top: 1.5rem; border-top: 1px solid #1E293B; text-align: center; font-size: 0.82rem; color: #64748B;">
+      &copy; 2026 BusPass. Enterprise Cloud Transit & Smart Pass Architecture.
+    </div>
+  </footer>
+
+</body>
+</html>
