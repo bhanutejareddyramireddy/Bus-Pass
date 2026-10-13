@@ -154,19 +154,17 @@
               </div>
             </div>
 
-            <div class="form-group">
-              <label class="form-label" for="renew-pass-type">Select Renewal Pass Duration <span class="required">*</span></label>
-              <select id="renew-pass-type" class="form-control" required onchange="calculateRenewalFee()">
-                <option value="Full Year">Annual Pass (Full Academic Year)</option>
-              </select>
-              <small style="color: var(--text-muted); font-size: 0.78rem;">Pass renewals are issued on an annual basis.</small>
-            </div>
+            <!-- Pass renewal is strictly Annual Pass (Full Year) - no dropdown needed -->
+            <input type="hidden" id="renew-pass-type" value="Full Year">
 
             <!-- Fee and Payment Details Callout -->
             <div style="background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%); border: 1px solid #C7D2FE; border-radius: var(--radius-md); padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
               <div>
-                <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--primary-dark); font-weight: 700; letter-spacing: 0.05em;">Renewal Fare Payable</span>
-                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.15rem;">Standard official rate for your registered boarding stop</div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--primary-dark); font-weight: 700; letter-spacing: 0.05em;">Annual Renewal Fare</span>
+                  <span class="badge badge-primary" style="font-size: 0.7rem; padding: 0.2rem 0.55rem;"><i class="fas fa-calendar-check"></i> Annual Pass</span>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem;">Standard official rate for your registered boarding stop</div>
               </div>
               <div style="font-size: 2rem; font-weight: 800; color: var(--primary); font-family: 'Inter', sans-serif;" id="renew-fee-display">₹0</div>
             </div>

@@ -98,7 +98,7 @@
 
         <div class="card" style="max-width: 840px; margin: 0 auto;">
           
-          <!-- Stepper Wizard Navigation -->
+            <!-- Stepper Wizard Navigation -->
           <div class="stepper">
             <div class="step-item active" id="step-nav-1">
               <div class="step-circle">1</div>
@@ -106,7 +106,7 @@
             </div>
             <div class="step-item" id="step-nav-2">
               <div class="step-circle">2</div>
-              <span class="step-label">Stop & Pass Type</span>
+              <span class="step-label">Boarding Stop</span>
             </div>
             <div class="step-item" id="step-nav-3">
               <div class="step-circle">3</div>
@@ -142,15 +142,15 @@
 
               <div style="display: flex; justify-content: flex-end; margin-top: 1.75rem;">
                 <button type="button" class="btn btn-primary" onclick="goToStep(2)">
-                  <span>Next: Choose Stop & Type</span> <i class="fas fa-arrow-right"></i>
+                  <span>Next: Choose Boarding Stop</span> <i class="fas fa-arrow-right"></i>
                 </button>
               </div>
             </div>
 
-            <!-- STEP 2: Select Stop & Pass Type -->
+            <!-- STEP 2: Select Boarding Stop -->
             <div class="step-content" id="step-2">
-              <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.35rem;">Step 2: Boarding Stop & Pass Duration</h3>
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Pick your nearest boarding station and preferred validity period.</p>
+              <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.35rem;">Step 2: Boarding Stop</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Pick your nearest boarding station to compute the annual pass fee.</p>
 
               <div class="form-group">
                 <label class="form-label" for="app-stop">Select Boarding Stop <span class="required">*</span></label>
@@ -159,22 +159,17 @@
                 </select>
               </div>
 
-              <div class="form-group">
-                <label class="form-label" for="app-pass-type">Pass Duration / Plan <span class="required">*</span></label>
-                <select id="app-pass-type" class="form-control" required onchange="calculateFee()">
-                  <option value="Full Year">Annual Pass (Full Academic Year)</option>
-                </select>
-                <small style="color: var(--text-muted); font-size: 0.78rem;">Passes are issued on an annual basis.</small>
-              </div>
+              <!-- Only Annual Pass is supported, no dropdown needed -->
+              <input type="hidden" id="app-pass-type" value="Full Year">
 
               <div style="background: var(--bg-page); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; margin-top: 1rem;">
                 <div>
-                  <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Calculated Pass Fee</div>
+                  <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Annual Pass Fee</div>
                   <div style="font-size: 1.75rem; font-weight: 800; color: var(--primary);" id="display-calculated-fee">₹0</div>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">Configured by your institution transport vendor</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Annual validity configured by institution transport vendor</div>
                 </div>
                 <div class="badge badge-success" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">
-                  <i class="fas fa-check"></i> Transparent Pricing
+                  <i class="fas fa-calendar-check"></i> Annual Pass
                 </div>
               </div>
 
