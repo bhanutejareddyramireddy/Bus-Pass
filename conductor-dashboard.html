@@ -161,10 +161,10 @@
               <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                 <h3 class="card-title" style="margin-bottom: 0;">Today's Boarding Logs</h3>
                 <span class="badge badge-success" id="trip-time-badge" style="font-size: 0.72rem; padding: 0.2rem 0.55rem;">
-                  <i class="fas fa-clock"></i> Resets at 07:30 AM
+                  <i class="fas fa-moon"></i> Resets Nightly at 11:59 PM
                 </span>
               </div>
-              <p class="card-subtitle" id="trip-status-subtitle" style="margin-top: 0.25rem;">Boarded passengers refreshed for current morning trip</p>
+              <p class="card-subtitle" id="trip-status-subtitle" style="margin-top: 0.25rem;">Boarded passengers reset nightly at 11:59 PM</p>
             </div>
 
             <div class="table-filters" style="display: flex; gap: 0.5rem; align-items: center;">
@@ -256,7 +256,6 @@
     let allRawBoardingDocs = [];
     let isLiveDutyActive = false;
     let lastScannedStudentTime = {}; // Anti-passback cache
-    let busMorningTime = '07:30';
 
     initAppShell('duty');
 
@@ -285,29 +284,6 @@
         document.getElementById('banner-bus-number').textContent = `${conductorDoc.busNumber || 'BUS-101'} (${conductorDoc.registrationNumber || 'Assigned Bus'})`;
         document.getElementById('banner-org-name').textContent = conductorDoc.organizationName || 'Assigned Organization';
         document.getElementById('banner-route-name').textContent = conductorDoc.routeName || 'Assigned Route';
-
-        // Retrieve assigned bus and route morning departure timing
-        if (conductorDoc.busId) {
-          try {
-            const busSnap = await db.collection('buses').doc(conductorDoc.busId).get();
-            if (busSnap.exists) {
-              const bData = busSnap.data();
-              if (bData.morningTime) busMorningTime = bData.morningTime;
-            }
-          } catch(bErr) {}
-        }
-
-        if (conductorDoc.routeId && busMorningTime === '07:30') {
-          try {
-            const routeSnap = await db.collection('routes').doc(conductorDoc.routeId).get();
-            if (routeSnap.exists) {
-              const rData = routeSnap.data();
-              if (rData.morningTime) busMorningTime = rData.morningTime;
-            }
-          } catch(rErr) {}
-        }
-
-        updateMorningResetUI();
 
         if (conductorDoc.routeId) {
           const passSnap = await db.collection('passes')
@@ -390,38 +366,14 @@
       }
     }
 
-    function updateMorningResetUI() {
-      const timeBadge = document.getElementById('trip-time-badge');
-      if (timeBadge) {
-        timeBadge.innerHTML = `<i class="fas fa-clock"></i> Resets at ${busMorningTime}`;
-      }
-      const desc = document.getElementById('kpi-allowed-desc');
-      if (desc) {
-        desc.textContent = `Boarded since ${busMorningTime}`;
-      }
-    }
-
     /**
-     * Compute timestamp (epoch ms) of the most recent morning departure time.
-     * Boarded students are refreshed/reset after the morning starting time each day.
+     * Compute timestamp (epoch ms) of the start of the current day (00:00:00).
+     * Boarded students automatically reset each night at 11:59 PM / midnight.
      */
-    function getSessionMorningCutoff() {
-      const parts = (busMorningTime || '07:30').split(':');
-      const h = Number(parts[0]) || 7;
-      const m = Number(parts[1]) || 30;
-
-      const now = new Date();
-      const cutoff = new Date();
-      cutoff.setHours(h, m, 0, 0);
-
-      // If current time is earlier than today's morning bus start time,
-      // the current active trip session is from yesterday's morning starting time.
-      // Once current time reaches or passes today's morning start time,
-      // the cutoff becomes today at morning time, refreshing the boarded students list!
-      if (now.getTime() < cutoff.getTime()) {
-        cutoff.setDate(cutoff.getDate() - 1);
-      }
-      return cutoff.getTime();
+    function getDailyMidnightCutoff() {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // 12:00:00 AM (immediately following 11:59 PM)
+      return today.getTime();
     }
 
     function listenToTodayBoarding() {
@@ -435,7 +387,7 @@
           processBoardingRecords();
         });
 
-      // Auto-refresh when crossing morning departure time
+      // Auto-refresh when crossing midnight (11:59 PM -> 12:00 AM)
       setInterval(() => {
         if (allRawBoardingDocs.length > 0) {
           processBoardingRecords();
@@ -444,7 +396,7 @@
     }
 
     function processBoardingRecords() {
-      const cutoffMs = getSessionMorningCutoff();
+      const cutoffMs = getDailyMidnightCutoff();
       boardingList = [];
       let allowed = 0;
       let denied = 0;
@@ -453,7 +405,7 @@
         const t = data.timestamp;
         const timeMs = t ? (t.toMillis ? t.toMillis() : new Date(t).getTime()) : Date.now();
 
-        // Only count and show boardings that occurred AFTER the latest morning bus starting time
+        // Only count and show boardings that occurred TODAY (after 11:59 PM of previous night)
         if (timeMs >= cutoffMs) {
           if (data.result === 'Allowed') allowed++;
           else denied++;
@@ -476,7 +428,7 @@
 
     function refreshBoardingSession() {
       processBoardingRecords();
-      showToast(`Boarded passenger records refreshed for trip starting at ${busMorningTime}!`, "info");
+      showToast("Boarded passenger records refreshed for today!", "info");
     }
 
     function filterBoardingRecords() {
@@ -502,8 +454,8 @@
           <tr>
             <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
               <i class="fas fa-bus-alt" style="font-size: 2rem; color: var(--border-color); margin-bottom: 0.5rem; display: block;"></i>
-              <div style="font-weight: 600;">No students boarded for current trip yet.</div>
-              <small style="color: var(--text-muted);">Boarding list refreshes after every morning departure (${busMorningTime}).</small>
+              <div style="font-weight: 600;">No students boarded today yet.</div>
+              <small style="color: var(--text-muted);">Boarding list resets every night at 11:59 PM.</small>
             </td>
           </tr>
         `;
@@ -703,7 +655,7 @@
           }
         }
 
-        // Anti-passback check: verify student has not already boarded in this morning trip
+        // Anti-passback check: verify student has not already boarded today (resets nightly at 11:59 PM)
         const alreadyBoarded = boardingList.find(b => (b.passId === passDocSnap.id || (b.studentName && b.studentName === pass.studentName)) && b.result === 'Allowed');
         const now = Date.now();
 
@@ -713,8 +665,8 @@
             showScanResult(true, "Boarding Already Logged", "Pass already verified within the last 2 minutes.", pass);
             return;
           } else {
-            showScanResult(false, "Already Boarded Today", `Passenger ${pass.studentName} has already boarded for this morning trip.`, pass);
-            await logBoardingRecord(passDocSnap.id, pass.studentName, pass.boardingStop, 'Denied', 'Already boarded for morning trip');
+            showScanResult(false, "Already Boarded Today", `Passenger ${pass.studentName} has already boarded for today.`, pass);
+            await logBoardingRecord(passDocSnap.id, pass.studentName, pass.boardingStop, 'Denied', 'Already boarded today (resets nightly at 11:59 PM)');
             return;
           }
         }
