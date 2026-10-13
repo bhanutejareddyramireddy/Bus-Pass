@@ -154,7 +154,7 @@
 
               <div class="form-group">
                 <label class="form-label" for="app-stop">Select Boarding Stop <span class="required">*</span></label>
-                <select id="app-stop" class="form-control" required>
+                <select id="app-stop" class="form-control" required onchange="onStopChanged()">
                   <option value="">Choose route first...</option>
                 </select>
               </div>
@@ -427,8 +427,21 @@
       }
     }
 
+    function onStopChanged() {
+      if (!selectedRoute) return;
+      const currentPlanIdx = document.getElementById('app-pass-plan').value;
+      populatePassPlans(selectedRoute);
+      if (currentPlanIdx !== '') {
+        document.getElementById('app-pass-plan').value = currentPlanIdx;
+        onPassPlanSelected();
+      }
+    }
+
     function populatePassPlans(route) {
       const planSelect = document.getElementById('app-pass-plan');
+      const stopName = document.getElementById('app-stop').value;
+      const matchedStop = (route.stops || []).find(s => s.name === stopName);
+
       planSelect.innerHTML = '<option value="">Select pass duration / type...</option>';
 
       let plans = [];
@@ -442,11 +455,21 @@
       }
 
       plans.forEach((p, idx) => {
+        // Resolve stop-specific price
+        let stopPrice = p.price || p.defaultPrice || 0;
+        if (matchedStop && matchedStop.prices && matchedStop.prices[p.type] !== undefined) {
+          stopPrice = Number(matchedStop.prices[p.type]);
+        } else if (matchedStop && matchedStop.fullYearFee && p.type === 'Yearly Pass') {
+          stopPrice = Number(matchedStop.fullYearFee);
+        } else if (matchedStop && matchedStop.fee) {
+          stopPrice = Number(matchedStop.fee);
+        }
+
         const exp = p.expiryDate ? ` (Valid until: ${formatDate(p.expiryDate)})` : '';
-        planSelect.innerHTML += `<option value="${idx}">${p.type} - ${formatCurrency(p.price)}${exp}</option>`;
+        planSelect.innerHTML += `<option value="${idx}">${p.type} - ${formatCurrency(stopPrice)}${exp}</option>`;
       });
 
-      if (plans.length === 1) {
+      if (plans.length === 1 && planSelect.value === '') {
         planSelect.value = "0";
         onPassPlanSelected();
       }
@@ -455,6 +478,8 @@
     function onPassPlanSelected() {
       if (!selectedRoute) return;
       const planSelect = document.getElementById('app-pass-plan');
+      const stopName = document.getElementById('app-stop').value;
+      const matchedStop = (selectedRoute.stops || []).find(s => s.name === stopName);
       const val = planSelect.value;
 
       let plans = [];
@@ -468,10 +493,21 @@
 
       if (val !== '') {
         selectedPassPlan = plans[parseInt(val, 10)];
-        calculatedFee = Number(selectedPassPlan.price || 0);
+        
+        // Resolve exact fare for the selected stop & selected pass type
+        let stopPrice = selectedPassPlan.price || selectedPassPlan.defaultPrice || 0;
+        if (matchedStop && matchedStop.prices && matchedStop.prices[selectedPassPlan.type] !== undefined) {
+          stopPrice = Number(matchedStop.prices[selectedPassPlan.type]);
+        } else if (matchedStop && matchedStop.fullYearFee && selectedPassPlan.type === 'Yearly Pass') {
+          stopPrice = Number(matchedStop.fullYearFee);
+        } else if (matchedStop && matchedStop.fee) {
+          stopPrice = Number(matchedStop.fee);
+        }
+
+        calculatedFee = Number(stopPrice);
 
         document.getElementById('display-calculated-fee').textContent = formatCurrency(calculatedFee);
-        document.getElementById('display-fee-label').textContent = `${selectedPassPlan.type} Fee`;
+        document.getElementById('display-fee-label').textContent = stopName ? `${selectedPassPlan.type} Fare (${stopName})` : `${selectedPassPlan.type} Fare`;
         document.getElementById('selected-pass-type-badge').innerHTML = `<i class="fas fa-check-circle"></i> ${selectedPassPlan.type}`;
 
         const expText = selectedPassPlan.expiryDate
@@ -484,7 +520,7 @@
         document.getElementById('display-calculated-fee').textContent = '₹0';
         document.getElementById('display-fee-label').textContent = 'Pass Fee';
         document.getElementById('selected-pass-type-badge').innerHTML = `<i class="fas fa-ticket-alt"></i> Select Pass Type`;
-        document.getElementById('display-pass-expiry-hint').textContent = 'Select a pass duration to see validity expiry date';
+        document.getElementById('display-pass-expiry-hint').textContent = 'Select a boarding station and pass duration to see fare';
       }
     }
 

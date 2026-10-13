@@ -263,24 +263,24 @@
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
               <div>
                 <h4 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem;">
-                  <i class="fas fa-ticket-alt text-primary"></i> Available Pass Types, Pricing & Expiry Dates
+                  <i class="fas fa-ticket-alt text-primary"></i> 1. Pass Plans & Expiry Dates
                 </h4>
                 <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">
-                  Offer Monthly, Weekly, Yearly, or Other custom pass options for this route with individual price & expiry.
+                  Configure available pass types and their expiry dates. You can set individual prices for each stop below.
                 </p>
               </div>
               <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
                 <button type="button" class="btn btn-secondary btn-sm" onclick="addPassTypePreset('Monthly Pass')">
-                  <i class="fas fa-plus"></i> Monthly
+                  <i class="fas fa-plus"></i> Monthly Pass
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="addPassTypePreset('Weekly Pass')">
-                  <i class="fas fa-plus"></i> Weekly
+                  <i class="fas fa-plus"></i> Weekly Pass
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="addPassTypePreset('Yearly Pass')">
-                  <i class="fas fa-plus"></i> Yearly
+                  <i class="fas fa-plus"></i> Yearly Pass
                 </button>
                 <button type="button" class="btn btn-primary btn-sm" onclick="addPassTypeRow('Other')">
-                  <i class="fas fa-plus-circle"></i> Other
+                  <i class="fas fa-plus-circle"></i> Other (Custom)
                 </button>
               </div>
             </div>
@@ -295,17 +295,17 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
               <div>
                 <h4 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem;">
-                  <i class="fas fa-map-marker-alt text-danger"></i> Route Boarding Stops & Stations
+                  <i class="fas fa-map-marker-alt text-danger"></i> 2. Boarding Stops & Stop-Specific Pricing
                 </h4>
-                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">Boarding stations where students can board</p>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">Set distinct fares for each boarding station according to the pass types</p>
               </div>
-              <button type="button" class="btn btn-secondary btn-sm" onclick="addStopRow()">
+              <button type="button" class="btn btn-primary btn-sm" onclick="addStopRow()">
                 <i class="fas fa-plus"></i> Add Boarding Stop
               </button>
             </div>
 
-            <div id="stops-container" style="display: flex; flex-direction: column; gap: 0.5rem;">
-              <!-- Dynamic Stop Rows -->
+            <div id="stops-container" style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <!-- Dynamic Stop Rows with Per-Pass Pricing -->
             </div>
           </div>
         </div>
@@ -473,15 +473,30 @@
               <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                 ${passTypesList.map(pt => `
                   <span class="badge badge-info" style="font-size: 0.72rem; padding: 0.2rem 0.5rem; justify-content: flex-start; text-align: left; white-space: normal;">
-                    <strong>${pt.type}:</strong>&nbsp;${formatCurrency(pt.price)}&nbsp;<small style="opacity: 0.9;">(${formatDate(pt.expiryDate)})</small>
+                    <strong>${pt.type}:</strong>&nbsp;<small style="opacity: 0.9;">(Expires: ${formatDate(pt.expiryDate)})</small>
                   </span>
                 `).join('')}
               </div>
             </td>
             <td>
-              <span class="badge badge-secondary" style="font-weight: 700;">${stopsCount} Stops</span>
-              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
-                ${stopsPreview}${stopsCount > 3 ? '...' : ''}
+              <div style="font-weight: 700; color: var(--text-primary); font-size: 0.85rem;">${stopsCount} Stops Configured</div>
+              <div style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.35rem; max-height: 120px; overflow-y: auto;">
+                ${(route.stops || []).map(s => {
+                  let priceTags = '';
+                  if (s.prices && Object.keys(s.prices).length > 0) {
+                    priceTags = Object.entries(s.prices).map(([pt, pr]) => 
+                      `<span style="background: #EEF2FF; border: 1px solid #C7D2FE; color: var(--primary); padding: 1px 5px; border-radius: 4px; font-size: 0.7rem; white-space: nowrap;"><strong>${pt}:</strong> ${formatCurrency(pr)}</span>`
+                    ).join(' ');
+                  } else {
+                    priceTags = `<span style="font-size: 0.72rem; color: var(--text-muted);">${formatCurrency(s.fullYearFee || s.fee || 0)}</span>`;
+                  }
+                  return `
+                    <div style="font-size: 0.75rem; display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap;">
+                      <span style="font-weight: 600; color: var(--text-primary);"><i class="fas fa-map-pin text-danger" style="font-size: 0.68rem;"></i> ${s.name}:</span>
+                      ${priceTags}
+                    </div>
+                  `;
+                }).join('')}
               </div>
             </td>
             <td>
@@ -507,8 +522,76 @@
       }).join('');
     }
 
+    // Helper: Collect Active Pass Types from Form
+    function getActivePassTypes() {
+      const rows = document.querySelectorAll('.pass-type-row');
+      const types = [];
+      rows.forEach(r => {
+        const sel = r.querySelector('.pass-type-select').value;
+        const custom = r.querySelector('.pass-custom-input').value.trim();
+        const expiry = r.querySelector('.pass-expiry-input').value;
+        const basePrice = Number(r.querySelector('.pass-price-input').value) || 0;
+        const finalName = (sel === 'Other' && custom) ? custom : sel;
+        if (finalName) {
+          types.push({ type: finalName, expiryDate: expiry, defaultPrice: basePrice });
+        }
+      });
+      return types;
+    }
+
+    // Sync stop pricing input fields whenever pass types change
+    function syncStopPricingFields() {
+      const activeTypes = getActivePassTypes();
+      const stopRows = document.querySelectorAll('.stop-item-row');
+
+      stopRows.forEach(stopRow => {
+        const pricesContainer = stopRow.querySelector('.stop-prices-grid');
+        if (!pricesContainer) return;
+
+        // Remember existing prices in this stop
+        const existingPrices = {};
+        pricesContainer.querySelectorAll('.stop-price-item').forEach(item => {
+          const pt = item.getAttribute('data-pass-type');
+          const val = item.querySelector('.stop-price-input').value;
+          if (pt) existingPrices[pt] = val;
+        });
+
+        pricesContainer.innerHTML = '';
+
+        if (activeTypes.length === 0) {
+          pricesContainer.innerHTML = `<span style="color: var(--text-muted); font-size: 0.78rem;">Please add at least one Pass Plan above to set stop pricing.</span>`;
+          return;
+        }
+
+        activeTypes.forEach(pt => {
+          const currentVal = existingPrices[pt.type] !== undefined ? existingPrices[pt.type] : (pt.defaultPrice || '');
+          const col = document.createElement('div');
+          col.className = 'stop-price-item';
+          col.setAttribute('data-pass-type', pt.type);
+          col.style.cssText = 'flex: 1; min-width: 140px;';
+          col.innerHTML = `
+            <label style="font-size: 0.72rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+              <i class="fas fa-ticket-alt"></i> ${pt.type} (₹)
+            </label>
+            <input type="number" class="form-control stop-price-input" min="0" placeholder="₹ Price" value="${currentVal}" required>
+          `;
+          pricesContainer.appendChild(col);
+        });
+      });
+    }
+
+    function removePassTypeRow(btn) {
+      btn.closest('.pass-type-row').remove();
+      syncStopPricingFields();
+    }
+
+    function onPassTypeChanged(selectEl) {
+      toggleCustomPassInput(selectEl);
+      syncStopPricingFields();
+    }
+
     // Dynamic Pass Type Row Builder
-    function addPassTypeRow(type = 'Yearly Pass', customName = '', price = '', expiryDate = '') {
+    function addPassTypeRow(type = 'Yearly Pass', customName = '', defaultPrice = '', expiryDate = '') {
       const container = document.getElementById('pass-types-container');
       const row = document.createElement('div');
       row.className = 'pass-type-row';
@@ -527,6 +610,12 @@
         expiryDate = d.toISOString().split('T')[0];
       }
 
+      if (defaultPrice === '' || defaultPrice === undefined) {
+        if (type === 'Monthly Pass') defaultPrice = 2500;
+        else if (type === 'Weekly Pass') defaultPrice = 750;
+        else defaultPrice = 24000;
+      }
+
       const isKnownType = ['Monthly Pass', 'Weekly Pass', 'Yearly Pass'].includes(type);
       const isOther = type === 'Other' || (!isKnownType && Boolean(type));
       const selectedDropdownVal = isOther ? 'Other' : type;
@@ -536,7 +625,7 @@
         <div style="display: grid; grid-template-columns: 1.5fr 1fr 1.2fr 40px; gap: 0.5rem; align-items: center;">
           <div>
             <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pass Plan</label>
-            <select class="form-control pass-type-select" onchange="toggleCustomPassInput(this)" required>
+            <select class="form-control pass-type-select" onchange="onPassTypeChanged(this)" required>
               <option value="Monthly Pass" ${selectedDropdownVal === 'Monthly Pass' ? 'selected' : ''}>Monthly Pass</option>
               <option value="Weekly Pass" ${selectedDropdownVal === 'Weekly Pass' ? 'selected' : ''}>Weekly Pass</option>
               <option value="Yearly Pass" ${selectedDropdownVal === 'Yearly Pass' ? 'selected' : ''}>Yearly Pass</option>
@@ -545,8 +634,8 @@
           </div>
 
           <div>
-            <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Price (₹)</label>
-            <input type="number" class="form-control pass-price-input" placeholder="₹ Price" value="${price}" required min="0">
+            <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Default / Base Price (₹)</label>
+            <input type="number" class="form-control pass-price-input" placeholder="₹ Price" value="${defaultPrice}" oninput="syncStopPricingFields()" min="0">
           </div>
 
           <div>
@@ -555,7 +644,7 @@
           </div>
 
           <div style="display: flex; align-items: flex-end; justify-content: center; height: 100%;">
-            <button type="button" class="action-btn delete" title="Remove Pass Option" onclick="this.closest('.pass-type-row').remove()" style="margin-top: 1.2rem;">
+            <button type="button" class="action-btn delete" title="Remove Pass Option" onclick="removePassTypeRow(this)" style="margin-top: 1.2rem;">
               <i class="fas fa-times"></i>
             </button>
           </div>
@@ -563,10 +652,11 @@
 
         <div class="custom-type-container" style="display: ${selectedDropdownVal === 'Other' ? 'block' : 'none'}; margin-top: 0.25rem;">
           <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Custom Pass Title / Type</label>
-          <input type="text" class="form-control pass-custom-input" placeholder="Type custom pass name (e.g. Semester Pass, Quarterly Pass, Exam Special)" value="${customVal}" ${selectedDropdownVal === 'Other' ? 'required' : ''}>
+          <input type="text" class="form-control pass-custom-input" placeholder="Type custom pass name (e.g. Semester Pass, Quarterly Pass, Exam Special)" value="${customVal}" oninput="syncStopPricingFields()" ${selectedDropdownVal === 'Other' ? 'required' : ''}>
         </div>
       `;
       container.appendChild(row);
+      syncStopPricingFields();
     }
 
     function toggleCustomPassInput(selectEl) {
@@ -590,17 +680,55 @@
       addPassTypeRow(presetName, '', defaultPrice, '');
     }
 
-    function addStopRow(name = '') {
+    // Dynamic Boarding Stop Row with Stop-Specific Pricing per Pass Type
+    function addStopRow(name = '', prices = {}) {
       const container = document.getElementById('stops-container');
       const row = document.createElement('div');
       row.className = 'stop-item-row';
-      row.style.cssText = 'display: grid; grid-template-columns: 1fr 40px; gap: 0.5rem; align-items: center; background: var(--bg-page); padding: 0.4rem 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);';
+      row.style.cssText = 'background: var(--bg-page); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.6rem;';
+
+      const activeTypes = getActivePassTypes();
+
+      let pricesHtml = '';
+      if (activeTypes.length === 0) {
+        pricesHtml = `<span style="color: var(--text-muted); font-size: 0.78rem;">Please add at least one Pass Plan above to set stop pricing.</span>`;
+      } else {
+        activeTypes.forEach(pt => {
+          const val = (prices && prices[pt.type] !== undefined) ? prices[pt.type] : (pt.defaultPrice || '');
+          pricesHtml += `
+            <div class="stop-price-item" data-pass-type="${pt.type}" style="flex: 1; min-width: 140px;">
+              <label style="font-size: 0.72rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+                <i class="fas fa-ticket-alt"></i> ${pt.type} (₹)
+              </label>
+              <input type="number" class="form-control stop-price-input" min="0" placeholder="₹ Price" value="${val}" required>
+            </div>
+          `;
+        });
+      }
+
       row.innerHTML = `
-        <input type="text" class="form-control stop-name-input" placeholder="Boarding Stop Name (e.g. Shamshabad Bus Station)" value="${name}" required>
-        <button type="button" class="action-btn delete" title="Remove stop" onclick="this.parentElement.remove()">
-          <i class="fas fa-times"></i>
-        </button>
+        <div style="display: grid; grid-template-columns: 1fr 40px; gap: 0.5rem; align-items: center;">
+          <div>
+            <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Boarding Station Name</label>
+            <input type="text" class="form-control stop-name-input" placeholder="e.g. Shamshabad Bus Station" value="${name}" required>
+          </div>
+          <div style="display: flex; align-items: flex-end; justify-content: center;">
+            <button type="button" class="action-btn delete" title="Remove stop" onclick="this.closest('.stop-item-row').remove()" style="margin-top: 1.2rem;">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.25rem;">
+            Station Fare per Pass Type:
+          </div>
+          <div class="stop-prices-grid" style="display: flex; gap: 0.75rem; flex-wrap: wrap; background: #fff; padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            ${pricesHtml}
+          </div>
+        </div>
       `;
+
       container.appendChild(row);
     }
 
@@ -610,7 +738,7 @@
       document.getElementById('pass-types-container').innerHTML = '';
       document.getElementById('stops-container').innerHTML = '';
 
-      // Default presets: Add a Monthly Pass and a Yearly Pass
+      // Default presets: Add a Yearly Pass and a Monthly Pass
       const monthDate = new Date();
       monthDate.setMonth(monthDate.getMonth() + 1);
       const yearDate = new Date();
@@ -619,9 +747,9 @@
       addPassTypeRow('Yearly Pass', '', 24000, yearDate.toISOString().split('T')[0]);
       addPassTypeRow('Monthly Pass', '', 2500, monthDate.toISOString().split('T')[0]);
 
-      addStopRow('Origin / Main Terminal');
-      addStopRow('Central Junction Stop');
-      addStopRow('Campus / Destination Gate');
+      addStopRow('Origin / Main Terminal', { 'Yearly Pass': 24000, 'Monthly Pass': 2500 });
+      addStopRow('Central Junction Stop', { 'Yearly Pass': 20000, 'Monthly Pass': 2100 });
+      addStopRow('Campus / Destination Gate', { 'Yearly Pass': 16000, 'Monthly Pass': 1700 });
 
       document.getElementById('route-modal-title').textContent = 'Create Transit Route';
       openModal('route-modal');
@@ -645,7 +773,7 @@
       passContainer.innerHTML = '';
       if (route.passTypes && route.passTypes.length > 0) {
         route.passTypes.forEach(pt => {
-          addPassTypeRow(pt.type, pt.type, pt.price, pt.expiryDate);
+          addPassTypeRow(pt.type, pt.type, pt.defaultPrice || pt.price, pt.expiryDate);
         });
       } else {
         // Fallback from legacy route
@@ -653,11 +781,20 @@
         addPassTypeRow('Yearly Pass', '', defaultFee, route.passExpiryDate || '');
       }
 
-      // Populate stops
+      // Populate stops with stop-specific prices
       const stopContainer = document.getElementById('stops-container');
       stopContainer.innerHTML = '';
       if (route.stops && route.stops.length > 0) {
-        route.stops.forEach(s => addStopRow(s.name));
+        route.stops.forEach(s => {
+          let stopPrices = s.prices || {};
+          if (!s.prices || Object.keys(s.prices).length === 0) {
+            stopPrices = {
+              'Yearly Pass': s.fullYearFee || s.fee || 20000,
+              'Monthly Pass': Math.round((s.fullYearFee || s.fee || 20000) / 10)
+            };
+          }
+          addStopRow(s.name, stopPrices);
+        });
       } else {
         addStopRow('');
       }
@@ -679,32 +816,48 @@
       passTypeRows.forEach(row => {
         const selectVal = row.querySelector('.pass-type-select').value;
         const customVal = row.querySelector('.pass-custom-input').value.trim();
-        const price = Number(row.querySelector('.pass-price-input').value) || 0;
+        const basePrice = Number(row.querySelector('.pass-price-input').value) || 0;
         const expiryDate = row.querySelector('.pass-expiry-input').value;
         
         const finalType = (selectVal === 'Other' && customVal) ? customVal : selectVal;
         if (finalType && expiryDate) {
           passTypes.push({
             type: finalType,
-            price: price,
+            defaultPrice: basePrice,
+            price: basePrice,
             expiryDate: expiryDate
           });
         }
       });
 
       if (passTypes.length === 0) {
-        showToast("Please add at least one Pass Plan (Monthly, Weekly, Yearly, or Other) with price and expiry date.", "warning");
+        showToast("Please add at least one Pass Plan (Monthly, Weekly, Yearly, or Other) with expiry date.", "warning");
         return;
       }
 
-      // Collect Stops
+      // Collect Stops with Stop-Specific Prices
       const stopRows = document.querySelectorAll('.stop-item-row');
       const stops = [];
       stopRows.forEach(row => {
         const name = row.querySelector('.stop-name-input').value.trim();
-        if (name) {
-          stops.push({ name, fee: passTypes[0].price, fullYearFee: passTypes[0].price });
-        }
+        if (!name) return;
+
+        const prices = {};
+        row.querySelectorAll('.stop-price-item').forEach(pItem => {
+          const pType = pItem.getAttribute('data-pass-type');
+          const pVal = Number(pItem.querySelector('.stop-price-input').value) || 0;
+          if (pType) {
+            prices[pType] = pVal;
+          }
+        });
+
+        const firstPrice = Object.values(prices)[0] || passTypes[0].defaultPrice || 0;
+        stops.push({
+          name: name,
+          prices: prices,
+          fee: firstPrice,
+          fullYearFee: prices['Yearly Pass'] || firstPrice
+        });
       });
 
       if (stops.length === 0) {
@@ -726,7 +879,7 @@
         eveningTime: eveningTime,
         passTypes: passTypes,
         passExpiryDate: passTypes[0]?.expiryDate || '', // legacy fallback
-        fullYearFee: passTypes[0]?.price || 0, // legacy fallback
+        fullYearFee: stops[0]?.fullYearFee || stops[0]?.fee || passTypes[0]?.defaultPrice || 0, // legacy fallback
         status: document.getElementById('route-status').value,
         stops: stops,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()

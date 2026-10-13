@@ -353,6 +353,10 @@
       const planSelect = document.getElementById('renew-pass-plan');
       planSelect.innerHTML = '<option value="">Select pass duration...</option>';
 
+      const matchedStop = (currentRoute && currentRoute.stops)
+        ? currentRoute.stops.find(s => s.name === previousPass.boardingStop)
+        : null;
+
       let plans = [];
       if (currentRoute && currentRoute.passTypes && Array.isArray(currentRoute.passTypes) && currentRoute.passTypes.length > 0) {
         plans = currentRoute.passTypes;
@@ -363,8 +367,19 @@
       }
 
       plans.forEach((p, idx) => {
+        let stopPrice = p.price || p.defaultPrice || 0;
+        if (matchedStop && matchedStop.prices && matchedStop.prices[p.type] !== undefined) {
+          stopPrice = Number(matchedStop.prices[p.type]);
+        } else if (matchedStop && matchedStop.fullYearFee && p.type === 'Yearly Pass') {
+          stopPrice = Number(matchedStop.fullYearFee);
+        } else if (matchedStop && matchedStop.fee) {
+          stopPrice = Number(matchedStop.fee);
+        } else if (previousPass.fee) {
+          stopPrice = Number(previousPass.fee);
+        }
+
         const exp = p.expiryDate ? ` (Valid until: ${formatDate(p.expiryDate)})` : '';
-        planSelect.innerHTML += `<option value="${idx}">${p.type} - ${formatCurrency(p.price)}${exp}</option>`;
+        planSelect.innerHTML += `<option value="${idx}">${p.type} - ${formatCurrency(stopPrice)}${exp}</option>`;
       });
 
       // Default select matching previous pass or first plan
@@ -376,6 +391,9 @@
     function onRenewPassPlanChanged() {
       const planSelect = document.getElementById('renew-pass-plan');
       const val = planSelect.value;
+      const matchedStop = (currentRoute && currentRoute.stops)
+        ? currentRoute.stops.find(s => s.name === previousPass.boardingStop)
+        : null;
 
       let plans = [];
       if (currentRoute && currentRoute.passTypes && Array.isArray(currentRoute.passTypes) && currentRoute.passTypes.length > 0) {
@@ -388,11 +406,23 @@
 
       if (val !== '') {
         selectedRenewalPlan = plans[parseInt(val, 10)];
-        calculatedRenewalFee = Number(selectedRenewalPlan.price || 0);
+
+        let stopPrice = selectedRenewalPlan.price || selectedRenewalPlan.defaultPrice || 0;
+        if (matchedStop && matchedStop.prices && matchedStop.prices[selectedRenewalPlan.type] !== undefined) {
+          stopPrice = Number(matchedStop.prices[selectedRenewalPlan.type]);
+        } else if (matchedStop && matchedStop.fullYearFee && selectedRenewalPlan.type === 'Yearly Pass') {
+          stopPrice = Number(matchedStop.fullYearFee);
+        } else if (matchedStop && matchedStop.fee) {
+          stopPrice = Number(matchedStop.fee);
+        } else if (previousPass.fee) {
+          stopPrice = Number(previousPass.fee);
+        }
+
+        calculatedRenewalFee = Number(stopPrice);
 
         document.getElementById('renew-fee-display').textContent = formatCurrency(calculatedRenewalFee);
         document.getElementById('renew-amount-txt').textContent = formatCurrency(calculatedRenewalFee);
-        document.getElementById('renew-fare-label').textContent = `${selectedRenewalPlan.type} Fare`;
+        document.getElementById('renew-fare-label').textContent = `${selectedRenewalPlan.type} Fare (${previousPass.boardingStop || 'Stop'})`;
         document.getElementById('renew-plan-badge').innerHTML = `<i class="fas fa-ticket-alt"></i> ${selectedRenewalPlan.type}`;
         
         const expText = selectedRenewalPlan.expiryDate
