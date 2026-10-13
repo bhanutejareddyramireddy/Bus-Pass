@@ -172,9 +172,9 @@
                   <th>Route Name</th>
                   <th>Organization</th>
                   <th>Origin → Destination</th>
-                  <th>Schedule</th>
-                  <th>Pass Expiry</th>
-                  <th>Stops & Annual Fees</th>
+                  <th>Schedule (Start & Return)</th>
+                  <th>Pass Types, Pricing & Expiry</th>
+                  <th>Boarding Stops</th>
                   <th>Status</th>
                   <th style="text-align: right;">Actions</th>
                 </tr>
@@ -234,45 +234,77 @@
 
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label" for="route-morning">Morning Pickup Timing</label>
-              <input type="time" id="route-morning" class="form-control" value="07:30">
+              <label class="form-label" for="route-morning">
+                <i class="fas fa-sun text-warning"></i> Bus Start Time (Morning Departure) <span class="required">*</span>
+              </label>
+              <input type="time" id="route-morning" class="form-control" value="07:30" required>
+              <small style="color: var(--text-muted); font-size: 0.78rem;">Time when bus starts its trip in morning</small>
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="route-evening">Evening Return Timing</label>
-              <input type="time" id="route-evening" class="form-control" value="16:45">
+              <label class="form-label" for="route-evening">
+                <i class="fas fa-moon text-info"></i> Bus Again Starting Time (Evening / Return) <span class="required">*</span>
+              </label>
+              <input type="time" id="route-evening" class="form-control" value="16:45" required>
+              <small style="color: var(--text-muted); font-size: 0.78rem;">Time when bus starts again for evening trip (shown to students)</small>
             </div>
           </div>
 
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label" for="route-expiry-date">Pass Expiry Date <span class="required">*</span></label>
-              <input type="date" id="route-expiry-date" class="form-control" required>
-              <small style="color: var(--text-muted); font-size: 0.78rem;">Passes issued for this route will expire on this date.</small>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="route-status">Status</label>
-              <select id="route-status" class="form-control">
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </div>
+          <div class="form-group">
+            <label class="form-label" for="route-status">Route Status</label>
+            <select id="route-status" class="form-control">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
           </div>
 
-          <!-- Stops & Fee Configuration Section -->
+          <!-- Pass Types, Pricing & Expiry Dates Configuration Section -->
           <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; margin-top: 0.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+              <div>
+                <h4 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem;">
+                  <i class="fas fa-ticket-alt text-primary"></i> Available Pass Types, Pricing & Expiry Dates
+                </h4>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">
+                  Offer Monthly, Weekly, Yearly, or Other custom pass options for this route with individual price & expiry.
+                </p>
+              </div>
+              <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="addPassTypePreset('Monthly Pass')">
+                  <i class="fas fa-plus"></i> Monthly
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="addPassTypePreset('Weekly Pass')">
+                  <i class="fas fa-plus"></i> Weekly
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="addPassTypePreset('Yearly Pass')">
+                  <i class="fas fa-plus"></i> Yearly
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="addPassTypeRow('Other')">
+                  <i class="fas fa-plus-circle"></i> Other
+                </button>
+              </div>
+            </div>
+
+            <div id="pass-types-container" style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <!-- Dynamic Pass Type Rows -->
+            </div>
+          </div>
+
+          <!-- Stops Configuration Section -->
+          <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; margin-top: 1rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
               <div>
-                <h4 style="font-size: 1rem; font-weight: 700; color: var(--text-primary);">Route Stops & Annual Stop-Wise Pricing</h4>
-                <p style="font-size: 0.78rem; color: var(--text-muted);">Set annual pass fee for each boarding point</p>
+                <h4 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem;">
+                  <i class="fas fa-map-marker-alt text-danger"></i> Route Boarding Stops & Stations
+                </h4>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">Boarding stations where students can board</p>
               </div>
               <button type="button" class="btn btn-secondary btn-sm" onclick="addStopRow()">
                 <i class="fas fa-plus"></i> Add Boarding Stop
               </button>
             </div>
 
-            <div id="stops-container" style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div id="stops-container" style="display: flex; flex-direction: column; gap: 0.5rem;">
               <!-- Dynamic Stop Rows -->
             </div>
           </div>
@@ -412,7 +444,11 @@
       tbody.innerHTML = routes.map(route => {
         const isAct = route.status === 'Active';
         const stopsCount = route.stops ? route.stops.length : 0;
-        const stopsPreview = (route.stops || []).map(s => `${s.name} (${formatCurrency(s.fullYearFee || s.fee)})`).slice(0, 3).join(', ');
+        const stopsPreview = (route.stops || []).map(s => s.name).slice(0, 3).join(', ');
+
+        const passTypesList = (route.passTypes && route.passTypes.length > 0)
+          ? route.passTypes
+          : [{ type: 'Yearly Pass', price: (route.stops?.[0]?.fullYearFee || 20000), expiryDate: route.passExpiryDate || '' }];
 
         return `
           <tr>
@@ -429,15 +465,18 @@
             </td>
             <td>
               <div style="font-size: 0.78rem;">
-                <div><i class="fas fa-sun text-warning"></i> Morning: <strong>${route.morningTime || '07:30'}</strong></div>
-                <div><i class="fas fa-moon text-info"></i> Evening: <strong>${route.eveningTime || '16:45'}</strong></div>
+                <div><i class="fas fa-sun text-warning"></i> Morning Start: <strong>${route.morningTime || '07:30'}</strong></div>
+                <div style="margin-top: 3px;"><i class="fas fa-moon text-info"></i> Evening Start: <strong>${route.eveningTime || '16:45'}</strong></div>
               </div>
             </td>
             <td>
-              <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 0.35rem;">
-                <i class="fas fa-calendar-alt text-primary"></i> ${formatDate(route.passExpiryDate) || 'Not Set'}
+              <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                ${passTypesList.map(pt => `
+                  <span class="badge badge-info" style="font-size: 0.72rem; padding: 0.2rem 0.5rem; justify-content: flex-start; text-align: left; white-space: normal;">
+                    <strong>${pt.type}:</strong>&nbsp;${formatCurrency(pt.price)}&nbsp;<small style="opacity: 0.9;">(${formatDate(pt.expiryDate)})</small>
+                  </span>
+                `).join('')}
               </div>
-              <div style="font-size: 0.72rem; color: var(--text-muted);">Pass Expiry</div>
             </td>
             <td>
               <span class="badge badge-secondary" style="font-weight: 700;">${stopsCount} Stops</span>
@@ -468,14 +507,96 @@
       }).join('');
     }
 
-    function addStopRow(name = '', fullYear = '') {
+    // Dynamic Pass Type Row Builder
+    function addPassTypeRow(type = 'Yearly Pass', customName = '', price = '', expiryDate = '') {
+      const container = document.getElementById('pass-types-container');
+      const row = document.createElement('div');
+      row.className = 'pass-type-row';
+      row.style.cssText = 'background: var(--bg-page); padding: 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem;';
+      
+      // Auto-compute sensible default expiry date if none provided
+      if (!expiryDate) {
+        const d = new Date();
+        if (type === 'Weekly Pass') {
+          d.setDate(d.getDate() + 7);
+        } else if (type === 'Monthly Pass') {
+          d.setMonth(d.getMonth() + 1);
+        } else {
+          d.setFullYear(d.getFullYear() + 1);
+        }
+        expiryDate = d.toISOString().split('T')[0];
+      }
+
+      const isKnownType = ['Monthly Pass', 'Weekly Pass', 'Yearly Pass'].includes(type);
+      const isOther = type === 'Other' || (!isKnownType && Boolean(type));
+      const selectedDropdownVal = isOther ? 'Other' : type;
+      const customVal = isOther ? (customName || type) : '';
+
+      row.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1.5fr 1fr 1.2fr 40px; gap: 0.5rem; align-items: center;">
+          <div>
+            <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pass Plan</label>
+            <select class="form-control pass-type-select" onchange="toggleCustomPassInput(this)" required>
+              <option value="Monthly Pass" ${selectedDropdownVal === 'Monthly Pass' ? 'selected' : ''}>Monthly Pass</option>
+              <option value="Weekly Pass" ${selectedDropdownVal === 'Weekly Pass' ? 'selected' : ''}>Weekly Pass</option>
+              <option value="Yearly Pass" ${selectedDropdownVal === 'Yearly Pass' ? 'selected' : ''}>Yearly Pass</option>
+              <option value="Other" ${selectedDropdownVal === 'Other' ? 'selected' : ''}>Other (Type Manually)</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Price (₹)</label>
+            <input type="number" class="form-control pass-price-input" placeholder="₹ Price" value="${price}" required min="0">
+          </div>
+
+          <div>
+            <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Expiry Date</label>
+            <input type="date" class="form-control pass-expiry-input" value="${expiryDate}" required>
+          </div>
+
+          <div style="display: flex; align-items: flex-end; justify-content: center; height: 100%;">
+            <button type="button" class="action-btn delete" title="Remove Pass Option" onclick="this.closest('.pass-type-row').remove()" style="margin-top: 1.2rem;">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="custom-type-container" style="display: ${selectedDropdownVal === 'Other' ? 'block' : 'none'}; margin-top: 0.25rem;">
+          <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Custom Pass Title / Type</label>
+          <input type="text" class="form-control pass-custom-input" placeholder="Type custom pass name (e.g. Semester Pass, Quarterly Pass, Exam Special)" value="${customVal}" ${selectedDropdownVal === 'Other' ? 'required' : ''}>
+        </div>
+      `;
+      container.appendChild(row);
+    }
+
+    function toggleCustomPassInput(selectEl) {
+      const row = selectEl.closest('.pass-type-row');
+      const customContainer = row.querySelector('.custom-type-container');
+      const customInput = row.querySelector('.pass-custom-input');
+      if (selectEl.value === 'Other') {
+        customContainer.style.display = 'block';
+        customInput.required = true;
+        customInput.focus();
+      } else {
+        customContainer.style.display = 'none';
+        customInput.required = false;
+      }
+    }
+
+    function addPassTypePreset(presetName) {
+      let defaultPrice = 24000;
+      if (presetName === 'Monthly Pass') defaultPrice = 2500;
+      else if (presetName === 'Weekly Pass') defaultPrice = 750;
+      addPassTypeRow(presetName, '', defaultPrice, '');
+    }
+
+    function addStopRow(name = '') {
       const container = document.getElementById('stops-container');
       const row = document.createElement('div');
       row.className = 'stop-item-row';
-      row.style.cssText = 'display: grid; grid-template-columns: 2fr 1.5fr 40px; gap: 0.5rem; align-items: center; background: var(--bg-page); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);';
+      row.style.cssText = 'display: grid; grid-template-columns: 1fr 40px; gap: 0.5rem; align-items: center; background: var(--bg-page); padding: 0.4rem 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);';
       row.innerHTML = `
-        <input type="text" class="form-control stop-name-input" placeholder="Stop Name (e.g. Shamshabad)" value="${name}" required>
-        <input type="number" class="form-control stop-year-input" placeholder="Annual Pass Fee ₹" value="${fullYear}" required min="0">
+        <input type="text" class="form-control stop-name-input" placeholder="Boarding Stop Name (e.g. Shamshabad Bus Station)" value="${name}" required>
         <button type="button" class="action-btn delete" title="Remove stop" onclick="this.parentElement.remove()">
           <i class="fas fa-times"></i>
         </button>
@@ -486,15 +607,22 @@
     function openCreateRouteModal() {
       document.getElementById('route-doc-id').value = '';
       document.getElementById('route-form').reset();
+      document.getElementById('pass-types-container').innerHTML = '';
       document.getElementById('stops-container').innerHTML = '';
-      
-      // Default expiry date: May 31 of next academic year or 1 year from now
-      const defaultExpiry = new Date();
-      defaultExpiry.setFullYear(defaultExpiry.getFullYear() + 1);
-      document.getElementById('route-expiry-date').value = defaultExpiry.toISOString().split('T')[0];
 
-      addStopRow('Main Stop / Origin', 25000);
-      addStopRow('Intermediate Stop', 22000);
+      // Default presets: Add a Monthly Pass and a Yearly Pass
+      const monthDate = new Date();
+      monthDate.setMonth(monthDate.getMonth() + 1);
+      const yearDate = new Date();
+      yearDate.setFullYear(yearDate.getFullYear() + 1);
+
+      addPassTypeRow('Yearly Pass', '', 24000, yearDate.toISOString().split('T')[0]);
+      addPassTypeRow('Monthly Pass', '', 2500, monthDate.toISOString().split('T')[0]);
+
+      addStopRow('Origin / Main Terminal');
+      addStopRow('Central Junction Stop');
+      addStopRow('Campus / Destination Gate');
+
       document.getElementById('route-modal-title').textContent = 'Create Transit Route';
       openModal('route-modal');
     }
@@ -510,15 +638,28 @@
       document.getElementById('route-dest').value = route.destination || '';
       document.getElementById('route-morning').value = route.morningTime || '07:30';
       document.getElementById('route-evening').value = route.eveningTime || '16:45';
-      document.getElementById('route-expiry-date').value = route.passExpiryDate || '';
       document.getElementById('route-status').value = route.status || 'Active';
 
-      const container = document.getElementById('stops-container');
-      container.innerHTML = '';
-      if (route.stops && route.stops.length > 0) {
-        route.stops.forEach(s => addStopRow(s.name, s.fullYearFee || s.fee || ''));
+      // Populate pass types
+      const passContainer = document.getElementById('pass-types-container');
+      passContainer.innerHTML = '';
+      if (route.passTypes && route.passTypes.length > 0) {
+        route.passTypes.forEach(pt => {
+          addPassTypeRow(pt.type, pt.type, pt.price, pt.expiryDate);
+        });
       } else {
-        addStopRow('', '');
+        // Fallback from legacy route
+        const defaultFee = route.stops?.[0]?.fullYearFee || route.fullYearFee || 20000;
+        addPassTypeRow('Yearly Pass', '', defaultFee, route.passExpiryDate || '');
+      }
+
+      // Populate stops
+      const stopContainer = document.getElementById('stops-container');
+      stopContainer.innerHTML = '';
+      if (route.stops && route.stops.length > 0) {
+        route.stops.forEach(s => addStopRow(s.name));
+      } else {
+        addStopRow('');
       }
 
       document.getElementById('route-modal-title').textContent = 'Edit Transit Route';
@@ -531,20 +672,38 @@
       const docId = document.getElementById('route-doc-id').value;
       const saveBtn = document.getElementById('save-route-btn');
       const orgId = document.getElementById('route-org').value;
-      const passExpiryDate = document.getElementById('route-expiry-date').value;
 
-      if (!passExpiryDate) {
-        showToast("Please choose the pass expiry date for this route.", "warning");
+      // Collect Pass Types
+      const passTypeRows = document.querySelectorAll('.pass-type-row');
+      const passTypes = [];
+      passTypeRows.forEach(row => {
+        const selectVal = row.querySelector('.pass-type-select').value;
+        const customVal = row.querySelector('.pass-custom-input').value.trim();
+        const price = Number(row.querySelector('.pass-price-input').value) || 0;
+        const expiryDate = row.querySelector('.pass-expiry-input').value;
+        
+        const finalType = (selectVal === 'Other' && customVal) ? customVal : selectVal;
+        if (finalType && expiryDate) {
+          passTypes.push({
+            type: finalType,
+            price: price,
+            expiryDate: expiryDate
+          });
+        }
+      });
+
+      if (passTypes.length === 0) {
+        showToast("Please add at least one Pass Plan (Monthly, Weekly, Yearly, or Other) with price and expiry date.", "warning");
         return;
       }
 
+      // Collect Stops
       const stopRows = document.querySelectorAll('.stop-item-row');
       const stops = [];
       stopRows.forEach(row => {
         const name = row.querySelector('.stop-name-input').value.trim();
-        const year = Number(row.querySelector('.stop-year-input').value) || 0;
         if (name) {
-          stops.push({ name, fullYearFee: year, fee: year });
+          stops.push({ name, fee: passTypes[0].price, fullYearFee: passTypes[0].price });
         }
       });
 
@@ -553,6 +712,9 @@
         return;
       }
 
+      const morningTime = document.getElementById('route-morning').value || '07:30';
+      const eveningTime = document.getElementById('route-evening').value || '16:45';
+
       const routeData = {
         vendorId: currentVendorId,
         organizationId: orgId,
@@ -560,9 +722,11 @@
         routeName: document.getElementById('route-name').value.trim(),
         startPoint: document.getElementById('route-origin').value.trim(),
         destination: document.getElementById('route-dest').value.trim(),
-        morningTime: document.getElementById('route-morning').value,
-        eveningTime: document.getElementById('route-evening').value,
-        passExpiryDate: passExpiryDate,
+        morningTime: morningTime,
+        eveningTime: eveningTime,
+        passTypes: passTypes,
+        passExpiryDate: passTypes[0]?.expiryDate || '', // legacy fallback
+        fullYearFee: passTypes[0]?.price || 0, // legacy fallback
         status: document.getElementById('route-status').value,
         stops: stops,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()

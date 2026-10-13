@@ -151,20 +151,34 @@
                   <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Previous Pass #</div>
                   <strong id="renew-prev-pass-no" style="font-family: monospace; color: var(--primary);">-</strong>
                 </div>
+                <div>
+                  <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Bus Start Time (Morning)</div>
+                  <strong id="renew-morning-time" style="color: var(--primary);"><i class="fas fa-sun text-warning"></i> 07:30</strong>
+                </div>
+                <div>
+                  <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Bus Again Starting Time (Evening)</div>
+                  <strong id="renew-evening-time" style="color: var(--primary);"><i class="fas fa-moon text-info"></i> 16:45</strong>
+                </div>
               </div>
             </div>
 
-            <!-- Pass renewal is strictly Annual Pass (Full Year) - no dropdown needed -->
-            <input type="hidden" id="renew-pass-type" value="Full Year">
+            <!-- Pass renewal plan selection -->
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+              <label class="form-label" for="renew-pass-plan">Select Renewal Pass Duration / Type <span class="required">*</span></label>
+              <select id="renew-pass-plan" class="form-control" required onchange="onRenewPassPlanChanged()">
+                <option value="">Select pass duration...</option>
+              </select>
+              <div class="form-text" id="renew-plan-expiry-hint" style="color: var(--text-muted); font-size: 0.8rem; margin-top: 4px;"></div>
+            </div>
 
             <!-- Fee and Payment Details Callout -->
             <div style="background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%); border: 1px solid #C7D2FE; border-radius: var(--radius-md); padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
               <div>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                  <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--primary-dark); font-weight: 700; letter-spacing: 0.05em;">Annual Renewal Fare</span>
-                  <span class="badge badge-primary" style="font-size: 0.7rem; padding: 0.2rem 0.55rem;"><i class="fas fa-calendar-check"></i> Annual Pass</span>
+                  <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--primary-dark); font-weight: 700; letter-spacing: 0.05em;" id="renew-fare-label">Renewal Fare</span>
+                  <span class="badge badge-primary" style="font-size: 0.7rem; padding: 0.2rem 0.55rem;" id="renew-plan-badge"><i class="fas fa-calendar-check"></i> Renewal Pass</span>
                 </div>
-                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem;">Standard official rate for your registered boarding stop</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem;" id="renew-fare-desc">Official rate configured by institution transport vendor</div>
               </div>
               <div style="font-size: 2rem; font-weight: 800; color: var(--primary); font-family: 'Inter', sans-serif;" id="renew-fee-display">₹0</div>
             </div>
@@ -323,34 +337,80 @@
       document.getElementById('renew-stop-name').textContent = previousPass.boardingStop || '-';
       document.getElementById('renew-prev-pass-no').textContent = previousPass.passNumber || previousPass.id;
 
-      calculateRenewalFee();
+      const morning = (currentRoute && currentRoute.morningTime) || previousPass.morningTime || '07:30';
+      const evening = (currentRoute && currentRoute.eveningTime) || previousPass.eveningTime || '16:45';
+      const mEl = document.getElementById('renew-morning-time');
+      const eEl = document.getElementById('renew-evening-time');
+      if (mEl) mEl.innerHTML = `<i class="fas fa-sun text-warning"></i> ${morning}`;
+      if (eEl) eEl.innerHTML = `<i class="fas fa-moon text-info"></i> ${evening}`;
+
+      populateRenewalPassPlans();
     }
 
-    function calculateRenewalFee() {
-      if (currentRoute && currentRoute.stops) {
-        const matchedStop = currentRoute.stops.find(s => s.name === previousPass.boardingStop);
-        if (matchedStop) {
-          calculatedRenewalFee = (matchedStop.fullYearFee || matchedStop.fee || 0);
-        } else {
-          calculatedRenewalFee = previousPass.fee || 20000;
-        }
+    let selectedRenewalPlan = null;
+
+    function populateRenewalPassPlans() {
+      const planSelect = document.getElementById('renew-pass-plan');
+      planSelect.innerHTML = '<option value="">Select pass duration...</option>';
+
+      let plans = [];
+      if (currentRoute && currentRoute.passTypes && Array.isArray(currentRoute.passTypes) && currentRoute.passTypes.length > 0) {
+        plans = currentRoute.passTypes;
       } else {
-        calculatedRenewalFee = previousPass.fee || 20000;
+        const defaultExpiry = (currentRoute && currentRoute.passExpiryDate) || previousPass.validUntil || '';
+        const defaultPrice = previousPass.fee || 20000;
+        plans = [{ type: previousPass.passType || 'Yearly Pass', price: defaultPrice, expiryDate: defaultExpiry }];
       }
 
-      document.getElementById('renew-fee-display').textContent = formatCurrency(calculatedRenewalFee);
-      document.getElementById('renew-amount-txt').textContent = formatCurrency(calculatedRenewalFee);
+      plans.forEach((p, idx) => {
+        const exp = p.expiryDate ? ` (Valid until: ${formatDate(p.expiryDate)})` : '';
+        planSelect.innerHTML += `<option value="${idx}">${p.type} - ${formatCurrency(p.price)}${exp}</option>`;
+      });
 
-      // Render Dynamic Payment QR with locked amount (mode=02, am=xx.xx, tr=...)
-      const upiId = (currentOrg && currentOrg.upiId) ? currentOrg.upiId : 'transport@upi';
-      const payeeName = (currentOrg && currentOrg.payeeName) ? currentOrg.payeeName : previousPass.organizationName;
+      // Default select matching previous pass or first plan
+      const matchIdx = plans.findIndex(p => p.type === previousPass.passType);
+      planSelect.value = matchIdx !== -1 ? matchIdx.toString() : "0";
+      onRenewPassPlanChanged();
+    }
 
-      document.getElementById('renew-payee-name').textContent = payeeName;
-      document.getElementById('renew-upi-id').textContent = upiId;
+    function onRenewPassPlanChanged() {
+      const planSelect = document.getElementById('renew-pass-plan');
+      const val = planSelect.value;
 
-      const trId = 'REN' + Date.now().toString().slice(-8) + Math.random().toString(36).substring(2, 6).toUpperCase();
-      const upiUri = buildDynamicUpiUri(upiId, payeeName, calculatedRenewalFee, `Bus Pass Renewal - ${currentStudent ? currentStudent.email : 'Student'}`, trId);
-      generatePassQRCode('renew-payment-qr', upiUri, 150, 150);
+      let plans = [];
+      if (currentRoute && currentRoute.passTypes && Array.isArray(currentRoute.passTypes) && currentRoute.passTypes.length > 0) {
+        plans = currentRoute.passTypes;
+      } else {
+        const defaultExpiry = (currentRoute && currentRoute.passExpiryDate) || previousPass.validUntil || '';
+        const defaultPrice = previousPass.fee || 20000;
+        plans = [{ type: previousPass.passType || 'Yearly Pass', price: defaultPrice, expiryDate: defaultExpiry }];
+      }
+
+      if (val !== '') {
+        selectedRenewalPlan = plans[parseInt(val, 10)];
+        calculatedRenewalFee = Number(selectedRenewalPlan.price || 0);
+
+        document.getElementById('renew-fee-display').textContent = formatCurrency(calculatedRenewalFee);
+        document.getElementById('renew-amount-txt').textContent = formatCurrency(calculatedRenewalFee);
+        document.getElementById('renew-fare-label').textContent = `${selectedRenewalPlan.type} Fare`;
+        document.getElementById('renew-plan-badge').innerHTML = `<i class="fas fa-ticket-alt"></i> ${selectedRenewalPlan.type}`;
+        
+        const expText = selectedRenewalPlan.expiryDate
+          ? `Pass Valid Until: <strong>${formatDate(selectedRenewalPlan.expiryDate)}</strong>`
+          : 'Standard validity period';
+        document.getElementById('renew-plan-expiry-hint').innerHTML = expText;
+
+        // Render Dynamic Payment QR with locked amount
+        const upiId = (currentOrg && currentOrg.upiId) ? currentOrg.upiId : 'transport@upi';
+        const payeeName = (currentOrg && currentOrg.payeeName) ? currentOrg.payeeName : previousPass.organizationName;
+
+        document.getElementById('renew-payee-name').textContent = payeeName;
+        document.getElementById('renew-upi-id').textContent = upiId;
+
+        const trId = 'REN' + Date.now().toString().slice(-8) + Math.random().toString(36).substring(2, 6).toUpperCase();
+        const upiUri = buildDynamicUpiUri(upiId, payeeName, calculatedRenewalFee, `${selectedRenewalPlan.type} Renewal - ${currentStudent ? currentStudent.email : 'Student'}`, trId);
+        generatePassQRCode('renew-payment-qr', upiUri, 150, 150);
+      }
     }
 
     async function handleRenewProofSelected(e) {
@@ -381,7 +441,10 @@
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Submitting Renewal...';
 
-      const passType = document.getElementById('renew-pass-type').value;
+      const passType = selectedRenewalPlan ? selectedRenewalPlan.type : (previousPass.passType || 'Bus Pass');
+      const passExpiryDate = (selectedRenewalPlan && selectedRenewalPlan.expiryDate) || (currentRoute && currentRoute.passExpiryDate) || '';
+      const morningTime = (currentRoute && currentRoute.morningTime) || previousPass.morningTime || '07:30';
+      const eveningTime = (currentRoute && currentRoute.eveningTime) || previousPass.eveningTime || '16:45';
 
       const appData = {
         studentId: currentStudent.uid,
@@ -396,6 +459,9 @@
         boardingStop: previousPass.boardingStop,
         busId: previousPass.busId || '',
         passType: passType,
+        passExpiryDate: passExpiryDate,
+        morningTime: morningTime,
+        eveningTime: eveningTime,
         fee: calculatedRenewalFee,
         isRenewal: true,
         previousPassId: previousPass.id,
@@ -421,11 +487,6 @@
         setTimeout(() => {
           window.location.href = 'my-applications.html';
         }, 1000);
-      } catch (err) {
-        console.error("Renewal error:", err);
-        showToast("Error submitting renewal: " + err.message, "danger");
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-redo"></i> Submit Pass Renewal Request';
       }
     });
   </script>

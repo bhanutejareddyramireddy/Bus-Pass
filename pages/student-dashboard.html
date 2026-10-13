@@ -327,8 +327,11 @@
               <div style="flex: 1; min-width: 0;">
                 <div style="font-family: monospace; font-size: 0.95rem; font-weight: 800; color: #818CF8;">${pass.passNumber}</div>
                 <div style="font-size: 1rem; font-weight: 700; color: #fff; margin-top: 2px;">${pass.routeName || 'Assigned Route'}</div>
-                <div style="font-size: 0.78rem; color: #CBD5E1; margin-top: 2px;">Stop: <strong>${pass.boardingStop || '-'}</strong></div>
+                <div style="font-size: 0.78rem; color: #CBD5E1; margin-top: 2px;">Stop: <strong>${pass.boardingStop || '-'}</strong> | Type: <span class="badge badge-primary" style="font-size: 0.7rem; padding: 1px 6px;">${pass.passType || 'Bus Pass'}</span></div>
                 <div style="font-size: 0.78rem; color: #CBD5E1;">Bus: <strong>${pass.busNumber || '-'}</strong></div>
+                <div style="font-size: 0.78rem; color: #FDE047; margin-top: 2px;">
+                  <i class="fas fa-sun"></i> Morning Start: <strong>${pass.morningTime || '07:30'}</strong> | <i class="fas fa-moon"></i> Evening Start: <strong>${pass.eveningTime || '16:45'}</strong>
+                </div>
                 <div style="font-size: 0.78rem; color: #A7F3D0; margin-top: 3px;" id="dash-conductor-box">
                   <i class="fas fa-id-badge"></i> Conductor: <span id="dash-cond-name">${pass.conductorName || 'Assigned'}</span>
                   <span id="dash-cond-phone">${pass.conductorPhone ? ` | <a href="tel:${pass.conductorPhone}" style="color: #6EE7B7; font-weight: 700; text-decoration: underline;"><i class="fas fa-phone-alt"></i> ${pass.conductorPhone}</a>` : ''}</span>

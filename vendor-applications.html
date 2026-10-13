@@ -234,6 +234,7 @@
               <div><span style="color: var(--text-muted);">Boarding Stop:</span> <strong id="modal-stop-name">-</strong></div>
               <div><span style="color: var(--text-muted);">Pass Type:</span> <span class="badge badge-primary" id="modal-pass-type">-</span></div>
               <div><span style="color: var(--text-muted);">Pass Expiry Date:</span> <strong id="modal-expiry-date" class="text-primary">-</strong></div>
+              <div><span style="color: var(--text-muted);">Bus Timings:</span> <span id="modal-route-timings">-</span></div>
               <div><span style="color: var(--text-muted);">Calculated Fee:</span> <strong style="font-size: 1.1rem; color: var(--primary);" id="modal-fee">-</strong></div>
               <div><span style="color: var(--text-muted);">Applied Date:</span> <span id="modal-date">-</span></div>
             </div>
@@ -321,6 +322,7 @@
     let currentVendorId = null;
     let organizationsMap = {};
     let busesCache = [];
+    let routesCache = [];
     let applicationsList = [];
     let selectedApp = null;
 
@@ -330,6 +332,7 @@
       currentVendorId = user.uid;
       await loadOrganizations();
       await loadBusesCache();
+      await loadRoutesCache();
       loadApplications();
     });
 
@@ -350,6 +353,14 @@
       busesCache = [];
       snap.forEach(doc => {
         busesCache.push({ id: doc.id, ...doc.data() });
+      });
+    }
+
+    async function loadRoutesCache() {
+      const snap = await db.collection('routes').where('vendorId', '==', currentVendorId).get();
+      routesCache = [];
+      snap.forEach(doc => {
+        routesCache.push({ id: doc.id, ...doc.data() });
       });
     }
 
@@ -505,12 +516,27 @@
       // Populate Route Expiry Date
       let routeExpiry = selectedApp.passExpiryDate || '';
       if (!routeExpiry && selectedApp.routeId) {
-        const matchedRoute = routesList.find(r => r.id === selectedApp.routeId);
+        const matchedRoute = routesCache.find(r => r.id === selectedApp.routeId);
         if (matchedRoute && matchedRoute.passExpiryDate) {
           routeExpiry = matchedRoute.passExpiryDate;
         }
       }
-      document.getElementById('modal-expiry-date').textContent = routeExpiry ? formatDate(routeExpiry) : 'Standard Annual Validity';
+      document.getElementById('modal-expiry-date').textContent = routeExpiry ? formatDate(routeExpiry) : 'Standard Validity';
+
+      // Populate Route Timings
+      let morning = selectedApp.morningTime || '';
+      let evening = selectedApp.eveningTime || '';
+      if ((!morning || !evening) && selectedApp.routeId) {
+        const matchedRoute = routesCache.find(r => r.id === selectedApp.routeId);
+        if (matchedRoute) {
+          morning = morning || matchedRoute.morningTime || '';
+          evening = evening || matchedRoute.eveningTime || '';
+        }
+      }
+      const timingEl = document.getElementById('modal-route-timings');
+      if (timingEl) {
+        timingEl.innerHTML = `<strong style="color: var(--primary);"><i class="fas fa-sun text-warning"></i> ${morning || '07:30'}</strong> &nbsp;|&nbsp; <strong style="color: var(--primary);"><i class="fas fa-moon text-info"></i> ${evening || '16:45'}</strong>`;
+      }
 
       // Render Proof Screenshot (checking both proofUrl and screenshotUrl)
       const proofBox = document.getElementById('modal-proof-container');
@@ -583,7 +609,7 @@
         const validFrom = new Date().toISOString().split('T')[0];
         let validUntil = selectedApp.passExpiryDate || '';
         if (!validUntil && selectedApp.routeId) {
-          const matchedRoute = routesList.find(r => r.id === selectedApp.routeId);
+          const matchedRoute = routesCache.find(r => r.id === selectedApp.routeId);
           if (matchedRoute && matchedRoute.passExpiryDate) {
             validUntil = matchedRoute.passExpiryDate;
           }
@@ -600,6 +626,17 @@
         const passNumber = `PASS-${validYear}-${randHex}`;
 
         const remarks = document.getElementById('review-remarks').value.trim();
+
+        // Retrieve route morning/evening times
+        let routeMorning = selectedApp.morningTime || '';
+        let routeEvening = selectedApp.eveningTime || '';
+        if ((!routeMorning || !routeEvening) && selectedApp.routeId) {
+          const matchedRoute = routesCache.find(r => r.id === selectedApp.routeId);
+          if (matchedRoute) {
+            routeMorning = routeMorning || matchedRoute.morningTime || '';
+            routeEvening = routeEvening || matchedRoute.eveningTime || '';
+          }
+        }
 
         // Look up assigned Conductor contact info
         let conductorName = '';
@@ -634,13 +671,13 @@
           busNumber: assignedBus ? assignedBus.busNumber : 'BUS-101',
           registrationNumber: assignedBus ? assignedBus.registrationNumber : '',
           driverName: assignedBus ? assignedBus.driverName : '',
-          morningTime: assignedBus ? assignedBus.morningTime : '07:30',
-          eveningTime: assignedBus ? assignedBus.eveningTime : '16:45',
+          morningTime: (assignedBus && assignedBus.morningTime) || routeMorning || '07:30',
+          eveningTime: (assignedBus && assignedBus.eveningTime) || routeEvening || '16:45',
           conductorName: conductorName,
           conductorPhone: conductorPhone,
           conductorId: conductorId,
           passNumber: passNumber,
-          passType: selectedApp.passType || 'Full Year',
+          passType: selectedApp.passType || 'Bus Pass',
           fee: selectedApp.fee || 0,
           validFrom: validFrom,
           validUntil: validUntil,

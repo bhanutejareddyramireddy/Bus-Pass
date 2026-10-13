@@ -147,29 +147,46 @@
               </div>
             </div>
 
-            <!-- STEP 2: Select Boarding Stop -->
+            <!-- STEP 2: Select Boarding Stop & Pass Plan -->
             <div class="step-content" id="step-2">
-              <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.35rem;">Step 2: Boarding Stop</h3>
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Pick your nearest boarding station to compute the annual pass fee.</p>
+              <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.35rem;">Step 2: Boarding Stop & Pass Duration</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Pick your nearest boarding station and choose your preferred pass type configured for this route.</p>
 
               <div class="form-group">
                 <label class="form-label" for="app-stop">Select Boarding Stop <span class="required">*</span></label>
-                <select id="app-stop" class="form-control" required onchange="calculateFee()">
+                <select id="app-stop" class="form-control" required>
                   <option value="">Choose route first...</option>
                 </select>
               </div>
 
-              <!-- Only Annual Pass is supported, no dropdown needed -->
-              <input type="hidden" id="app-pass-type" value="Full Year">
+              <div class="form-group" style="margin-top: 1.25rem;">
+                <label class="form-label" for="app-pass-plan">Select Pass Duration / Type <span class="required">*</span></label>
+                <select id="app-pass-plan" class="form-control" required onchange="onPassPlanSelected()">
+                  <option value="">Choose pass type...</option>
+                </select>
+                <div class="form-text">Choose from Monthly, Weekly, Yearly, or other custom plans configured by the transport vendor.</div>
+              </div>
+
+              <!-- Route Schedule Timings Display -->
+              <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-top: 1.25rem; font-size: 0.85rem; display: flex; flex-wrap: wrap; gap: 1.5rem;">
+                <div>
+                  <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 700; display: block;">Bus Start Time (Morning):</span>
+                  <strong id="step2-morning-time" style="color: var(--primary); font-size: 0.95rem;"><i class="fas fa-sun text-warning"></i> 07:30</strong>
+                </div>
+                <div>
+                  <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 700; display: block;">Bus Again Starting Time (Evening/Return):</span>
+                  <strong id="step2-evening-time" style="color: var(--primary); font-size: 0.95rem;"><i class="fas fa-moon text-info"></i> 16:45</strong>
+                </div>
+              </div>
 
               <div style="background: var(--bg-page); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; margin-top: 1rem;">
                 <div>
-                  <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Annual Pass Fee</div>
+                  <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;" id="display-fee-label">Pass Fee</div>
                   <div style="font-size: 1.75rem; font-weight: 800; color: var(--primary);" id="display-calculated-fee">₹0</div>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">Annual validity configured by institution transport vendor</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);" id="display-pass-expiry-hint">Select a pass duration to see validity expiry date</div>
                 </div>
-                <div class="badge badge-success" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">
-                  <i class="fas fa-calendar-check"></i> Annual Pass
+                <div class="badge badge-success" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;" id="selected-pass-type-badge">
+                  <i class="fas fa-ticket-alt"></i> Select Pass Type
                 </div>
               </div>
 
@@ -243,7 +260,9 @@
                   <div><span style="color: var(--text-muted);">Institution:</span> <strong id="sum-org">-</strong></div>
                   <div><span style="color: var(--text-muted);">Selected Route:</span> <strong id="sum-route">-</strong></div>
                   <div><span style="color: var(--text-muted);">Boarding Stop:</span> <strong id="sum-stop">-</strong></div>
-                  <div><span style="color: var(--text-muted);">Pass Duration:</span> <strong id="sum-type">-</strong></div>
+                  <div><span style="color: var(--text-muted);">Pass Type:</span> <strong id="sum-type">-</strong></div>
+                  <div><span style="color: var(--text-muted);">Pass Expiry Date:</span> <strong id="sum-expiry" style="color: var(--success);">-</strong></div>
+                  <div><span style="color: var(--text-muted);">Bus Timings:</span> <strong id="sum-timings">-</strong></div>
                   <div><span style="color: var(--text-muted);">Pass Fee:</span> <strong style="color: var(--primary); font-size: 1.05rem;" id="sum-fee">-</strong></div>
                   <div><span style="color: var(--text-muted);">UTR / Txn ID:</span> <strong style="font-family: monospace;" id="sum-txn">-</strong></div>
                 </div>
@@ -289,6 +308,7 @@
     let organizationsList = [];
     let routesCache = [];
     let selectedRoute = null;
+    let selectedPassPlan = null;
     let calculatedFee = 0;
     let proofDataUrl = '';
 
@@ -370,32 +390,102 @@
       stopSelect.innerHTML = '<option value="">Select your boarding stop...</option>';
 
       if (selectedRoute) {
-        let expiryText = selectedRoute.passExpiryDate ? ` | <i class="fas fa-calendar-check text-success"></i> Pass Valid Until: <strong>${formatDate(selectedRoute.passExpiryDate)}</strong>` : '';
-        hint.innerHTML = `<i class="fas fa-clock text-primary"></i> Pickup: <strong>${selectedRoute.morningTime || '07:30'}</strong> | Return: <strong>${selectedRoute.eveningTime || '16:45'}</strong>${expiryText}`;
+        const morning = selectedRoute.morningTime || '07:30';
+        const evening = selectedRoute.eveningTime || '16:45';
+
+        hint.innerHTML = `
+          <div style="margin-top: 0.75rem; background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: var(--radius-sm); padding: 0.85rem 1rem; display: flex; flex-wrap: wrap; gap: 1.5rem; font-size: 0.88rem;">
+            <div>
+              <span style="color: var(--text-muted); font-size: 0.75rem; display: block; text-transform: uppercase; font-weight: 700;">Bus Start Time (Morning)</span>
+              <span style="font-weight: 700; color: var(--primary); font-size: 0.95rem;"><i class="fas fa-sun text-warning"></i> ${morning}</span>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); font-size: 0.75rem; display: block; text-transform: uppercase; font-weight: 700;">Bus Again Starting Time (Evening / Return)</span>
+              <span style="font-weight: 700; color: var(--primary); font-size: 0.95rem;"><i class="fas fa-moon text-info"></i> ${evening}</span>
+            </div>
+          </div>
+        `;
+
+        const step2M = document.getElementById('step2-morning-time');
+        const step2E = document.getElementById('step2-evening-time');
+        if (step2M) step2M.innerHTML = `<i class="fas fa-sun text-warning"></i> ${morning}`;
+        if (step2E) step2E.innerHTML = `<i class="fas fa-moon text-info"></i> ${evening}`;
 
         if (selectedRoute.stops && Array.isArray(selectedRoute.stops)) {
           selectedRoute.stops.forEach(s => {
-            const fee = s.fullYearFee || s.fee || 0;
-            stopSelect.innerHTML += `<option value="${s.name}">${s.name} (Annual Fee: ${formatCurrency(fee)})</option>`;
+            stopSelect.innerHTML += `<option value="${s.name}">${s.name}</option>`;
           });
         }
+
+        populatePassPlans(selectedRoute);
       } else {
         hint.innerHTML = '';
+        const planSelect = document.getElementById('app-pass-plan');
+        if (planSelect) planSelect.innerHTML = '<option value="">Choose route first...</option>';
+        selectedPassPlan = null;
+        calculatedFee = 0;
       }
     }
 
-    function calculateFee() {
-      if (!selectedRoute) return;
-      const stopName = document.getElementById('app-stop').value;
+    function populatePassPlans(route) {
+      const planSelect = document.getElementById('app-pass-plan');
+      planSelect.innerHTML = '<option value="">Select pass duration / type...</option>';
 
-      const matchedStop = (selectedRoute.stops || []).find(s => s.name === stopName);
-      if (matchedStop) {
-        calculatedFee = Number(matchedStop.fullYearFee || matchedStop.fee || 0);
+      let plans = [];
+      if (route.passTypes && Array.isArray(route.passTypes) && route.passTypes.length > 0) {
+        plans = route.passTypes;
       } else {
-        calculatedFee = 0;
+        // Fallback for older routes
+        const defaultExpiry = route.passExpiryDate || '';
+        const defaultPrice = (route.stops && route.stops[0]) ? (route.stops[0].fullYearFee || route.stops[0].fee || 20000) : 20000;
+        plans = [{ type: 'Yearly Pass', price: defaultPrice, expiryDate: defaultExpiry }];
       }
 
-      document.getElementById('display-calculated-fee').textContent = formatCurrency(calculatedFee);
+      plans.forEach((p, idx) => {
+        const exp = p.expiryDate ? ` (Valid until: ${formatDate(p.expiryDate)})` : '';
+        planSelect.innerHTML += `<option value="${idx}">${p.type} - ${formatCurrency(p.price)}${exp}</option>`;
+      });
+
+      if (plans.length === 1) {
+        planSelect.value = "0";
+        onPassPlanSelected();
+      }
+    }
+
+    function onPassPlanSelected() {
+      if (!selectedRoute) return;
+      const planSelect = document.getElementById('app-pass-plan');
+      const val = planSelect.value;
+
+      let plans = [];
+      if (selectedRoute.passTypes && Array.isArray(selectedRoute.passTypes) && selectedRoute.passTypes.length > 0) {
+        plans = selectedRoute.passTypes;
+      } else {
+        const defaultExpiry = selectedRoute.passExpiryDate || '';
+        const defaultPrice = (selectedRoute.stops && selectedRoute.stops[0]) ? (selectedRoute.stops[0].fullYearFee || selectedRoute.stops[0].fee || 20000) : 20000;
+        plans = [{ type: 'Yearly Pass', price: defaultPrice, expiryDate: defaultExpiry }];
+      }
+
+      if (val !== '') {
+        selectedPassPlan = plans[parseInt(val, 10)];
+        calculatedFee = Number(selectedPassPlan.price || 0);
+
+        document.getElementById('display-calculated-fee').textContent = formatCurrency(calculatedFee);
+        document.getElementById('display-fee-label').textContent = `${selectedPassPlan.type} Fee`;
+        document.getElementById('selected-pass-type-badge').innerHTML = `<i class="fas fa-check-circle"></i> ${selectedPassPlan.type}`;
+
+        const expText = selectedPassPlan.expiryDate
+          ? `Pass Valid Until: <strong>${formatDate(selectedPassPlan.expiryDate)}</strong>`
+          : 'Standard validity period';
+        document.getElementById('display-pass-expiry-hint').innerHTML = expText;
+      } else {
+        selectedPassPlan = null;
+        calculatedFee = 0;
+        document.getElementById('display-calculated-fee').textContent = '₹0';
+        document.getElementById('display-fee-label').textContent = 'Pass Fee';
+        document.getElementById('selected-pass-type-badge').innerHTML = `<i class="fas fa-ticket-alt"></i> Select Pass Type`;
+        document.getElementById('display-pass-expiry-hint').textContent = 'Select a pass duration to see validity expiry date';
+      }
     }
 
     // Multi-Step Navigation
@@ -410,6 +500,10 @@
       if (stepNumber === 3) {
         if (!document.getElementById('app-stop').value) {
           showToast("Please select your boarding stop.", "warning");
+          return;
+        }
+        if (!selectedPassPlan) {
+          showToast("Please choose a pass duration / type.", "warning");
           return;
         }
         setupPaymentScreen();
@@ -462,8 +556,6 @@
     }
 
     function setupPaymentScreen() {
-      calculateFee(); // Ensure freshly computed from stop selection
-
       const orgId = document.getElementById('app-org').value;
       const org = organizationsList.find(o => o.id === orgId);
 
@@ -478,7 +570,8 @@
       // When PhonePe scans this QR, the amount directly populates and cannot be manually edited!
       const trId = 'BP' + Date.now().toString().slice(-8) + Math.random().toString(36).substring(2, 6).toUpperCase();
       const studentName = (studentData && studentData.name) ? studentData.name : 'Student';
-      const upiUri = buildDynamicUpiUri(upiId, payeeName, calculatedFee, `Bus Pass Fee - ${studentName}`, trId);
+      const passName = selectedPassPlan ? selectedPassPlan.type : 'Bus Pass';
+      const upiUri = buildDynamicUpiUri(upiId, payeeName, calculatedFee, `${passName} Fee - ${studentName}`, trId);
 
       generatePassQRCode('dynamic-payment-qr', upiUri, 170, 170);
     }
@@ -490,7 +583,13 @@
       document.getElementById('sum-org').textContent = org ? org.name : '-';
       document.getElementById('sum-route').textContent = selectedRoute ? selectedRoute.routeName : '-';
       document.getElementById('sum-stop').textContent = document.getElementById('app-stop').value;
-      document.getElementById('sum-type').textContent = document.getElementById('app-pass-type').value;
+      document.getElementById('sum-type').textContent = selectedPassPlan ? selectedPassPlan.type : 'Bus Pass';
+      document.getElementById('sum-expiry').textContent = (selectedPassPlan && selectedPassPlan.expiryDate) ? formatDate(selectedPassPlan.expiryDate) : (selectedRoute.passExpiryDate ? formatDate(selectedRoute.passExpiryDate) : 'Standard Validity');
+
+      const morning = selectedRoute ? (selectedRoute.morningTime || '07:30') : '07:30';
+      const evening = selectedRoute ? (selectedRoute.eveningTime || '16:45') : '16:45';
+      document.getElementById('sum-timings').textContent = `Morning: ${morning} | Evening Return: ${evening}`;
+
       document.getElementById('sum-fee').textContent = formatCurrency(calculatedFee);
       document.getElementById('sum-txn').textContent = document.getElementById('transaction-id').value.trim();
     }
@@ -505,7 +604,10 @@
       const orgId = document.getElementById('app-org').value;
       const org = organizationsList.find(o => o.id === orgId);
       const stopName = document.getElementById('app-stop').value;
-      const passType = document.getElementById('app-pass-type').value;
+      const passType = selectedPassPlan ? selectedPassPlan.type : 'Bus Pass';
+      const passExpiryDate = (selectedPassPlan && selectedPassPlan.expiryDate) || selectedRoute.passExpiryDate || '';
+      const morningTime = selectedRoute.morningTime || '07:30';
+      const eveningTime = selectedRoute.eveningTime || '16:45';
       const txnId = document.getElementById('transaction-id').value.trim();
 
       const applicationDoc = {
@@ -518,7 +620,9 @@
         organizationName: org.name,
         routeId: selectedRoute.id,
         routeName: selectedRoute.routeName,
-        passExpiryDate: selectedRoute.passExpiryDate || '',
+        morningTime: morningTime,
+        eveningTime: eveningTime,
+        passExpiryDate: passExpiryDate,
         boardingStop: stopName,
         passType: passType,
         fee: calculatedFee,

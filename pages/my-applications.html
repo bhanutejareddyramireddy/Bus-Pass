@@ -338,7 +338,10 @@
           <div><span style="color: var(--text-muted);">Organization:</span> <strong>${app.organizationName}</strong></div>
           <div><span style="color: var(--text-muted);">Route:</span> <strong>${app.routeName}</strong></div>
           <div><span style="color: var(--text-muted);">Boarding Stop:</span> <strong>${app.boardingStop}</strong></div>
-          <div><span style="color: var(--text-muted);">Pass Type:</span> <span>${app.passType}</span></div>
+          <div><span style="color: var(--text-muted);">Pass Type:</span> <span class="badge badge-primary">${app.passType || 'Bus Pass'}</span></div>
+          <div><span style="color: var(--text-muted);">Pass Valid Until:</span> <strong style="color: var(--success);">${app.passExpiryDate ? formatDate(app.passExpiryDate) : 'Configured Expiry'}</strong></div>
+          <div><span style="color: var(--text-muted);">Bus Start Time (Morning):</span> <strong style="color: var(--primary);"><i class="fas fa-sun text-warning"></i> ${app.morningTime || '07:30'}</strong></div>
+          <div><span style="color: var(--text-muted);">Bus Again Starting Time (Evening):</span> <strong style="color: var(--primary);"><i class="fas fa-moon text-info"></i> ${app.eveningTime || '16:45'}</strong></div>
           <div><span style="color: var(--text-muted);">Calculated Fee:</span> <strong style="color: var(--primary);">${formatCurrency(app.fee)}</strong></div>
           <div><span style="color: var(--text-muted);">Transaction Reference:</span> <span style="font-family: monospace;">${app.transactionId || '-'}</span></div>
           <div><span style="color: var(--text-muted);">Payment Status:</span> <strong>${app.paymentStatus}</strong></div>
