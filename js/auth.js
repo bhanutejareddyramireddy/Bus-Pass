@@ -68,15 +68,17 @@ function terminateUserSession() {
   } catch (e) {}
 }
 
-function isSessionLoggedOut() {
+function isExplicitlyLoggedOut() {
   try {
-    const isExplicitlyLoggedOut = sessionStorage.getItem('bp_logged_out') === 'true' || 
-                                 localStorage.getItem('bp_logged_out') === 'true';
-    const isSessionMissing = localStorage.getItem('bp_session_active') !== 'true';
-    return isExplicitlyLoggedOut || isSessionMissing;
+    return sessionStorage.getItem('bp_logged_out') === 'true' || 
+           localStorage.getItem('bp_logged_out') === 'true';
   } catch (e) {
     return false;
   }
+}
+
+function isSessionLoggedOut() {
+  return isExplicitlyLoggedOut();
 }
 
 function isCurrentPageProtected() {
@@ -88,8 +90,8 @@ function isCurrentPageProtected() {
 }
 
 // Immediate execution on script parse:
-// If on a protected page and session is not active / logged out, immediately hide page and redirect!
-if (isCurrentPageProtected() && isSessionLoggedOut()) {
+// If on a protected page and user has explicitly logged out, immediately hide page and redirect!
+if (isCurrentPageProtected() && isExplicitlyLoggedOut()) {
   document.documentElement.style.display = 'none';
   let initialRole = 'student';
   const currentPath = (window.location.pathname || window.location.href).toLowerCase();
@@ -102,7 +104,7 @@ if (isCurrentPageProtected() && isSessionLoggedOut()) {
 // When Chrome navigates back into a protected page after logout,
 // Chrome fires pageshow. This listener ensures the cached page is instantly wiped and replaced.
 window.addEventListener('pageshow', function (event) {
-  if (isCurrentPageProtected() && isSessionLoggedOut()) {
+  if (isCurrentPageProtected() && isExplicitlyLoggedOut()) {
     document.documentElement.style.display = 'none';
     let targetRole = window._expectedRole || 'student';
     const currentPath = (window.location.pathname || window.location.href).toLowerCase();
@@ -117,7 +119,7 @@ window.addEventListener('pageshow', function (event) {
 
 // Popstate guard for history back navigation
 window.addEventListener('popstate', function () {
-  if (isCurrentPageProtected() && isSessionLoggedOut()) {
+  if (isCurrentPageProtected() && isExplicitlyLoggedOut()) {
     document.documentElement.style.display = 'none';
     let targetRole = window._expectedRole || 'student';
     redirectToLogin(targetRole);
@@ -126,8 +128,8 @@ window.addEventListener('popstate', function () {
 
 // Cross-tab synchronization: If user logs out in another tab, terminate session immediately
 window.addEventListener('storage', function (e) {
-  if (e.key === 'bp_logged_out' || e.key === 'bp_session_active') {
-    if (isCurrentPageProtected() && isSessionLoggedOut()) {
+  if (e.key === 'bp_logged_out') {
+    if (isCurrentPageProtected() && isExplicitlyLoggedOut()) {
       document.documentElement.style.display = 'none';
       let targetRole = window._expectedRole || 'student';
       redirectToLogin(targetRole);
@@ -163,8 +165,14 @@ async function registerVendor(name, email, password, phone, businessName = '') {
 // Vendor Login
 async function loginVendor(email, password) {
   try {
+    sessionStorage.removeItem('bp_logged_out');
+    localStorage.removeItem('bp_logged_out');
+
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
     const uid = userCredential.user.uid;
+
+    establishUserSession('vendor', uid);
+
     const userDoc = await db.collection('users').doc(uid).get();
 
     if (!userDoc.exists || userDoc.data().role !== 'vendor') {
@@ -173,7 +181,6 @@ async function loginVendor(email, password) {
       throw new Error("Access denied: Not registered as a Transport Vendor.");
     }
 
-    establishUserSession('vendor', uid);
     return { user: userCredential.user, userData: userDoc.data() };
   } catch (error) {
     console.error("Vendor login error:", error);
@@ -208,8 +215,14 @@ async function registerStudent(name, email, password, phone) {
 // Student Login
 async function loginStudent(email, password) {
   try {
+    sessionStorage.removeItem('bp_logged_out');
+    localStorage.removeItem('bp_logged_out');
+
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
     const uid = userCredential.user.uid;
+
+    establishUserSession('student', uid);
+
     const userDoc = await db.collection('users').doc(uid).get();
 
     if (!userDoc.exists || userDoc.data().role !== 'student') {
@@ -218,7 +231,6 @@ async function loginStudent(email, password) {
       throw new Error("Access denied: Not registered as a Student.");
     }
 
-    establishUserSession('student', uid);
     return { user: userCredential.user, userData: userDoc.data() };
   } catch (error) {
     console.error("Student login error:", error);
@@ -229,6 +241,9 @@ async function loginStudent(email, password) {
 // Conductor Login using Conductor ID & Password (No email typed)
 async function loginConductor(conductorId, password) {
   try {
+    sessionStorage.removeItem('bp_logged_out');
+    localStorage.removeItem('bp_logged_out');
+
     let cleanId = conductorId.trim().toUpperCase().replace(/\s+/g, '');
     
     // Auto-normalize if user typed ID without 'CON-' prefix (e.g., '7F42A9')
@@ -260,6 +275,8 @@ async function loginConductor(conductorId, password) {
     }
 
     const uid = userCredential.user.uid;
+    establishUserSession('conductor', uid);
+
     let userDoc = await db.collection('users').doc(uid).get();
     let userData = userDoc.exists ? userDoc.data() : null;
 
@@ -296,7 +313,6 @@ async function loginConductor(conductorId, password) {
       }
     }
 
-    establishUserSession('conductor', uid);
     return { user: userCredential.user, userData: userData };
   } catch (error) {
     console.error("Conductor login error:", error);
@@ -459,7 +475,7 @@ function requireAuth(expectedRole, onReady) {
   window._expectedRole = expectedRole;
 
   // 1. Instant Synchronous Check
-  if (isSessionLoggedOut()) {
+  if (isExplicitlyLoggedOut()) {
     document.documentElement.style.display = 'none';
     if (typeof auth !== 'undefined' && auth.signOut) {
       auth.signOut().catch(() => {});
@@ -469,7 +485,7 @@ function requireAuth(expectedRole, onReady) {
   }
 
   auth.onAuthStateChanged(async (user) => {
-    if (!user || isSessionLoggedOut()) {
+    if (!user || isExplicitlyLoggedOut()) {
       terminateUserSession();
       document.documentElement.style.display = 'none';
       redirectToLogin(expectedRole);

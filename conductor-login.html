@@ -159,22 +159,16 @@
       }
     });
 
-    // Auto redirect if already logged in as conductor (skip if recently logged out)
+    // Auto redirect if already logged in as conductor (skip if logged out)
     auth.onAuthStateChanged(async (user) => {
-      if (typeof isSessionLoggedOut === 'function' && isSessionLoggedOut()) {
-        if (user) {
-          try { await auth.signOut(); } catch(e) {}
+      if (!user) return;
+      if (typeof isSessionLoggedOut === 'function' && isSessionLoggedOut()) return;
+      try {
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        if (userDoc.exists && userDoc.data().role === 'conductor') {
+          window.location.replace('conductor-dashboard.html');
         }
-        return;
-      }
-      if (user) {
-        try {
-          const userDoc = await db.collection('users').doc(user.uid).get();
-          if (userDoc.exists && userDoc.data().role === 'conductor') {
-            window.location.replace('conductor-dashboard.html');
-          }
-        } catch(e) {}
-      }
+      } catch(e) {}
     });
   </script>
 </body>
