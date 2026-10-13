@@ -145,7 +145,7 @@
         await registerStudent(name, email, password, phone);
         showToast("Account created successfully! Welcome to BusPass.", "success");
         setTimeout(() => {
-          window.location.href = 'pages/student-dashboard.html';
+          window.location.replace('pages/student-dashboard.html');
         }, 1000);
       } catch (error) {
         showToast(error.message, "danger", "Registration Failed");

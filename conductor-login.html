@@ -150,7 +150,7 @@
         await loginConductor(conductorId, password);
         showToast("Conductor authenticated successfully!", "success");
         setTimeout(() => {
-          window.location.href = 'conductor-dashboard.html';
+          window.location.replace('conductor-dashboard.html');
         }, 800);
       } catch (error) {
         showToast(error.message, "danger", "Authentication Failed");
@@ -159,13 +159,19 @@
       }
     });
 
-    // Auto redirect if already logged in as conductor
+    // Auto redirect if already logged in as conductor (skip if recently logged out)
     auth.onAuthStateChanged(async (user) => {
+      if (typeof isSessionLoggedOut === 'function' && isSessionLoggedOut()) {
+        if (user) {
+          try { await auth.signOut(); } catch(e) {}
+        }
+        return;
+      }
       if (user) {
         try {
           const userDoc = await db.collection('users').doc(user.uid).get();
           if (userDoc.exists && userDoc.data().role === 'conductor') {
-            window.location.href = 'conductor-dashboard.html';
+            window.location.replace('conductor-dashboard.html');
           }
         } catch(e) {}
       }

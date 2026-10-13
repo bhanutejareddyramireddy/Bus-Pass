@@ -138,7 +138,7 @@
         await loginStudent(email, password);
         showToast("Login successful! Redirecting to student portal...", "success");
         setTimeout(() => {
-          window.location.href = 'pages/student-dashboard.html';
+          window.location.replace('pages/student-dashboard.html');
         }, 800);
       } catch (error) {
         showToast(error.message, "danger", "Login Failed");
@@ -147,13 +147,19 @@
       }
     });
 
-    // Check if already logged in as student
+    // Check if already logged in as student (skip if recently logged out)
     auth.onAuthStateChanged(async (user) => {
+      if (typeof isSessionLoggedOut === 'function' && isSessionLoggedOut()) {
+        if (user) {
+          try { await auth.signOut(); } catch(e) {}
+        }
+        return;
+      }
       if (user) {
         try {
           const userDoc = await db.collection('users').doc(user.uid).get();
           if (userDoc.exists && userDoc.data().role === 'student') {
-            window.location.href = 'pages/student-dashboard.html';
+            window.location.replace('pages/student-dashboard.html');
           }
         } catch(e) {}
       }

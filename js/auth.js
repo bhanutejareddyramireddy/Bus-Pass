@@ -15,6 +15,126 @@ function generateConductorId() {
   return `CON-${code}`;
 }
 
+// Unified Relative Path Resolver for Root vs Pages Directory
+function resolveAppPath(target) {
+  const isInsidePages = window.location.pathname.includes('/pages/') || window.location.href.includes('/pages/');
+  if (isInsidePages) {
+    if (target.startsWith('pages/')) {
+      return target.replace('pages/', '');
+    } else {
+      return '../' + target;
+    }
+  } else {
+    return target;
+  }
+}
+
+function redirectToLogin(role) {
+  let target = 'login.html';
+  if (role === 'vendor') {
+    target = 'vendor-login.html';
+  } else if (role === 'conductor') {
+    target = 'conductor-login.html';
+  }
+  window.location.replace(resolveAppPath(target));
+}
+
+// Session State Management (Sync & Cross-Tab Safe)
+function establishUserSession(role, uid) {
+  try {
+    sessionStorage.setItem('bp_session_active', 'true');
+    sessionStorage.setItem('bp_user_role', role);
+    if (uid) sessionStorage.setItem('bp_user_uid', uid);
+    sessionStorage.removeItem('bp_logged_out');
+
+    localStorage.setItem('bp_session_active', 'true');
+    localStorage.setItem('bp_user_role', role);
+    if (uid) localStorage.setItem('bp_user_uid', uid);
+    localStorage.removeItem('bp_logged_out');
+  } catch (e) {}
+}
+
+function terminateUserSession() {
+  try {
+    sessionStorage.removeItem('bp_session_active');
+    sessionStorage.removeItem('bp_user_role');
+    sessionStorage.removeItem('bp_user_uid');
+    sessionStorage.setItem('bp_logged_out', 'true');
+
+    localStorage.removeItem('bp_session_active');
+    localStorage.removeItem('bp_user_role');
+    localStorage.removeItem('bp_user_uid');
+    localStorage.setItem('bp_logged_out', 'true');
+  } catch (e) {}
+}
+
+function isSessionLoggedOut() {
+  try {
+    const isExplicitlyLoggedOut = sessionStorage.getItem('bp_logged_out') === 'true' || 
+                                 localStorage.getItem('bp_logged_out') === 'true';
+    const isSessionMissing = localStorage.getItem('bp_session_active') !== 'true';
+    return isExplicitlyLoggedOut || isSessionMissing;
+  } catch (e) {
+    return false;
+  }
+}
+
+function isCurrentPageProtected() {
+  const path = (window.location.pathname || window.location.href).toLowerCase();
+  if (path.includes('/pages/')) return true;
+  if (path.includes('conductor-dashboard.html')) return true;
+  if (path.includes('vendor-') && !path.includes('vendor-login') && !path.includes('vendor-register')) return true;
+  return false;
+}
+
+// Immediate execution on script parse:
+// If on a protected page and session is not active / logged out, immediately hide page and redirect!
+if (isCurrentPageProtected() && isSessionLoggedOut()) {
+  document.documentElement.style.display = 'none';
+  let initialRole = 'student';
+  const currentPath = (window.location.pathname || window.location.href).toLowerCase();
+  if (currentPath.includes('conductor')) initialRole = 'conductor';
+  else if (currentPath.includes('vendor')) initialRole = 'vendor';
+  redirectToLogin(initialRole);
+}
+
+// BFCache (Back-Forward Cache) Guard:
+// When Chrome navigates back into a protected page after logout,
+// Chrome fires pageshow. This listener ensures the cached page is instantly wiped and replaced.
+window.addEventListener('pageshow', function (event) {
+  if (isCurrentPageProtected() && isSessionLoggedOut()) {
+    document.documentElement.style.display = 'none';
+    let targetRole = window._expectedRole || 'student';
+    const currentPath = (window.location.pathname || window.location.href).toLowerCase();
+    if (currentPath.includes('conductor')) targetRole = 'conductor';
+    else if (currentPath.includes('vendor')) targetRole = 'vendor';
+    if (typeof auth !== 'undefined' && auth.signOut) {
+      auth.signOut().catch(() => {});
+    }
+    redirectToLogin(targetRole);
+  }
+});
+
+// Popstate guard for history back navigation
+window.addEventListener('popstate', function () {
+  if (isCurrentPageProtected() && isSessionLoggedOut()) {
+    document.documentElement.style.display = 'none';
+    let targetRole = window._expectedRole || 'student';
+    redirectToLogin(targetRole);
+  }
+});
+
+// Cross-tab synchronization: If user logs out in another tab, terminate session immediately
+window.addEventListener('storage', function (e) {
+  if (e.key === 'bp_logged_out' || e.key === 'bp_session_active') {
+    if (isCurrentPageProtected() && isSessionLoggedOut()) {
+      document.documentElement.style.display = 'none';
+      let targetRole = window._expectedRole || 'student';
+      redirectToLogin(targetRole);
+    }
+  }
+});
+
 // Vendor Registration
 async function registerVendor(name, email, password, phone, businessName = '') {
   try {
@@ -32,6 +152,7 @@ async function registerVendor(name, email, password, phone, businessName = '') {
     };
 
     await db.collection('users').doc(uid).set(vendorData);
+    establishUserSession('vendor', uid);
     return { user: userCredential.user, userData: vendorData };
   } catch (error) {
     console.error("Vendor registration error:", error);
@@ -48,9 +169,11 @@ async function loginVendor(email, password) {
 
     if (!userDoc.exists || userDoc.data().role !== 'vendor') {
       await auth.signOut();
+      terminateUserSession();
       throw new Error("Access denied: Not registered as a Transport Vendor.");
     }
 
+    establishUserSession('vendor', uid);
     return { user: userCredential.user, userData: userDoc.data() };
   } catch (error) {
     console.error("Vendor login error:", error);
@@ -74,6 +197,7 @@ async function registerStudent(name, email, password, phone) {
     };
 
     await db.collection('users').doc(uid).set(studentData);
+    establishUserSession('student', uid);
     return { user: userCredential.user, userData: studentData };
   } catch (error) {
     console.error("Student registration error:", error);
@@ -90,9 +214,11 @@ async function loginStudent(email, password) {
 
     if (!userDoc.exists || userDoc.data().role !== 'student') {
       await auth.signOut();
+      terminateUserSession();
       throw new Error("Access denied: Not registered as a Student.");
     }
 
+    establishUserSession('student', uid);
     return { user: userCredential.user, userData: userDoc.data() };
   } catch (error) {
     console.error("Student login error:", error);
@@ -165,10 +291,12 @@ async function loginConductor(conductorId, password) {
         }
       } else {
         await auth.signOut();
+        terminateUserSession();
         throw new Error("Access denied: This account is not registered as an authorized Conductor.");
       }
     }
 
+    establishUserSession('conductor', uid);
     return { user: userCredential.user, userData: userData };
   } catch (error) {
     console.error("Conductor login error:", error);
@@ -300,28 +428,25 @@ async function updateConductorPassword(conductorDocId, conductorId, currentPassw
   }
 }
 
-// Unified Relative Path Resolver for Root vs Pages Directory
-function resolveAppPath(target) {
-  const isInsidePages = window.location.pathname.includes('/pages/') || window.location.href.includes('/pages/');
-  if (isInsidePages) {
-    if (target.startsWith('pages/')) {
-      return target.replace('pages/', '');
-    } else {
-      return '../' + target;
-    }
-  } else {
-    return target;
-  }
-}
-
 // Unified Logout
 async function logoutUser() {
   try {
-    await auth.signOut();
-    window.location.href = resolveAppPath('index.html');
+    // 1. Immediately terminate local & session storage
+    terminateUserSession();
+
+    // 2. Sign out of Firebase Auth
+    if (typeof auth !== 'undefined' && auth.signOut) {
+      await auth.signOut();
+    }
   } catch (error) {
     console.error("Logout error:", error);
-    showToast("Error during logout", "danger");
+    terminateUserSession();
+  } finally {
+    // 3. Immediately hide document content to prevent any snapshot from showing on back/forward
+    document.documentElement.style.display = 'none';
+
+    // 4. Force replace current URL so user cannot press Back into this page
+    window.location.replace(resolveAppPath('index.html'));
   }
 }
 
@@ -330,8 +455,23 @@ async function logoutUser() {
  * Validates session, checks role, updates UI navbar and executes onReady callback
  */
 function requireAuth(expectedRole, onReady) {
+  window._isProtectedPage = true;
+  window._expectedRole = expectedRole;
+
+  // 1. Instant Synchronous Check
+  if (isSessionLoggedOut()) {
+    document.documentElement.style.display = 'none';
+    if (typeof auth !== 'undefined' && auth.signOut) {
+      auth.signOut().catch(() => {});
+    }
+    redirectToLogin(expectedRole);
+    return;
+  }
+
   auth.onAuthStateChanged(async (user) => {
-    if (!user) {
+    if (!user || isSessionLoggedOut()) {
+      terminateUserSession();
+      document.documentElement.style.display = 'none';
       redirectToLogin(expectedRole);
       return;
     }
@@ -375,7 +515,9 @@ function requireAuth(expectedRole, onReady) {
       }
 
       if (!userData) {
+        terminateUserSession();
         await auth.signOut();
+        document.documentElement.style.display = 'none';
         redirectToLogin(expectedRole);
         return;
       }
@@ -383,13 +525,16 @@ function requireAuth(expectedRole, onReady) {
       // Check role enforcement
       if (expectedRole && userData.role !== expectedRole) {
         console.warn(`Role mismatch: Expected ${expectedRole}, got ${userData.role}`);
-        // Redirect to appropriate dashboard
-        if (userData.role === 'vendor') window.location.href = resolveAppPath('vendor-dashboard.html');
-        else if (userData.role === 'student') window.location.href = resolveAppPath('pages/student-dashboard.html');
-        else if (userData.role === 'conductor') window.location.href = resolveAppPath('conductor-dashboard.html');
-        else window.location.href = resolveAppPath('index.html');
+        // Redirect to appropriate dashboard using replace
+        if (userData.role === 'vendor') window.location.replace(resolveAppPath('vendor-dashboard.html'));
+        else if (userData.role === 'student') window.location.replace(resolveAppPath('pages/student-dashboard.html'));
+        else if (userData.role === 'conductor') window.location.replace(resolveAppPath('conductor-dashboard.html'));
+        else window.location.replace(resolveAppPath('index.html'));
         return;
       }
+
+      // Ensure session is marked active
+      establishUserSession(userData.role, user.uid);
 
       // Populate user info in layout if elements exist
       updateLayoutUserInfo(userData);
@@ -402,16 +547,6 @@ function requireAuth(expectedRole, onReady) {
       showToast("Authentication check failed. Please refresh.", "danger");
     }
   });
-}
-
-function redirectToLogin(role) {
-  if (role === 'vendor') {
-    window.location.href = resolveAppPath('vendor-login.html');
-  } else if (role === 'conductor') {
-    window.location.href = resolveAppPath('conductor-login.html');
-  } else {
-    window.location.href = resolveAppPath('login.html');
-  }
 }
 
 function updateLayoutUserInfo(userData) {

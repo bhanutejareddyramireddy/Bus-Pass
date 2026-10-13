@@ -138,7 +138,7 @@
         await loginVendor(email, password);
         showToast("Vendor authentication successful!", "success");
         setTimeout(() => {
-          window.location.href = 'vendor-dashboard.html';
+          window.location.replace('vendor-dashboard.html');
         }, 800);
       } catch (error) {
         showToast(error.message, "danger", "Login Error");
@@ -147,13 +147,19 @@
       }
     });
 
-    // Auto-redirect if already logged in as vendor
+    // Auto-redirect if already logged in as vendor (skip if recently logged out)
     auth.onAuthStateChanged(async (user) => {
+      if (typeof isSessionLoggedOut === 'function' && isSessionLoggedOut()) {
+        if (user) {
+          try { await auth.signOut(); } catch(e) {}
+        }
+        return;
+      }
       if (user) {
         try {
           const userDoc = await db.collection('users').doc(user.uid).get();
           if (userDoc.exists && userDoc.data().role === 'vendor') {
-            window.location.href = 'vendor-dashboard.html';
+            window.location.replace('vendor-dashboard.html');
           }
         } catch(e) {}
       }
