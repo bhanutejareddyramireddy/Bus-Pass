@@ -173,14 +173,15 @@
                   <th>Organization</th>
                   <th>Origin → Destination</th>
                   <th>Schedule</th>
-                  <th>Stops & Fees</th>
+                  <th>Pass Expiry</th>
+                  <th>Stops & Annual Fees</th>
                   <th>Status</th>
                   <th style="text-align: right;">Actions</th>
                 </tr>
               </thead>
               <tbody id="routes-table-body">
                 <tr>
-                  <td colspan="7" style="text-align: center; padding: 2.5rem;">
+                  <td colspan="8" style="text-align: center; padding: 2.5rem;">
                     <div class="spinner"></div>
                     <p style="margin-top: 0.5rem; color: var(--text-muted);">Loading routes...</p>
                   </td>
@@ -231,7 +232,7 @@
             </div>
           </div>
 
-          <div class="form-grid-3">
+          <div class="form-grid">
             <div class="form-group">
               <label class="form-label" for="route-morning">Morning Pickup Timing</label>
               <input type="time" id="route-morning" class="form-control" value="07:30">
@@ -240,6 +241,14 @@
             <div class="form-group">
               <label class="form-label" for="route-evening">Evening Return Timing</label>
               <input type="time" id="route-evening" class="form-control" value="16:45">
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="route-expiry-date">Pass Expiry Date <span class="required">*</span></label>
+              <input type="date" id="route-expiry-date" class="form-control" required>
+              <small style="color: var(--text-muted); font-size: 0.78rem;">Passes issued for this route will expire on this date.</small>
             </div>
 
             <div class="form-group">
@@ -255,8 +264,8 @@
           <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; margin-top: 0.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
               <div>
-                <h4 style="font-size: 1rem; font-weight: 700; color: var(--text-primary);">Route Stops & Stop-Wise Pricing</h4>
-                <p style="font-size: 0.78rem; color: var(--text-muted);">Set unique Full Year and Semester pass prices for each boarding point</p>
+                <h4 style="font-size: 1rem; font-weight: 700; color: var(--text-primary);">Route Stops & Annual Stop-Wise Pricing</h4>
+                <p style="font-size: 0.78rem; color: var(--text-muted);">Set annual pass fee for each boarding point</p>
               </div>
               <button type="button" class="btn btn-secondary btn-sm" onclick="addStopRow()">
                 <i class="fas fa-plus"></i> Add Boarding Stop
@@ -387,11 +396,11 @@
       if (routes.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="7">
+            <td colspan="8">
               <div class="state-container">
                 <div class="state-icon"><i class="fas fa-route"></i></div>
                 <h4 class="state-title">No Routes Configured</h4>
-                <p class="state-desc">Create your first bus route with custom boarding stops and pricing.</p>
+                <p class="state-desc">Create your first bus route with custom boarding stops and annual pricing.</p>
                 <button class="btn btn-primary" onclick="openCreateRouteModal()"><i class="fas fa-plus"></i> Add New Route</button>
               </div>
             </td>
@@ -403,7 +412,7 @@
       tbody.innerHTML = routes.map(route => {
         const isAct = route.status === 'Active';
         const stopsCount = route.stops ? route.stops.length : 0;
-        const stopsPreview = (route.stops || []).map(s => `${s.name} (${formatCurrency(s.fullYearFee)}/yr)`).slice(0, 3).join(', ');
+        const stopsPreview = (route.stops || []).map(s => `${s.name} (${formatCurrency(s.fullYearFee || s.fee)})`).slice(0, 3).join(', ');
 
         return `
           <tr>
@@ -423,6 +432,12 @@
                 <div><i class="fas fa-sun text-warning"></i> Morning: <strong>${route.morningTime || '07:30'}</strong></div>
                 <div><i class="fas fa-moon text-info"></i> Evening: <strong>${route.eveningTime || '16:45'}</strong></div>
               </div>
+            </td>
+            <td>
+              <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 0.35rem;">
+                <i class="fas fa-calendar-alt text-primary"></i> ${formatDate(route.passExpiryDate) || 'Not Set'}
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">Pass Expiry</div>
             </td>
             <td>
               <span class="badge badge-secondary" style="font-weight: 700;">${stopsCount} Stops</span>
@@ -453,15 +468,14 @@
       }).join('');
     }
 
-    function addStopRow(name = '', fullYear = '', sem = '') {
+    function addStopRow(name = '', fullYear = '') {
       const container = document.getElementById('stops-container');
       const row = document.createElement('div');
       row.className = 'stop-item-row';
-      row.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr 40px; gap: 0.5rem; align-items: center; background: var(--bg-page); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);';
+      row.style.cssText = 'display: grid; grid-template-columns: 2fr 1.5fr 40px; gap: 0.5rem; align-items: center; background: var(--bg-page); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);';
       row.innerHTML = `
         <input type="text" class="form-control stop-name-input" placeholder="Stop Name (e.g. Shamshabad)" value="${name}" required>
-        <input type="number" class="form-control stop-year-input" placeholder="Full Year ₹" value="${fullYear}" required min="0">
-        <input type="number" class="form-control stop-sem-input" placeholder="Semester ₹" value="${sem}" required min="0">
+        <input type="number" class="form-control stop-year-input" placeholder="Annual Pass Fee ₹" value="${fullYear}" required min="0">
         <button type="button" class="action-btn delete" title="Remove stop" onclick="this.parentElement.remove()">
           <i class="fas fa-times"></i>
         </button>
@@ -473,8 +487,14 @@
       document.getElementById('route-doc-id').value = '';
       document.getElementById('route-form').reset();
       document.getElementById('stops-container').innerHTML = '';
-      addStopRow('Main Stop / Origin', 25000, 14000);
-      addStopRow('Intermediate Stop', 22000, 12000);
+      
+      // Default expiry date: May 31 of next academic year or 1 year from now
+      const defaultExpiry = new Date();
+      defaultExpiry.setFullYear(defaultExpiry.getFullYear() + 1);
+      document.getElementById('route-expiry-date').value = defaultExpiry.toISOString().split('T')[0];
+
+      addStopRow('Main Stop / Origin', 25000);
+      addStopRow('Intermediate Stop', 22000);
       document.getElementById('route-modal-title').textContent = 'Create Transit Route';
       openModal('route-modal');
     }
@@ -490,14 +510,15 @@
       document.getElementById('route-dest').value = route.destination || '';
       document.getElementById('route-morning').value = route.morningTime || '07:30';
       document.getElementById('route-evening').value = route.eveningTime || '16:45';
+      document.getElementById('route-expiry-date').value = route.passExpiryDate || '';
       document.getElementById('route-status').value = route.status || 'Active';
 
       const container = document.getElementById('stops-container');
       container.innerHTML = '';
       if (route.stops && route.stops.length > 0) {
-        route.stops.forEach(s => addStopRow(s.name, s.fullYearFee, s.semesterFee));
+        route.stops.forEach(s => addStopRow(s.name, s.fullYearFee || s.fee || ''));
       } else {
-        addStopRow('', '', '');
+        addStopRow('', '');
       }
 
       document.getElementById('route-modal-title').textContent = 'Edit Transit Route';
@@ -510,15 +531,20 @@
       const docId = document.getElementById('route-doc-id').value;
       const saveBtn = document.getElementById('save-route-btn');
       const orgId = document.getElementById('route-org').value;
+      const passExpiryDate = document.getElementById('route-expiry-date').value;
+
+      if (!passExpiryDate) {
+        showToast("Please choose the pass expiry date for this route.", "warning");
+        return;
+      }
 
       const stopRows = document.querySelectorAll('.stop-item-row');
       const stops = [];
       stopRows.forEach(row => {
         const name = row.querySelector('.stop-name-input').value.trim();
         const year = Number(row.querySelector('.stop-year-input').value) || 0;
-        const sem = Number(row.querySelector('.stop-sem-input').value) || 0;
         if (name) {
-          stops.push({ name, fullYearFee: year, semesterFee: sem });
+          stops.push({ name, fullYearFee: year, fee: year });
         }
       });
 
@@ -536,6 +562,7 @@
         destination: document.getElementById('route-dest').value.trim(),
         morningTime: document.getElementById('route-morning').value,
         eveningTime: document.getElementById('route-evening').value,
+        passExpiryDate: passExpiryDate,
         status: document.getElementById('route-status').value,
         stops: stops,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()

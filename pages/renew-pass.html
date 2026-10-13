@@ -157,9 +157,9 @@
             <div class="form-group">
               <label class="form-label" for="renew-pass-type">Select Renewal Pass Duration <span class="required">*</span></label>
               <select id="renew-pass-type" class="form-control" required onchange="calculateRenewalFee()">
-                <option value="Full Year">Full Academic Year (12 Months)</option>
-                <option value="Semester">Semester Pass (6 Months)</option>
+                <option value="Full Year">Annual Pass (Full Academic Year)</option>
               </select>
+              <small style="color: var(--text-muted); font-size: 0.78rem;">Pass renewals are issued on an annual basis.</small>
             </div>
 
             <!-- Fee and Payment Details Callout -->
@@ -175,7 +175,15 @@
             <div class="grid-renew-qr responsive-renew-grid" style="background: #F8FAFC; padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 1.5rem; align-items: center;">
               <div style="background: #ffffff; padding: 0.85rem; border-radius: var(--radius-md); text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
                 <div id="renew-payment-qr" style="width: 150px; height: 150px; margin: 0 auto; display: flex; align-items: center; justify-content: center;"></div>
-                <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700; margin-top: 6px; display: block; letter-spacing: 0.05em;">SCAN VIA ANY UPI APP</span>
+                <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700; margin-top: 6px; display: block; letter-spacing: 0.05em;">SCAN VIA PHONEPE / UPI</span>
+                <div style="margin-top: 0.4rem; display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.7rem; color: var(--success); font-weight: 600; background: #ECFDF5; padding: 0.2rem 0.5rem; border-radius: 999px; border: 1px solid #A7F3D0;">
+                  <i class="fas fa-lock"></i> Amount Locked
+                </div>
+                <div style="margin-top: 0.5rem;">
+                  <a id="renew-direct-pay-link" href="#" class="btn btn-outline-primary btn-sm btn-block" style="display: none; text-decoration: none; font-size: 0.78rem; align-items: center; justify-content: center; gap: 0.4rem;">
+                    <i class="fas fa-mobile-alt"></i> Pay on PhonePe / UPI
+                  </a>
+                </div>
               </div>
 
               <div style="display: flex; flex-direction: column; justify-content: center; gap: 0.65rem; font-size: 0.88rem;">
@@ -329,12 +337,10 @@
     }
 
     function calculateRenewalFee() {
-      const passType = document.getElementById('renew-pass-type').value;
-
       if (currentRoute && currentRoute.stops) {
         const matchedStop = currentRoute.stops.find(s => s.name === previousPass.boardingStop);
         if (matchedStop) {
-          calculatedRenewalFee = passType === 'Semester' ? (matchedStop.semesterFee || 0) : (matchedStop.fullYearFee || 0);
+          calculatedRenewalFee = (matchedStop.fullYearFee || matchedStop.fee || 0);
         } else {
           calculatedRenewalFee = previousPass.fee || 20000;
         }
@@ -345,15 +351,22 @@
       document.getElementById('renew-fee-display').textContent = formatCurrency(calculatedRenewalFee);
       document.getElementById('renew-amount-txt').textContent = formatCurrency(calculatedRenewalFee);
 
-      // Render Dynamic Payment QR
+      // Render Dynamic Payment QR with locked amount (mode=02, am=xx.xx, tr=...)
       const upiId = (currentOrg && currentOrg.upiId) ? currentOrg.upiId : 'transport@upi';
       const payeeName = (currentOrg && currentOrg.payeeName) ? currentOrg.payeeName : previousPass.organizationName;
 
       document.getElementById('renew-payee-name').textContent = payeeName;
       document.getElementById('renew-upi-id').textContent = upiId;
 
-      const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${calculatedRenewalFee}&cu=INR`;
+      const trId = 'REN' + Date.now().toString().slice(-8) + Math.random().toString(36).substring(2, 6).toUpperCase();
+      const upiUri = buildDynamicUpiUri(upiId, payeeName, calculatedRenewalFee, `Bus Pass Renewal - ${currentStudent ? currentStudent.email : 'Student'}`, trId);
       generatePassQRCode('renew-payment-qr', upiUri, 150, 150);
+
+      const directLink = document.getElementById('renew-direct-pay-link');
+      if (directLink) {
+        directLink.href = upiUri;
+        directLink.style.display = 'inline-flex';
+      }
     }
 
     async function handleRenewProofSelected(e) {

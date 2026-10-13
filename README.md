@@ -15,7 +15,7 @@ VENDOR / TRANSPORT ADMIN
         ↓
      ROUTES
         ↓
-     STOPS (With Stop-Wise Full Year & Semester Pricing)
+     STOPS (With Boarding Stop Annual Fees & Vendor-Configured Expiry Date)
         ↓
       BUSES (Assigned to Organization & Route)
         ↓
@@ -44,7 +44,7 @@ LIVE BUS TRACKING (Real-Time GPS Telemetry on Leaflet Maps)
 
 ### 1. Vendor / Transport Admin (`/vendor-login.html`)
 - **Multi-Tenant Organization Management**: Create, edit, activate/deactivate colleges, schools, companies.
-- **Route & Dynamic Stop Pricing**: Define transit corridors, departure timings, and customized stop-wise Full Year and Semester fares.
+- **Route & Dynamic Stop Pricing**: Define transit corridors, departure timings, customized annual stop fares, and route pass expiry dates.
 - **Bus Fleet Allocation**: Add buses with capacities, registration plates, drivers, and route assignments.
 - **Conductor Provisioning**: Generates unique Conductor IDs (e.g., `CON-7F42A9`) with vendor-set passwords. Built using a secondary Firebase Auth instance so the vendor stays **100% logged in**.
 - **Application Review & Payment Verification**: Inspect payment screenshots, verify UPI transactions, approve/reject applications, and issue digital passes.
@@ -56,8 +56,8 @@ LIVE BUS TRACKING (Real-Time GPS Telemetry on Leaflet Maps)
 - **Self-Service Registration & Profile**: Register with name, email, phone, and password.
 - **Multi-Step Application Wizard**:
   - *Step 1*: Select Organization & Route
-  - *Step 2*: Pick Boarding Stop & Pass Duration (Full Year / Semester)
-  - *Step 3*: View auto-calculated fare, scan official dynamic UPI QR code, upload screenshot receipt & transaction ID
+  - *Step 2*: Pick Boarding Stop (Annual Pass)
+  - *Step 3*: View auto-calculated annual fare, scan official dynamic UPI QR code (amount locked in PhonePe/UPI), upload screenshot receipt & transaction ID
   - *Step 4*: Review summary and submit
 - **Official Digital Bus Pass**: Sleek ID card with holographic styling, student details, validity dates, vehicle info, and QR code ready for boarding scans. Includes a **Print / Save as PDF** stylesheet (`@media print`).
 - **Pass Renewal**: 1-click renewal workflow pre-filling current route and stop details.
@@ -154,7 +154,7 @@ Open your browser at `http://localhost:8080/index.html`.
 1. Navigate to `/vendor-register.html` and register your agency.
 2. Sign in at `/vendor-login.html`.
 3. In `/vendor-organizations.html`, create a sample college (e.g. *ABC College of Engineering*).
-4. In `/vendor-routes.html`, create a route with stops and Full Year / Semester pricing.
+4. In `/vendor-routes.html`, create a route with stops, annual pricing, and pass expiry date.
 5. In `/vendor-buses.html`, add a bus (`BUS-101`) assigned to this route.
 6. In `/vendor-conductors.html`, create a conductor:
    - Conductor ID is auto-generated (`CON-XXXXXX`).

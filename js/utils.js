@@ -92,6 +92,21 @@ function generatePassQRCode(elementId, qrDataString, width = 180, height = 180) 
   }
 }
 
+// Build NPCI-compliant dynamic UPI URI with locked pre-filled amount.
+// Using mode=02 and mandatory tr (transaction ref) signals dynamic POS/invoice checkout,
+// which instructs PhonePe, Google Pay, BHIM, and Paytm to pre-fill and lock the amount,
+// preventing user manual entry or modification.
+function buildDynamicUpiUri(upiId, payeeName, amount, note = 'Bus Pass Fee', txnRef = '') {
+  const cleanUpiId = (upiId || '').trim();
+  const cleanPayee = (payeeName || 'Transport Dept').trim();
+  const numAmount = Number(amount) || 0;
+  const formattedAmount = numAmount.toFixed(2);
+  const ref = txnRef || ('BP' + Date.now().toString().slice(-8) + Math.random().toString(36).substring(2, 6).toUpperCase());
+  const cleanNote = (note || 'Bus Pass Fee').trim();
+
+  return `upi://pay?pa=${encodeURIComponent(cleanUpiId)}&pn=${encodeURIComponent(cleanPayee)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(cleanNote)}&tr=${encodeURIComponent(ref)}&mode=02`;
+}
+
 // Prepare secure QR payload string (JSON)
 function createPassQRPayload(passData) {
   return JSON.stringify({
@@ -343,13 +358,14 @@ async function seedSampleVendorData(vendorId) {
       destination: "St. Xavier Main Gate",
       morningTime: "07:30",
       eveningTime: "16:45",
+      passExpiryDate: "2027-05-31",
       status: "Active",
       stops: [
-        { name: "Jadcherla", fullYearFee: 26000, semesterFee: 14000 },
-        { name: "Mahbubnagar", fullYearFee: 24000, semesterFee: 13000 },
-        { name: "Shadnagar", fullYearFee: 20000, semesterFee: 11000 },
-        { name: "Shamshabad Junction", fullYearFee: 16000, semesterFee: 9000 },
-        { name: "Campus Gate", fullYearFee: 12000, semesterFee: 7000 }
+        { name: "Jadcherla", fullYearFee: 26000, fee: 26000 },
+        { name: "Mahbubnagar", fullYearFee: 24000, fee: 24000 },
+        { name: "Shadnagar", fullYearFee: 20000, fee: 20000 },
+        { name: "Shamshabad Junction", fullYearFee: 16000, fee: 16000 },
+        { name: "Campus Gate", fullYearFee: 12000, fee: 12000 }
       ],
       createdAt: now,
       updatedAt: now

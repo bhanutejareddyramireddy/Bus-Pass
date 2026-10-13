@@ -204,16 +204,25 @@
             <h4 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;" id="preview-payee-display">
               Select an Organization
             </h4>
-            <div style="font-family: monospace; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;" id="preview-upi-display">
+            <div style="font-family: monospace; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem;" id="preview-upi-display">
               UPI: -
             </div>
+            <div style="font-size: 1.15rem; font-weight: 800; color: var(--success); margin-bottom: 1rem;" id="preview-amount-display">
+              Sample Pass Fee: ₹20,000
+            </div>
 
-            <div style="background: #FFFFFF; padding: 1.25rem; border-radius: var(--radius-lg); border: 2px dashed var(--border-color); box-shadow: var(--shadow-sm); margin-bottom: 1.25rem;">
+            <div style="background: #FFFFFF; padding: 1.25rem; border-radius: var(--radius-lg); border: 2px dashed var(--border-color); box-shadow: var(--shadow-sm); margin-bottom: 1rem;">
               <div id="upi-qr-preview-box"></div>
             </div>
 
+            <div style="margin-bottom: 0.75rem;">
+              <span class="badge badge-success" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
+                <i class="fas fa-lock"></i> Direct Amount Lock Enabled
+              </span>
+            </div>
+
             <div style="font-size: 0.82rem; color: var(--text-secondary); max-width: 320px;">
-              <i class="fas fa-mobile-alt text-primary"></i> Students will scan this dynamic UPI QR code with GPay, PhonePe, Paytm, or BHIM during pass application.
+              <i class="fas fa-mobile-alt text-primary"></i> When students scan this dynamic QR in PhonePe / GPay, the route pass amount comes directly pre-filled with no manual entry required.
             </div>
           </div>
         </div>
@@ -330,8 +339,10 @@
       previewPayee.textContent = payeeName || 'Payee Name';
       previewUpi.textContent = `UPI: ${upiId}`;
 
-      // Build UPI URI standard string
-      const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&cu=INR`;
+      // Build NPCI dynamic UPI URI with sample locked amount so PhonePe pre-fills directly without manual input
+      const sampleAmount = (20000).toFixed(2);
+      const trId = 'PREV' + Date.now().toString().slice(-6);
+      const upiUri = buildDynamicUpiUri(upiId, payeeName, sampleAmount, 'Sample Bus Pass Fee', trId);
       generatePassQRCode('upi-qr-preview-box', upiUri, 160, 160);
     }
 

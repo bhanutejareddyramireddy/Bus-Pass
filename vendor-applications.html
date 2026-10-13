@@ -170,8 +170,7 @@
 
             <select id="filter-pass-type" class="form-control" onchange="filterApplications()" style="width: auto;">
               <option value="">All Pass Types</option>
-              <option value="Full Year">Full Year</option>
-              <option value="Semester">Semester</option>
+              <option value="Full Year">Annual / Full Year</option>
             </select>
           </div>
         </div>
@@ -234,6 +233,7 @@
               <div><span style="color: var(--text-muted);">Route:</span> <strong id="modal-route-name">-</strong></div>
               <div><span style="color: var(--text-muted);">Boarding Stop:</span> <strong id="modal-stop-name">-</strong></div>
               <div><span style="color: var(--text-muted);">Pass Type:</span> <span class="badge badge-primary" id="modal-pass-type">-</span></div>
+              <div><span style="color: var(--text-muted);">Pass Expiry Date:</span> <strong id="modal-expiry-date" class="text-primary">-</strong></div>
               <div><span style="color: var(--text-muted);">Calculated Fee:</span> <strong style="font-size: 1.1rem; color: var(--primary);" id="modal-fee">-</strong></div>
               <div><span style="color: var(--text-muted);">Applied Date:</span> <span id="modal-date">-</span></div>
             </div>
@@ -287,8 +287,8 @@
 
         <!-- Optional remarks / reason -->
         <div class="form-group">
-          <label class="form-label" for="review-remarks">Remarks / Rejection Reason (sent to student notification)</label>
-          <input type="text" id="review-remarks" class="form-control" placeholder="e.g. Approved for semester 1. Payment verified.">
+          <label class="form-label" for="review-remarks">Remarks / Verification Reason (sent to student notification)</label>
+          <input type="text" id="review-remarks" class="form-control" placeholder="e.g. Approved. Annual fee verified.">
         </div>
       </div>
 
@@ -502,12 +502,23 @@
       if (selectedApp.paymentStatus === 'Rejected') payBadge = '<span class="badge badge-danger"><i class="fas fa-times"></i> Payment Rejected</span>';
       document.getElementById('modal-pay-status-badge').innerHTML = payBadge;
 
-      // Render Proof Screenshot
+      // Populate Route Expiry Date
+      let routeExpiry = selectedApp.passExpiryDate || '';
+      if (!routeExpiry && selectedApp.routeId) {
+        const matchedRoute = routesList.find(r => r.id === selectedApp.routeId);
+        if (matchedRoute && matchedRoute.passExpiryDate) {
+          routeExpiry = matchedRoute.passExpiryDate;
+        }
+      }
+      document.getElementById('modal-expiry-date').textContent = routeExpiry ? formatDate(routeExpiry) : 'Standard Annual Validity';
+
+      // Render Proof Screenshot (checking both proofUrl and screenshotUrl)
       const proofBox = document.getElementById('modal-proof-container');
-      if (selectedApp.paymentProofUrl) {
+      const proofUrl = selectedApp.paymentProofUrl || selectedApp.paymentScreenshotUrl;
+      if (proofUrl) {
         proofBox.innerHTML = `
-          <a href="${selectedApp.paymentProofUrl}" target="_blank" title="Click to view full image">
-            <img src="${selectedApp.paymentProofUrl}" alt="Proof" style="max-height: 180px; width: 100%; object-fit: contain;">
+          <a href="${proofUrl}" target="_blank" title="Click to view full image">
+            <img src="${proofUrl}" alt="Proof" style="max-height: 180px; width: 100%; object-fit: contain;">
           </a>
         `;
       } else {
@@ -568,19 +579,25 @@
       approveBtn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Generating Pass...';
 
       try {
-        // Compute Pass Validity Dates
+        // Compute Pass Validity Dates from Route's vendor-configured Pass Expiry Date
         const validFrom = new Date().toISOString().split('T')[0];
-        const validUntilDate = new Date();
-        if (selectedApp.passType === 'Semester') {
-          validUntilDate.setMonth(validUntilDate.getMonth() + 6);
-        } else {
-          validUntilDate.setFullYear(validUntilDate.getFullYear() + 1);
+        let validUntil = selectedApp.passExpiryDate || '';
+        if (!validUntil && selectedApp.routeId) {
+          const matchedRoute = routesList.find(r => r.id === selectedApp.routeId);
+          if (matchedRoute && matchedRoute.passExpiryDate) {
+            validUntil = matchedRoute.passExpiryDate;
+          }
         }
-        const validUntil = validUntilDate.toISOString().split('T')[0];
+        if (!validUntil) {
+          const validUntilDate = new Date();
+          validUntilDate.setFullYear(validUntilDate.getFullYear() + 1);
+          validUntil = validUntilDate.toISOString().split('T')[0];
+        }
 
-        // Unique pass number (e.g. PASS-2026-A48F)
+        const validYear = validUntil ? validUntil.split('-')[0] : new Date().getFullYear();
+        // Unique pass number (e.g. PASS-2027-A48F)
         const randHex = Math.random().toString(16).substring(2, 6).toUpperCase();
-        const passNumber = `PASS-${validUntilDate.getFullYear()}-${randHex}`;
+        const passNumber = `PASS-${validYear}-${randHex}`;
 
         const remarks = document.getElementById('review-remarks').value.trim();
 
@@ -652,6 +669,7 @@
           status: 'Approved',
           passId: passRef.id,
           passNumber: passNumber,
+          validUntil: validUntil,
           busId: busId,
           busNumber: passDocData.busNumber,
           remarks: remarks,
