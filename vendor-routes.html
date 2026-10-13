@@ -530,10 +530,9 @@
         const sel = r.querySelector('.pass-type-select').value;
         const custom = r.querySelector('.pass-custom-input').value.trim();
         const expiry = r.querySelector('.pass-expiry-input').value;
-        const basePrice = Number(r.querySelector('.pass-price-input').value) || 0;
         const finalName = (sel === 'Other' && custom) ? custom : sel;
         if (finalName) {
-          types.push({ type: finalName, expiryDate: expiry, defaultPrice: basePrice });
+          types.push({ type: finalName, expiryDate: expiry });
         }
       });
       return types;
@@ -564,7 +563,7 @@
         }
 
         activeTypes.forEach(pt => {
-          const currentVal = existingPrices[pt.type] !== undefined ? existingPrices[pt.type] : (pt.defaultPrice || '');
+          const currentVal = existingPrices[pt.type] !== undefined ? existingPrices[pt.type] : '';
           const col = document.createElement('div');
           col.className = 'stop-price-item';
           col.setAttribute('data-pass-type', pt.type);
@@ -591,7 +590,7 @@
     }
 
     // Dynamic Pass Type Row Builder
-    function addPassTypeRow(type = 'Yearly Pass', customName = '', defaultPrice = '', expiryDate = '') {
+    function addPassTypeRow(type = 'Yearly Pass', customName = '', expiryDate = '') {
       const container = document.getElementById('pass-types-container');
       const row = document.createElement('div');
       row.className = 'pass-type-row';
@@ -610,19 +609,13 @@
         expiryDate = d.toISOString().split('T')[0];
       }
 
-      if (defaultPrice === '' || defaultPrice === undefined) {
-        if (type === 'Monthly Pass') defaultPrice = 2500;
-        else if (type === 'Weekly Pass') defaultPrice = 750;
-        else defaultPrice = 24000;
-      }
-
       const isKnownType = ['Monthly Pass', 'Weekly Pass', 'Yearly Pass'].includes(type);
       const isOther = type === 'Other' || (!isKnownType && Boolean(type));
       const selectedDropdownVal = isOther ? 'Other' : type;
       const customVal = isOther ? (customName || type) : '';
 
       row.innerHTML = `
-        <div style="display: grid; grid-template-columns: 1.5fr 1fr 1.2fr 40px; gap: 0.5rem; align-items: center;">
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr 40px; gap: 0.5rem; align-items: center;">
           <div>
             <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pass Plan</label>
             <select class="form-control pass-type-select" onchange="onPassTypeChanged(this)" required>
@@ -631,11 +624,6 @@
               <option value="Yearly Pass" ${selectedDropdownVal === 'Yearly Pass' ? 'selected' : ''}>Yearly Pass</option>
               <option value="Other" ${selectedDropdownVal === 'Other' ? 'selected' : ''}>Other (Type Manually)</option>
             </select>
-          </div>
-
-          <div>
-            <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Default / Base Price (₹)</label>
-            <input type="number" class="form-control pass-price-input" placeholder="₹ Price" value="${defaultPrice}" oninput="syncStopPricingFields()" min="0">
           </div>
 
           <div>
@@ -674,10 +662,7 @@
     }
 
     function addPassTypePreset(presetName) {
-      let defaultPrice = 24000;
-      if (presetName === 'Monthly Pass') defaultPrice = 2500;
-      else if (presetName === 'Weekly Pass') defaultPrice = 750;
-      addPassTypeRow(presetName, '', defaultPrice, '');
+      addPassTypeRow(presetName, '', '');
     }
 
     // Dynamic Boarding Stop Row with Stop-Specific Pricing per Pass Type
@@ -694,7 +679,7 @@
         pricesHtml = `<span style="color: var(--text-muted); font-size: 0.78rem;">Please add at least one Pass Plan above to set stop pricing.</span>`;
       } else {
         activeTypes.forEach(pt => {
-          const val = (prices && prices[pt.type] !== undefined) ? prices[pt.type] : (pt.defaultPrice || '');
+          const val = (prices && prices[pt.type] !== undefined) ? prices[pt.type] : '';
           pricesHtml += `
             <div class="stop-price-item" data-pass-type="${pt.type}" style="flex: 1; min-width: 140px;">
               <label style="font-size: 0.72rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
@@ -744,8 +729,8 @@
       const yearDate = new Date();
       yearDate.setFullYear(yearDate.getFullYear() + 1);
 
-      addPassTypeRow('Yearly Pass', '', 24000, yearDate.toISOString().split('T')[0]);
-      addPassTypeRow('Monthly Pass', '', 2500, monthDate.toISOString().split('T')[0]);
+      addPassTypeRow('Yearly Pass', '', yearDate.toISOString().split('T')[0]);
+      addPassTypeRow('Monthly Pass', '', monthDate.toISOString().split('T')[0]);
 
       addStopRow('Origin / Main Terminal', { 'Yearly Pass': 24000, 'Monthly Pass': 2500 });
       addStopRow('Central Junction Stop', { 'Yearly Pass': 20000, 'Monthly Pass': 2100 });
@@ -773,12 +758,11 @@
       passContainer.innerHTML = '';
       if (route.passTypes && route.passTypes.length > 0) {
         route.passTypes.forEach(pt => {
-          addPassTypeRow(pt.type, pt.type, pt.defaultPrice || pt.price, pt.expiryDate);
+          addPassTypeRow(pt.type, pt.type, pt.expiryDate);
         });
       } else {
         // Fallback from legacy route
-        const defaultFee = route.stops?.[0]?.fullYearFee || route.fullYearFee || 20000;
-        addPassTypeRow('Yearly Pass', '', defaultFee, route.passExpiryDate || '');
+        addPassTypeRow('Yearly Pass', '', route.passExpiryDate || '');
       }
 
       // Populate stops with stop-specific prices
@@ -816,15 +800,12 @@
       passTypeRows.forEach(row => {
         const selectVal = row.querySelector('.pass-type-select').value;
         const customVal = row.querySelector('.pass-custom-input').value.trim();
-        const basePrice = Number(row.querySelector('.pass-price-input').value) || 0;
         const expiryDate = row.querySelector('.pass-expiry-input').value;
         
         const finalType = (selectVal === 'Other' && customVal) ? customVal : selectVal;
         if (finalType && expiryDate) {
           passTypes.push({
             type: finalType,
-            defaultPrice: basePrice,
-            price: basePrice,
             expiryDate: expiryDate
           });
         }
@@ -851,7 +832,7 @@
           }
         });
 
-        const firstPrice = Object.values(prices)[0] || passTypes[0].defaultPrice || 0;
+        const firstPrice = Object.values(prices)[0] || 0;
         stops.push({
           name: name,
           prices: prices,
@@ -864,6 +845,11 @@
         showToast("Please add at least one boarding stop.", "warning");
         return;
       }
+
+      // Attach prices to passTypes from first stop for backward compatibility
+      passTypes.forEach(pt => {
+        pt.price = stops[0]?.prices?.[pt.type] || 0;
+      });
 
       const morningTime = document.getElementById('route-morning').value || '07:30';
       const eveningTime = document.getElementById('route-evening').value || '16:45';
@@ -879,7 +865,7 @@
         eveningTime: eveningTime,
         passTypes: passTypes,
         passExpiryDate: passTypes[0]?.expiryDate || '', // legacy fallback
-        fullYearFee: stops[0]?.fullYearFee || stops[0]?.fee || passTypes[0]?.defaultPrice || 0, // legacy fallback
+        fullYearFee: stops[0]?.fullYearFee || stops[0]?.prices?.['Yearly Pass'] || stops[0]?.fee || 0, // legacy fallback
         status: document.getElementById('route-status').value,
         stops: stops,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
