@@ -584,8 +584,32 @@
       syncStopPricingFields();
     }
 
+    function validatePassExpiryInput(inputEl) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (inputEl.value && inputEl.value < todayStr) {
+        showToast("Pass expiry date cannot be in the past. Please select today or a future date.", "warning");
+        inputEl.value = todayStr;
+      }
+    }
+
     function onPassTypeChanged(selectEl) {
       toggleCustomPassInput(selectEl);
+      const row = selectEl.closest('.pass-type-row');
+      if (row) {
+        const expiryInput = row.querySelector('.pass-expiry-input');
+        const type = selectEl.value;
+        const d = new Date();
+        if (type === 'Weekly Pass') {
+          d.setDate(d.getDate() + 7);
+        } else if (type === 'Monthly Pass') {
+          d.setMonth(d.getMonth() + 1);
+        } else if (type === 'Yearly Pass') {
+          d.setFullYear(d.getFullYear() + 1);
+        }
+        if (['Weekly Pass', 'Monthly Pass', 'Yearly Pass'].includes(type) && expiryInput) {
+          expiryInput.value = d.toISOString().split('T')[0];
+        }
+      }
       syncStopPricingFields();
     }
 
@@ -596,8 +620,11 @@
       row.className = 'pass-type-row';
       row.style.cssText = 'background: var(--bg-page); padding: 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem;';
       
-      // Auto-compute sensible default expiry date if none provided
-      if (!expiryDate) {
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+
+      // Auto-compute sensible default expiry date if none provided or if in past
+      if (!expiryDate || expiryDate < todayStr) {
         const d = new Date();
         if (type === 'Weekly Pass') {
           d.setDate(d.getDate() + 7);
@@ -628,7 +655,7 @@
 
           <div>
             <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Expiry Date</label>
-            <input type="date" class="form-control pass-expiry-input" value="${expiryDate}" required>
+            <input type="date" class="form-control pass-expiry-input" value="${expiryDate}" min="${todayStr}" required onchange="validatePassExpiryInput(this)" oninput="validatePassExpiryInput(this)">
           </div>
 
           <div style="display: flex; align-items: flex-end; justify-content: center; height: 100%;">
@@ -797,19 +824,31 @@
       // Collect Pass Types
       const passTypeRows = document.querySelectorAll('.pass-type-row');
       const passTypes = [];
+      const todayStr = new Date().toISOString().split('T')[0];
+      let hasPastExpiry = false;
+
       passTypeRows.forEach(row => {
         const selectVal = row.querySelector('.pass-type-select').value;
         const customVal = row.querySelector('.pass-custom-input').value.trim();
-        const expiryDate = row.querySelector('.pass-expiry-input').value;
+        const expiryInput = row.querySelector('.pass-expiry-input');
+        const expiryDate = expiryInput.value;
         
         const finalType = (selectVal === 'Other' && customVal) ? customVal : selectVal;
         if (finalType && expiryDate) {
+          if (expiryDate < todayStr) {
+            hasPastExpiry = true;
+            expiryInput.focus();
+            showToast(`Expiry date for "${finalType}" cannot be in the past (${expiryDate}). Please choose today or a future date.`, "warning");
+            return;
+          }
           passTypes.push({
             type: finalType,
             expiryDate: expiryDate
           });
         }
       });
+
+      if (hasPastExpiry) return;
 
       if (passTypes.length === 0) {
         showToast("Please add at least one Pass Plan (Monthly, Weekly, Yearly, or Other) with expiry date.", "warning");

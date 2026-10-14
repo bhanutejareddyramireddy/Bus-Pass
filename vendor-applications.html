@@ -233,7 +233,10 @@
               <div><span style="color: var(--text-muted);">Route:</span> <strong id="modal-route-name">-</strong></div>
               <div><span style="color: var(--text-muted);">Boarding Stop:</span> <strong id="modal-stop-name">-</strong></div>
               <div><span style="color: var(--text-muted);">Pass Type:</span> <span class="badge badge-primary" id="modal-pass-type">-</span></div>
-              <div><span style="color: var(--text-muted);">Pass Expiry Date:</span> <strong id="modal-expiry-date" class="text-primary">-</strong></div>
+              <div style="margin-top: 0.15rem; margin-bottom: 0.15rem;">
+                <label style="color: var(--text-muted); font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 3px;">Pass Expiry Date:</label>
+                <input type="date" id="modal-expiry-date-input" class="form-control" style="font-weight: 700; color: var(--primary); padding: 0.35rem 0.6rem; font-size: 0.88rem;" required onchange="validateApprovalExpiry(this)" oninput="validateApprovalExpiry(this)">
+              </div>
               <div><span style="color: var(--text-muted);">Bus Timings:</span> <span id="modal-route-timings">-</span></div>
               <div><span style="color: var(--text-muted);">Calculated Fee:</span> <strong style="font-size: 1.1rem; color: var(--primary);" id="modal-fee">-</strong></div>
               <div><span style="color: var(--text-muted);">Applied Date:</span> <span id="modal-date">-</span></div>
@@ -513,7 +516,8 @@
       if (selectedApp.paymentStatus === 'Rejected') payBadge = '<span class="badge badge-danger"><i class="fas fa-times"></i> Payment Rejected</span>';
       document.getElementById('modal-pay-status-badge').innerHTML = payBadge;
 
-      // Populate Route Expiry Date
+      // Populate Route Expiry Date (restricted to today or future)
+      const todayStr = new Date().toISOString().split('T')[0];
       let routeExpiry = selectedApp.passExpiryDate || '';
       if (!routeExpiry && selectedApp.routeId) {
         const matchedRoute = routesCache.find(r => r.id === selectedApp.routeId);
@@ -521,7 +525,16 @@
           routeExpiry = matchedRoute.passExpiryDate;
         }
       }
-      document.getElementById('modal-expiry-date').textContent = routeExpiry ? formatDate(routeExpiry) : 'Standard Validity';
+      if (!routeExpiry || routeExpiry < todayStr) {
+        const d = new Date();
+        d.setFullYear(d.getFullYear() + 1);
+        routeExpiry = d.toISOString().split('T')[0];
+      }
+      const expiryInput = document.getElementById('modal-expiry-date-input');
+      if (expiryInput) {
+        expiryInput.min = todayStr;
+        expiryInput.value = routeExpiry;
+      }
 
       // Populate Route Timings
       let morning = selectedApp.morningTime || '';
@@ -589,6 +602,14 @@
     }
 
     // Approve Application and issue digital pass
+    function validateApprovalExpiry(inputEl) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (inputEl.value && inputEl.value < todayStr) {
+        showToast("Pass expiry date cannot be in the past. Please select today or a future date.", "warning");
+        inputEl.value = todayStr;
+      }
+    }
+
     async function approveCurrentApplication() {
       if (!selectedApp) return;
 
@@ -605,19 +626,23 @@
       approveBtn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Generating Pass...';
 
       try {
-        // Compute Pass Validity Dates from Route's vendor-configured Pass Expiry Date
-        const validFrom = new Date().toISOString().split('T')[0];
-        let validUntil = selectedApp.passExpiryDate || '';
+        const todayStr = new Date().toISOString().split('T')[0];
+        const validFrom = todayStr;
+        const expiryInput = document.getElementById('modal-expiry-date-input');
+        let validUntil = expiryInput && expiryInput.value ? expiryInput.value : (selectedApp.passExpiryDate || '');
+
         if (!validUntil && selectedApp.routeId) {
           const matchedRoute = routesCache.find(r => r.id === selectedApp.routeId);
           if (matchedRoute && matchedRoute.passExpiryDate) {
             validUntil = matchedRoute.passExpiryDate;
           }
         }
-        if (!validUntil) {
-          const validUntilDate = new Date();
-          validUntilDate.setFullYear(validUntilDate.getFullYear() + 1);
-          validUntil = validUntilDate.toISOString().split('T')[0];
+        if (!validUntil || validUntil < todayStr) {
+          showToast("Pass expiry date cannot be in the past. Please select today or a future date.", "warning");
+          if (expiryInput) expiryInput.focus();
+          approveBtn.disabled = false;
+          approveBtn.innerHTML = '<i class="fas fa-check-circle"></i> Approve & Generate Pass';
+          return;
         }
 
         const validYear = validUntil ? validUntil.split('-')[0] : new Date().getFullYear();
