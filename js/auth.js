@@ -140,6 +140,11 @@ window.addEventListener('storage', function (e) {
 // Vendor Registration
 async function registerVendor(name, email, password, phone, businessName = '') {
   try {
+    const cleanPhone = (phone || '').toString().trim().replace(/[^0-9]/g, '');
+    if (cleanPhone.length !== 10) {
+      throw new Error("Mobile number must be exactly 10 digits.");
+    }
+
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     const uid = userCredential.user.uid;
 
@@ -147,7 +152,7 @@ async function registerVendor(name, email, password, phone, businessName = '') {
       uid: uid,
       name: name.trim(),
       email: email.trim().toLowerCase(),
-      phone: phone.trim(),
+      phone: cleanPhone,
       businessName: businessName.trim(),
       role: 'vendor',
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -191,6 +196,11 @@ async function loginVendor(email, password) {
 // Student Registration
 async function registerStudent(name, email, password, phone) {
   try {
+    const cleanPhone = (phone || '').toString().trim().replace(/[^0-9]/g, '');
+    if (cleanPhone.length !== 10) {
+      throw new Error("Mobile number must be exactly 10 digits.");
+    }
+
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     const uid = userCredential.user.uid;
 
@@ -198,7 +208,7 @@ async function registerStudent(name, email, password, phone) {
       uid: uid,
       name: name.trim(),
       email: email.trim().toLowerCase(),
-      phone: phone.trim(),
+      phone: cleanPhone,
       role: 'student',
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
@@ -338,6 +348,12 @@ async function loginConductor(conductorId, password) {
  * Uses secondary Firebase Auth instance so the Vendor remains logged in!
  */
 async function createConductorAccount(conductorData, password) {
+  const cleanPhone = (conductorData.phone || '').toString().trim().replace(/[^0-9]/g, '');
+  if (conductorData.phone && cleanPhone.length !== 10) {
+    throw new Error("Conductor mobile number must be exactly 10 digits.");
+  }
+  conductorData.phone = cleanPhone;
+
   const secondaryApp = getSecondaryApp();
   const secondaryAuth = secondaryApp.auth();
   const conductorId = (conductorData.conductorId || generateConductorId()).toUpperCase().trim();

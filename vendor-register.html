@@ -86,8 +86,8 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="phone">Contact Phone</label>
-            <input type="tel" id="phone" class="form-control" placeholder="9876543210" required autocomplete="tel">
+            <label class="form-label" for="phone">Contact Mobile Number (10 Digits) <span class="required" style="color:var(--danger)">*</span></label>
+            <input type="tel" id="phone" class="form-control" placeholder="e.g. 9876543210" required autocomplete="tel" pattern="[0-9]{10}" maxlength="10" minlength="10" inputmode="numeric" title="Please enter exact 10-digit mobile number" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
           </div>
         </div>
 
@@ -137,9 +137,16 @@
       const name = document.getElementById('name').value;
       const businessName = document.getElementById('business-name').value;
       const email = document.getElementById('email').value;
-      const phone = document.getElementById('phone').value;
+      const rawPhone = document.getElementById('phone').value;
+      const cleanPhone = rawPhone.trim().replace(/[^0-9]/g, '');
       const password = document.getElementById('password').value;
       const confirmPassword = document.getElementById('confirm-password').value;
+
+      if (cleanPhone.length !== 10) {
+        showToast("Contact mobile number must be exactly 10 digits.", "warning");
+        document.getElementById('phone').focus();
+        return;
+      }
 
       if (password !== confirmPassword) {
         showToast("Passwords do not match.", "warning");
@@ -150,7 +157,7 @@
       btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Registering agency...';
 
       try {
-        await registerVendor(name, email, password, phone, businessName);
+        await registerVendor(name, email, password, cleanPhone, businessName);
         showToast("Vendor account created successfully!", "success");
         setTimeout(() => {
           window.location.replace('vendor-dashboard.html');

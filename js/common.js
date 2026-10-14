@@ -209,3 +209,15 @@ function fileToDataUrl(file) {
     reader.readAsDataURL(file);
   });
 }
+
+// Mobile Number Validator (exact 10 digits)
+function isValidTenDigitPhone(phone) {
+  if (!phone) return false;
+  const digits = String(phone).trim().replace(/[^0-9]/g, '');
+  return digits.length === 10;
+}
+
+function cleanTenDigitPhone(phone) {
+  if (!phone) return '';
+  return String(phone).trim().replace(/[^0-9]/g, '').slice(0, 10);
+}
