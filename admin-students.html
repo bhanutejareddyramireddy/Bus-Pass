@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Students Directory | BusPass Super Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+
+  <div class="admin-layout">
+    <div id="admin-sidebar-container"></div>
+
+    <div class="admin-main-wrap">
+      <!-- Topbar -->
+      <header class="admin-topbar">
+        <div class="admin-topbar-left">
+          <button class="admin-mobile-toggle" id="admin-mobile-toggle" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="admin-breadcrumb">
+            <span>BusPass HQ</span>
+            <i class="fas fa-chevron-right admin-breadcrumb-sep"></i>
+            <span class="admin-breadcrumb-current">Commuter Directory</span>
+          </div>
+        </div>
+
+        <div class="admin-topbar-right">
+          <div style="font-size: 0.82rem; font-weight: 600; color: var(--admin-text-main);" id="admin-topbar-email">
+            admin@buspass.local
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="admin-content">
+        <!-- Header -->
+        <div class="admin-page-header">
+          <div class="admin-page-title-wrap">
+            <h1><i class="fas fa-user-graduate text-primary"></i> Registered Commuters & Students</h1>
+            <p>Platform-wide directory of all student and passenger accounts, active passes, and application records.</p>
+          </div>
+          <div class="admin-header-actions">
+            <button class="admin-btn admin-btn-secondary" onclick="loadStudentsData()">
+              <i class="fas fa-sync-alt" id="refresh-icon"></i> Refresh List
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Mini Bar -->
+        <div class="admin-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.5rem;">
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Total Commuters</div>
+            <div class="admin-stat-val" id="mini-total-students" style="font-size: 1.6rem;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Active Users</div>
+            <div class="admin-stat-val" id="mini-active-students" style="font-size: 1.6rem; color: #10B981;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Suspended Accounts</div>
+            <div class="admin-stat-val" id="mini-suspended-students" style="font-size: 1.6rem; color: #EF4444;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Active Pass Holders</div>
+            <div class="admin-stat-val" id="mini-passholders" style="font-size: 1.6rem; color: #6366F1;">0</div>
+          </div>
+        </div>
+
+        <!-- Search & Filter Card -->
+        <div class="admin-card" style="margin-bottom: 1.5rem; padding: 1.25rem;">
+          <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+            <div class="admin-search-box" style="flex: 1; min-width: 260px;">
+              <i class="fas fa-search admin-search-icon"></i>
+              <input type="text" id="student-search-input" class="admin-search-input" placeholder="Search by name, email, mobile, student ID..." oninput="handleFilterChange()">
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <select id="status-filter" class="admin-form-control" style="width: 150px;" onchange="handleFilterChange()">
+                <option value="all">All Statuses</option>
+                <option value="Active">Active</option>
+                <option value="Suspended">Suspended</option>
+              </select>
+
+              <select id="org-filter" class="admin-form-control" style="width: 190px;" onchange="handleFilterChange()">
+                <option value="all">All Institutions</option>
+                <!-- Injected dynamically -->
+              </select>
+
+              <select id="sort-select" class="admin-form-control" style="width: 150px;" onchange="handleFilterChange()">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="name">Name (A-Z)</option>
+              </select>
+
+              <button class="admin-btn admin-btn-secondary" onclick="resetFilters()">
+                <i class="fas fa-redo"></i> Reset
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Students Table -->
+        <div class="admin-card">
+          <div class="admin-card-header" style="border-bottom: 1px solid var(--admin-border); margin-bottom: 0;">
+            <h3 class="admin-card-title">
+              <i class="fas fa-list text-primary"></i> Commuters Directory 
+              <span class="admin-badge admin-badge-info" style="margin-left: 0.5rem;" id="filter-count">0</span>
+            </h3>
+          </div>
+
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Commuter / Student</th>
+                  <th>Contact Info</th>
+                  <th>Institution / PRN</th>
+                  <th>Joined Date</th>
+                  <th>Pass Status</th>
+                  <th>Account Status</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="students-table-body">
+                <tr>
+                  <td colspan="7">
+                    <div class="admin-skeleton" style="height: 50px; margin-bottom: 0.5rem;"></div>
+                    <div class="admin-skeleton" style="height: 50px; margin-bottom: 0.5rem;"></div>
+                    <div class="admin-skeleton" style="height: 50px;"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="students-pagination" style="padding: 1rem;"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Student Dossier Inspection Modal -->
+  <div class="admin-modal-overlay" id="student-inspect-modal">
+    <div class="admin-modal" style="max-width: 780px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title"><i class="fas fa-id-card text-primary"></i> Commuter Dossier</h3>
+        <button class="admin-modal-close" onclick="closeModal('student-inspect-modal')">&times;</button>
+      </div>
+      <div class="admin-modal-body" id="student-inspect-body">
+        <!-- Injected dynamically -->
+      </div>
+      <div class="admin-modal-footer">
+        <button type="button" class="admin-btn admin-btn-secondary" onclick="closeModal('student-inspect-modal')">Close</button>
+        <button type="button" id="s-toggle-status-btn" class="admin-btn"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/admin-common.js"></script>
+
+  <script>
+    initAdminShell('students');
+
+    let allStudents = [];
+    let filteredStudents = [];
+    let allOrgs = [];
+    let passesByStudent = {};
+    let appsByStudent = {};
+    let currentPage = 1;
+    const PAGE_SIZE = 10;
+
+    requireSuperAdmin((user, userData) => {
+      loadStudentsData();
+    });
+
+    async function loadStudentsData() {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (refreshIcon) refreshIcon.classList.add('fa-spin');
+
+      try {
+        const [usersSnap, orgsSnap, passesSnap, appsSnap] = await Promise.all([
+          db.collection('users').where('role', '==', 'student').get(),
+          db.collection('organizations').get(),
+          db.collection('passes').get(),
+          db.collection('applications').get()
+        ]);
+
+        allStudents = [];
+        usersSnap.forEach(doc => {
+          allStudents.push({ id: doc.id, ...doc.data() });
+        });
+
+        allOrgs = [];
+        const orgSelect = document.getElementById('org-filter');
+        let orgHtml = '<option value="all">All Institutions</option>';
+        orgsSnap.forEach(doc => {
+          const org = { id: doc.id, ...doc.data() };
+          allOrgs.push(org);
+          orgHtml += `<option value="${escapeHtml(org.name || org.id)}">${escapeHtml(org.name || org.id)}</option>`;
+        });
+        orgSelect.innerHTML = orgHtml;
+
+        // Group passes & applications by student
+        passesByStudent = {};
+        passesSnap.forEach(doc => {
+          const pass = { id: doc.id, ...doc.data() };
+          const sid = pass.studentId || pass.userId;
+          if (sid) {
+            if (!passesByStudent[sid]) passesByStudent[sid] = [];
+            passesByStudent[sid].push(pass);
+          }
+        });
+
+        appsByStudent = {};
+        appsSnap.forEach(doc => {
+          const app = { id: doc.id, ...doc.data() };
+          const sid = app.studentId || app.userId;
+          if (sid) {
+            if (!appsByStudent[sid]) appsByStudent[sid] = [];
+            appsByStudent[sid].push(app);
+          }
+        });
+
+        // Compute KPIs
+        let activeStudents = 0;
+        let suspendedStudents = 0;
+        let passHolders = 0;
+
+        allStudents.forEach(s => {
+          if (s.status === 'Suspended') suspendedStudents++;
+          else activeStudents++;
+
+          const studentPasses = passesByStudent[s.id] || [];
+          const hasActivePass = studentPasses.some(p => p.status === 'Active' || p.status === 'active');
+          if (hasActivePass) passHolders++;
+        });
+
+        document.getElementById('mini-total-students').textContent = allStudents.length;
+        document.getElementById('mini-active-students').textContent = activeStudents;
+        document.getElementById('mini-suspended-students').textContent = suspendedStudents;
+        document.getElementById('mini-passholders').textContent = passHolders;
+
+        handleFilterChange();
+      } catch (err) {
+        console.error("Error loading students:", err);
+        showToast("Failed to load students directory: " + err.message, "error");
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+      }
+    }
+
+    function handleFilterChange() {
+      const query = document.getElementById('student-search-input').value.toLowerCase().trim();
+      const statusFilter = document.getElementById('status-filter').value;
+      const orgFilter = document.getElementById('org-filter').value;
+      const sortBy = document.getElementById('sort-select').value;
+
+      filteredStudents = allStudents.filter(s => {
+        // Status filter
+        const isSusp = s.status === 'Suspended';
+        if (statusFilter === 'Active' && isSusp) return false;
+        if (statusFilter === 'Suspended' && !isSusp) return false;
+
+        // Org filter
+        if (orgFilter !== 'all') {
+          const sOrg = (s.organization || s.college || s.school || '').toLowerCase();
+          if (sOrg !== orgFilter.toLowerCase()) return false;
+        }
+
+        // Search query
+        if (query) {
+          const name = (s.name || s.fullName || '').toLowerCase();
+          const email = (s.email || '').toLowerCase();
+          const phone = (s.mobile || s.phone || '').toLowerCase();
+          const prn = (s.prn || s.rollNo || s.studentId || '').toLowerCase();
+          if (!name.includes(query) && !email.includes(query) && !phone.includes(query) && !prn.includes(query)) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      // Sorting
+      filteredStudents.sort((a, b) => {
+        if (sortBy === 'name') return (a.name || a.fullName || '').localeCompare(b.name || b.fullName || '');
+        if (sortBy === 'oldest') return (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
+        return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+      });
+
+      document.getElementById('filter-count').textContent = filteredStudents.length;
+      currentPage = 1;
+      renderStudentsTable();
+    }
+
+    function resetFilters() {
+      document.getElementById('student-search-input').value = '';
+      document.getElementById('status-filter').value = 'all';
+      document.getElementById('org-filter').value = 'all';
+      document.getElementById('sort-select').value = 'newest';
+      handleFilterChange();
+    }
+
+    function renderStudentsTable() {
+      const tbody = document.getElementById('students-table-body');
+      const paginationContainer = document.getElementById('students-pagination');
+
+      if (filteredStudents.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7">
+              <div class="admin-empty-state">
+                <div class="admin-empty-icon"><i class="fas fa-user-graduate"></i></div>
+                <h4 class="admin-empty-title">No Commuters Found</h4>
+                <p class="admin-empty-desc">No registered students match your current search and filter settings.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        paginationContainer.innerHTML = '';
+        return;
+      }
+
+      const paginated = paginateTable(filteredStudents, currentPage, PAGE_SIZE);
+
+      tbody.innerHTML = paginated.items.map(s => {
+        const isSusp = s.status === 'Suspended';
+        const sPasses = passesByStudent[s.id] || [];
+        const hasActivePass = sPasses.some(p => p.status === 'Active' || p.status === 'active');
+        const sApps = appsByStudent[s.id] || [];
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight: 600; color: var(--admin-text-main); font-size: 0.95rem;">
+                ${escapeHtml(s.name || s.fullName || 'Unnamed Student')}
+              </div>
+              <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-family: monospace;">
+                UID: ${s.id.substring(0, 10)}...
+              </div>
+            </td>
+            <td>
+              <div><i class="fas fa-envelope" style="font-size: 0.75rem; color: var(--admin-text-muted); margin-right: 4px;"></i> ${escapeHtml(s.email || 'N/A')}</div>
+              <div style="font-size: 0.8rem; color: var(--admin-text-muted); margin-top: 2px;">
+                <i class="fas fa-phone" style="font-size: 0.75rem; margin-right: 4px;"></i> ${escapeHtml(s.mobile || s.phone || 'N/A')}
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 500;">${escapeHtml(s.organization || s.college || s.school || 'Unassigned')}</div>
+              ${s.prn || s.rollNo ? `<div style="font-size: 0.75rem; color: var(--admin-text-muted);">ID/PRN: ${escapeHtml(s.prn || s.rollNo)}</div>` : ''}
+            </td>
+            <td>
+              <div style="font-size: 0.85rem;">${formatDate(s.createdAt)}</div>
+            </td>
+            <td>
+              ${hasActivePass 
+                ? `<span class="admin-badge admin-badge-success"><i class="fas fa-check-circle"></i> Active Pass</span>` 
+                : (sApps.length > 0 
+                  ? `<span class="admin-badge admin-badge-warning"><i class="fas fa-clock"></i> ${sApps.length} App(s)</span>` 
+                  : `<span class="admin-badge admin-badge-secondary">None</span>`)}
+            </td>
+            <td>
+              ${isSusp 
+                ? '<span class="admin-badge admin-badge-danger"><i class="fas fa-ban"></i> Suspended</span>' 
+                : '<span class="admin-badge admin-badge-success"><i class="fas fa-check"></i> Active</span>'}
+            </td>
+            <td style="text-align: right;">
+              <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
+                <button class="admin-btn admin-btn-sm admin-btn-secondary" onclick="inspectStudent('${s.id}')" title="Inspect Full Dossier">
+                  <i class="fas fa-eye"></i> View
+                </button>
+                <button class="admin-btn admin-btn-sm ${isSusp ? 'admin-btn-primary' : 'admin-btn-danger'}" 
+                  onclick="promptToggleStudentStatus('${s.id}', '${escapeHtml(s.name || s.fullName || 'Student')}', '${s.status || 'Active'}')"
+                  title="${isSusp ? 'Reactivate Account' : 'Suspend Account'}">
+                  <i class="fas ${isSusp ? 'fa-user-check' : 'fa-user-slash'}"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      renderPaginationControls('students-pagination', paginated, (newPage) => {
+        currentPage = newPage;
+        renderStudentsTable();
+      });
+    }
+
+    function inspectStudent(studentId) {
+      const student = allStudents.find(s => s.id === studentId);
+      if (!student) return;
+
+      const isSuspended = student.status === 'Suspended';
+      const studentPasses = passesByStudent[studentId] || [];
+      const studentApps = appsByStudent[studentId] || [];
+
+      const body = document.getElementById('student-inspect-body');
+      body.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--admin-border);">
+          <div style="width: 54px; height: 54px; border-radius: 50%; background: #EEF2FF; color: var(--admin-primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700;">
+            ${(student.name || student.fullName || 'S').charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 1.25rem;">${escapeHtml(student.name || student.fullName || 'Unnamed Student')}</h3>
+            <div style="font-size: 0.85rem; color: var(--admin-text-muted);">
+              ID: <code>${student.id}</code> &bull; Registered: ${formatDate(student.createdAt)}
+            </div>
+          </div>
+          <div style="margin-left: auto;">
+            ${isSuspended 
+              ? '<span class="admin-badge admin-badge-danger" style="font-size: 0.85rem;"><i class="fas fa-ban"></i> Suspended</span>' 
+              : '<span class="admin-badge admin-badge-success" style="font-size: 0.85rem;"><i class="fas fa-check"></i> Active Account</span>'}
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">EMAIL ADDRESS</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(student.email || 'N/A')}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">PHONE NUMBER</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(student.mobile || student.phone || 'N/A')}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">INSTITUTION</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(student.organization || student.college || student.school || 'Unassigned')}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">PRN / ROLL NO</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(student.prn || student.rollNo || 'N/A')}</div>
+          </div>
+        </div>
+
+        <!-- Passes Section -->
+        <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+          <span><i class="fas fa-ticket-alt text-primary"></i> Digital Passes History (${studentPasses.length})</span>
+        </h4>
+        ${studentPasses.length === 0 ? '<p style="color: var(--admin-text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">No issued digital passes on record.</p>' : `
+          <div class="admin-table-container" style="margin-bottom: 1.5rem;">
+            <table class="admin-table" style="font-size: 0.82rem;">
+              <thead>
+                <tr>
+                  <th>Pass No</th>
+                  <th>Route / Transit</th>
+                  <th>Validity</th>
+                  <th>Fee</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${studentPasses.map(p => `
+                  <tr>
+                    <td><strong>${escapeHtml(p.passNumber || p.id.substring(0, 8))}</strong></td>
+                    <td>${escapeHtml(p.routeName || p.route || 'General Transit')}</td>
+                    <td>${formatDate(p.validFrom)} &rarr; ${formatDate(p.validUntil || p.expiryDate)}</td>
+                    <td>${formatCurrency(p.amount || p.price || 0)}</td>
+                    <td>
+                      <span class="admin-badge ${p.status === 'Active' || p.status === 'active' ? 'admin-badge-success' : 'admin-badge-secondary'}">
+                        ${escapeHtml(p.status || 'Active')}
+                      </span>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `}
+
+        <!-- Applications Section -->
+        <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">
+          <i class="fas fa-file-alt text-primary"></i> Bus Pass Applications (${studentApps.length})
+        </h4>
+        ${studentApps.length === 0 ? '<p style="color: var(--admin-text-muted); font-size: 0.85rem;">No submitted applications on record.</p>' : `
+          <div class="admin-table-container">
+            <table class="admin-table" style="font-size: 0.82rem;">
+              <thead>
+                <tr>
+                  <th>App ID</th>
+                  <th>Route Requested</th>
+                  <th>Submitted Date</th>
+                  <th>Payment Proof</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${studentApps.map(a => `
+                  <tr>
+                    <td><code>${a.id.substring(0, 8)}</code></td>
+                    <td>${escapeHtml(a.routeName || a.route || 'N/A')}</td>
+                    <td>${formatDate(a.createdAt || a.submittedAt)}</td>
+                    <td>
+                      ${a.paymentProofUrl ? `<a href="${a.paymentProofUrl}" target="_blank" style="color: var(--admin-primary);"><i class="fas fa-receipt"></i> View Proof</a>` : '<span style="color: var(--admin-text-muted);">None</span>'}
+                    </td>
+                    <td>
+                      <span class="admin-badge ${a.status === 'Approved' ? 'admin-badge-success' : (a.status === 'Rejected' ? 'admin-badge-danger' : 'admin-badge-warning')}">
+                        ${escapeHtml(a.status || 'Pending')}
+                      </span>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `}
+      `;
+
+      // Configure bottom toggle action button
+      const toggleBtn = document.getElementById('s-toggle-status-btn');
+      if (isSuspended) {
+        toggleBtn.className = 'admin-btn admin-btn-primary';
+        toggleBtn.innerHTML = '<i class="fas fa-user-check"></i> Reactivate Commuter';
+        toggleBtn.onclick = () => {
+          closeModal('student-inspect-modal');
+          promptToggleStudentStatus(student.id, student.name || 'Student', student.status);
+        };
+      } else {
+        toggleBtn.className = 'admin-btn admin-btn-danger';
+        toggleBtn.innerHTML = '<i class="fas fa-user-slash"></i> Suspend Commuter';
+        toggleBtn.onclick = () => {
+          closeModal('student-inspect-modal');
+          promptToggleStudentStatus(student.id, student.name || 'Student', student.status);
+        };
+      }
+
+      openModal('student-inspect-modal');
+    }
+
+    function promptToggleStudentStatus(studentId, studentName, currentStatus) {
+      const isSuspended = currentStatus === 'Suspended';
+      const actionTitle = isSuspended ? 'Reactivate Commuter Account' : 'Suspend Commuter Account';
+      const actionVerb = isSuspended ? 'reactivate' : 'suspend';
+      const newStatus = isSuspended ? 'Active' : 'Suspended';
+
+      const message = `Are you sure you want to <strong>${actionVerb}</strong> commuter "<strong>${escapeHtml(studentName)}</strong>"? ${
+        isSuspended 
+          ? 'They will be allowed to log into the mobile/web commuter portal, submit new pass applications, and view their digital passes.' 
+          : 'Their student portal access will be temporarily blocked. Their digital bus passes and historical applications will remain intact.'
+      }`;
+
+      adminConfirmModal(
+        actionTitle,
+        message,
+        isSuspended ? 'Reactivate Commuter' : 'Confirm Suspension',
+        async (reason) => {
+          try {
+            await db.collection('users').doc(studentId).update({
+              status: newStatus,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            await logAdminAction(
+              isSuspended ? 'STUDENT_REACTIVATED' : 'STUDENT_SUSPENDED',
+              'student',
+              studentId,
+              studentName,
+              { previousStatus: currentStatus, newStatus: newStatus },
+              reason || `Commuter ${newStatus.toLowerCase()} by Super Admin`
+            );
+
+            showToast(`Commuter account successfully ${newStatus.toLowerCase()}!`, "success");
+            loadStudentsData();
+          } catch (e) {
+            console.error("Status update error:", e);
+            throw new Error("Failed to update commuter status: " + e.message);
+          }
+        },
+        !isSuspended
+      );
+    }
+  </script>
+</body>
+</html>

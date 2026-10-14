@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vendors Management | BusPass Super Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+
+  <div class="admin-layout">
+    <div id="admin-sidebar-container"></div>
+
+    <div class="admin-main-wrap">
+      <!-- Topbar -->
+      <header class="admin-topbar">
+        <div class="admin-topbar-left">
+          <button class="admin-mobile-toggle" id="admin-mobile-toggle" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="admin-breadcrumb">
+            <span>BusPass HQ</span>
+            <i class="fas fa-chevron-right admin-breadcrumb-sep"></i>
+            <span class="admin-breadcrumb-current">Vendor Agencies</span>
+          </div>
+        </div>
+
+        <div class="admin-topbar-right">
+          <div style="font-size: 0.82rem; font-weight: 600; color: var(--admin-text-main);" id="admin-topbar-email">
+            admin@buspass.local
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="admin-content">
+        <!-- Header -->
+        <div class="admin-page-header">
+          <div class="admin-page-title-wrap">
+            <h1><i class="fas fa-building text-primary"></i> Transport Vendors Directory</h1>
+            <p>Manage, inspect, and monitor all commercial and institutional fleet operator accounts.</p>
+          </div>
+          <div class="admin-header-actions">
+            <button class="admin-btn admin-btn-secondary" onclick="loadVendorsData()">
+              <i class="fas fa-sync-alt" id="refresh-icon"></i> Refresh List
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Mini Bar -->
+        <div class="admin-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.5rem;">
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Total Agencies</div>
+            <div class="admin-stat-val" id="mini-total-vendors" style="font-size: 1.6rem;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Active Operators</div>
+            <div class="admin-stat-val" id="mini-active-vendors" style="font-size: 1.6rem; color: #10B981;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Suspended Operators</div>
+            <div class="admin-stat-val" id="mini-suspended-vendors" style="font-size: 1.6rem; color: #EF4444;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Associated Buses</div>
+            <div class="admin-stat-val" id="mini-total-buses" style="font-size: 1.6rem; color: #6366F1;">0</div>
+          </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="admin-card" style="padding: 1.25rem; margin-bottom: 1.5rem;">
+          <div class="admin-filter-bar" style="margin-bottom: 0;">
+            <div class="admin-filter-group">
+              <div class="admin-table-search">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-vendor" placeholder="Search by name, email, agency, or city..." oninput="handleFilterChange()">
+              </div>
+
+              <select id="filter-status" class="admin-select" onchange="handleFilterChange()">
+                <option value="ALL">All Statuses</option>
+                <option value="Active">Active Only</option>
+                <option value="Suspended">Suspended Only</option>
+              </select>
+
+              <select id="filter-sort" class="admin-select" onchange="handleFilterChange()">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="name">Agency Name (A-Z)</option>
+              </select>
+            </div>
+
+            <div style="font-size: 0.85rem; color: var(--admin-text-muted);">
+              Filtered: <strong id="filter-count" style="color:var(--admin-text-main);">0</strong> vendors
+            </div>
+          </div>
+        </div>
+
+        <!-- Vendors Table -->
+        <div class="admin-card" style="padding: 0; overflow: hidden;">
+          <div class="admin-table-wrap" style="border: none; border-radius: 0;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Agency &amp; Contact</th>
+                  <th>Location / Type</th>
+                  <th>Fleet Stats</th>
+                  <th>Registered</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Administrative Actions</th>
+                </tr>
+              </thead>
+              <tbody id="vendors-table-body">
+                <tr><td colspan="6" style="text-align:center; padding:3rem;"><span class="spinner spinner-sm"></span> Loading vendors directory...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="admin-pagination" id="vendors-pagination"></div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Detailed Vendor Inspection Drawer / Modal -->
+  <div class="admin-modal-backdrop" id="vendor-inspect-modal">
+    <div class="admin-modal-dialog modal-lg">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title">
+          <i class="fas fa-building text-primary"></i> <span id="v-inspect-title">Vendor Dossier</span>
+        </h3>
+        <button class="admin-modal-close" onclick="closeModal('vendor-inspect-modal')">&times;</button>
+      </div>
+      <div class="admin-modal-body" style="padding: 1.5rem;">
+        
+        <!-- Header Info Card -->
+        <div style="background: var(--admin-bg); border: 1px solid var(--admin-border); border-radius: 12px; padding: 1.25rem; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 id="v-inspect-biz" style="font-size: 1.3rem; font-weight: 800; color: var(--admin-text-main); margin-bottom: 0.2rem;">-</h2>
+            <div style="color: var(--admin-text-muted); font-size: 0.85rem;">
+              Admin: <strong id="v-inspect-name" style="color: var(--admin-text-main);">-</strong> &bull; 
+              <span id="v-inspect-email">-</span> &bull; 
+              <span id="v-inspect-phone">-</span>
+            </div>
+            <div style="margin-top: 0.5rem; font-family: monospace; font-size: 0.76rem; color: var(--admin-text-subtle);">
+              UID: <span id="v-inspect-uid">-</span>
+            </div>
+          </div>
+          <div id="v-inspect-status-badge"></div>
+        </div>
+
+        <!-- Metric Badges -->
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.85rem; margin-bottom: 1.5rem; text-align: center;">
+          <div style="background: #F8FAFC; border: 1px solid var(--admin-border); border-radius: 8px; padding: 0.75rem;">
+            <div style="font-size: 0.7rem; color: var(--admin-text-muted); text-transform: uppercase; font-weight: 700;">Orgs</div>
+            <div id="v-stat-orgs" style="font-size: 1.3rem; font-weight: 800; color: var(--admin-text-main);">-</div>
+          </div>
+          <div style="background: #F8FAFC; border: 1px solid var(--admin-border); border-radius: 8px; padding: 0.75rem;">
+            <div style="font-size: 0.7rem; color: var(--admin-text-muted); text-transform: uppercase; font-weight: 700;">Routes</div>
+            <div id="v-stat-routes" style="font-size: 1.3rem; font-weight: 800; color: var(--admin-text-main);">-</div>
+          </div>
+          <div style="background: #F8FAFC; border: 1px solid var(--admin-border); border-radius: 8px; padding: 0.75rem;">
+            <div style="font-size: 0.7rem; color: var(--admin-text-muted); text-transform: uppercase; font-weight: 700;">Buses</div>
+            <div id="v-stat-buses" style="font-size: 1.3rem; font-weight: 800; color: var(--admin-text-main);">-</div>
+          </div>
+          <div style="background: #F8FAFC; border: 1px solid var(--admin-border); border-radius: 8px; padding: 0.75rem;">
+            <div style="font-size: 0.7rem; color: var(--admin-text-muted); text-transform: uppercase; font-weight: 700;">Conductors</div>
+            <div id="v-stat-conductors" style="font-size: 1.3rem; font-weight: 800; color: var(--admin-text-main);">-</div>
+          </div>
+          <div style="background: #F8FAFC; border: 1px solid var(--admin-border); border-radius: 8px; padding: 0.75rem;">
+            <div style="font-size: 0.7rem; color: var(--admin-text-muted); text-transform: uppercase; font-weight: 700;">Passes</div>
+            <div id="v-stat-passes" style="font-size: 1.3rem; font-weight: 800; color: #10B981;">-</div>
+          </div>
+        </div>
+
+        <!-- Detailed Operations Content -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div>
+            <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--admin-text-muted); text-transform: uppercase; margin-bottom: 0.6rem;">
+              <i class="fas fa-map-marker-alt"></i> Operating Base &amp; Info
+            </h4>
+            <div style="background: #FFFFFF; border: 1px solid var(--admin-border); border-radius: 8px; padding: 1rem; font-size: 0.86rem; line-height: 1.6;">
+              <div>City / HQ: <strong id="v-inspect-city">-</strong></div>
+              <div>Address: <span id="v-inspect-address">-</span></div>
+              <div>Business Type: <span id="v-inspect-type">-</span></div>
+              <div>Description: <p id="v-inspect-desc" style="color:var(--admin-text-muted); font-size:0.8rem; margin-top:4px;">-</p></div>
+            </div>
+          </div>
+
+          <div>
+            <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--admin-text-muted); text-transform: uppercase; margin-bottom: 0.6rem;">
+              <i class="fas fa-university"></i> Associated Organizations
+            </h4>
+            <div id="v-inspect-orgs-list" style="max-height: 170px; overflow-y: auto; background: #FFFFFF; border: 1px solid var(--admin-border); border-radius: 8px; padding: 0.75rem; font-size: 0.82rem;">
+              Loading institutions...
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="admin-modal-footer">
+        <button type="button" class="admin-btn admin-btn-secondary" onclick="closeModal('vendor-inspect-modal')">Close</button>
+        <button type="button" id="v-toggle-status-btn" class="admin-btn">
+          <!-- Toggle Action -->
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/admin-common.js"></script>
+
+  <script>
+    initAdminShell('vendors');
+
+    let allVendors = [];
+    let filteredVendors = [];
+    let currentPage = 1;
+    const PAGE_SIZE = 10;
+
+    // Cross-collection statistics cache
+    let orgsByVendor = {};
+    let routesByVendor = {};
+    let busesByVendor = {};
+    let conductorsByVendor = {};
+    let passesByVendor = {};
+
+    requireSuperAdmin((user, userData) => {
+      loadVendorsData();
+    });
+
+    async function loadVendorsData() {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (refreshIcon) refreshIcon.classList.add('fa-spin');
+
+      try {
+        // Fetch users, orgs, routes, buses, conductors, passes in parallel
+        const [
+          usersSnap,
+          orgsSnap,
+          routesSnap,
+          busesSnap,
+          condsSnap,
+          passesSnap
+        ] = await Promise.all([
+          db.collection('users').where('role', '==', 'vendor').get(),
+          db.collection('organizations').get(),
+          db.collection('routes').get(),
+          db.collection('buses').get(),
+          db.collection('conductors').get(),
+          db.collection('passes').get()
+        ]);
+
+        // Build metric aggregates
+        orgsByVendor = {};
+        orgsSnap.forEach(d => {
+          const v = d.data().vendorId;
+          if (!orgsByVendor[v]) orgsByVendor[v] = [];
+          orgsByVendor[v].push({ id: d.id, ...d.data() });
+        });
+
+        routesByVendor = {};
+        routesSnap.forEach(d => {
+          const v = d.data().vendorId;
+          routesByVendor[v] = (routesByVendor[v] || 0) + 1;
+        });
+
+        busesByVendor = {};
+        busesSnap.forEach(d => {
+          const v = d.data().vendorId;
+          busesByVendor[v] = (busesByVendor[v] || 0) + 1;
+        });
+
+        conductorsByVendor = {};
+        condsSnap.forEach(d => {
+          const v = d.data().vendorId;
+          conductorsByVendor[v] = (conductorsByVendor[v] || 0) + 1;
+        });
+
+        passesByVendor = {};
+        passesSnap.forEach(d => {
+          const v = d.data().vendorId;
+          passesByVendor[v] = (passesByVendor[v] || 0) + 1;
+        });
+
+        allVendors = [];
+        let activeCount = 0;
+        let suspendedCount = 0;
+
+        usersSnap.forEach(d => {
+          const v = { id: d.id, ...d.data() };
+          allVendors.push(v);
+          if (v.status === 'Suspended') suspendedCount++;
+          else activeCount++;
+        });
+
+        // Update mini KPIs
+        document.getElementById('mini-total-vendors').textContent = allVendors.length;
+        document.getElementById('mini-active-vendors').textContent = activeCount;
+        document.getElementById('mini-suspended-vendors').textContent = suspendedCount;
+        document.getElementById('mini-total-buses').textContent = busesSnap.size;
+
+        handleFilterChange();
+
+      } catch (err) {
+        console.error("Error loading vendors:", err);
+        showToast("Failed to load vendors: " + err.message, "danger");
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+      }
+    }
+
+    function handleFilterChange() {
+      const q = (document.getElementById('search-vendor').value || '').trim().toLowerCase();
+      const statusFilter = document.getElementById('filter-status').value;
+      const sortBy = document.getElementById('filter-sort').value;
+
+      filteredVendors = allVendors.filter(v => {
+        const matchesQuery = !q || 
+          (v.name && v.name.toLowerCase().includes(q)) ||
+          (v.email && v.email.toLowerCase().includes(q)) ||
+          (v.businessName && v.businessName.toLowerCase().includes(q)) ||
+          (v.city && v.city.toLowerCase().includes(q));
+
+        const matchesStatus = statusFilter === 'ALL' ||
+          (statusFilter === 'Active' && v.status !== 'Suspended') ||
+          (statusFilter === 'Suspended' && v.status === 'Suspended');
+
+        return matchesQuery && matchesStatus;
+      });
+
+      // Sorting
+      filteredVendors.sort((a, b) => {
+        if (sortBy === 'name') return (a.businessName || a.name || '').localeCompare(b.businessName || b.name || '');
+        if (sortBy === 'oldest') return (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
+        return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0); // newest default
+      });
+
+      document.getElementById('filter-count').textContent = filteredVendors.length;
+      currentPage = 1;
+      renderVendorsTable();
+    }
+
+    function renderVendorsTable() {
+      const tbody = document.getElementById('vendors-table-body');
+      const paginationContainer = document.getElementById('vendors-pagination');
+
+      if (filteredVendors.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6">
+              <div class="admin-empty-state">
+                <div class="admin-empty-icon"><i class="fas fa-building"></i></div>
+                <h4 class="admin-empty-title">No Transport Vendors Found</h4>
+                <p class="admin-empty-desc">No vendor accounts match your current filter or search criteria.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        paginationContainer.innerHTML = '';
+        return;
+      }
+
+      const paginated = paginateTable(filteredVendors, currentPage, PAGE_SIZE);
+
+      tbody.innerHTML = paginated.items.map(v => {
+        const isSusp = v.status === 'Suspended';
+        const orgs = (orgsByVendor[v.id] || []).length;
+        const routes = routesByVendor[v.id] || 0;
+        const buses = busesByVendor[v.id] || 0;
+        const conductors = conductorsByVendor[v.id] || 0;
+        const passes = passesByVendor[v.id] || 0;
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight:700; font-size:0.92rem; color:var(--admin-text-main);">
+                ${v.businessName || v.name || 'Unnamed Agency'}
+              </div>
+              <div style="font-size:0.78rem; color:var(--admin-text-muted);">
+                <i class="fas fa-user-tie"></i> ${v.name || 'Operator'} &bull; <i class="fas fa-envelope"></i> ${v.email || '-'}
+              </div>
+              <div style="font-size:0.75rem; color:var(--admin-text-subtle);">
+                <i class="fas fa-phone"></i> <code>${v.phone || '-'}</code>
+              </div>
+            </td>
+            <td>
+              <div style="font-weight:600;">${v.city || 'National Fleet'}</div>
+              <div style="font-size:0.75rem; color:var(--admin-text-muted);">${v.businessType || 'Commercial Transport'}</div>
+            </td>
+            <td>
+              <div style="display:flex; gap:0.4rem; font-size:0.74rem; flex-wrap:wrap;">
+                <span class="admin-badge admin-badge-secondary" title="Organizations">${orgs} Orgs</span>
+                <span class="admin-badge admin-badge-secondary" title="Routes">${routes} Routes</span>
+                <span class="admin-badge admin-badge-primary" title="Buses">${buses} Buses</span>
+                <span class="admin-badge admin-badge-info" title="Conductors">${conductors} Staff</span>
+                <span class="admin-badge admin-badge-success" title="Passes">${passes} Passes</span>
+              </div>
+            </td>
+            <td>
+              <div style="font-weight:600;">${formatDate(v.createdAt)}</div>
+              <div style="font-size:0.72rem; color:var(--admin-text-subtle);">${timeAgo(v.createdAt)}</div>
+            </td>
+            <td>
+              <span class="admin-badge ${isSusp ? 'admin-badge-danger' : 'admin-badge-success'}">
+                <span class="admin-badge-dot"></span> ${v.status || 'Active'}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <div style="display:inline-flex; align-items:center; gap:0.4rem;">
+                <button class="admin-btn-icon" title="Inspect Full Dossier" onclick="inspectVendor('${v.id}')">
+                  <i class="fas fa-eye text-primary"></i>
+                </button>
+                <button class="admin-btn-icon ${isSusp ? '' : 'danger'}" title="${isSusp ? 'Reactivate Vendor' : 'Suspend Vendor'}" onclick="promptToggleVendorStatus('${v.id}', '${v.businessName || v.name}', '${v.status}')">
+                  <i class="fas ${isSusp ? 'fa-check text-success' : 'fa-ban text-danger'}"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      renderPaginationControls('vendors-pagination', paginated, 'gotoVendorsPage');
+    }
+
+    function gotoVendorsPage(page) {
+      currentPage = page;
+      renderVendorsTable();
+    }
+
+    // Inspect Modal
+    function inspectVendor(vendorId) {
+      const v = allVendors.find(x => x.id === vendorId);
+      if (!v) return;
+
+      document.getElementById('v-inspect-title').textContent = v.businessName || v.name;
+      document.getElementById('v-inspect-biz').textContent = v.businessName || 'Transport Fleet';
+      document.getElementById('v-inspect-name').textContent = v.name || '-';
+      document.getElementById('v-inspect-email').textContent = v.email || '-';
+      document.getElementById('v-inspect-phone').textContent = v.phone || '-';
+      document.getElementById('v-inspect-uid').textContent = v.id;
+      document.getElementById('v-inspect-city').textContent = v.city || 'Unspecified';
+      document.getElementById('v-inspect-address').textContent = v.address || 'Head office address unlisted';
+      document.getElementById('v-inspect-type').textContent = v.businessType || 'Commercial Transport Agency';
+      document.getElementById('v-inspect-desc').textContent = v.description || 'No description provided by operator.';
+
+      const isSusp = v.status === 'Suspended';
+      document.getElementById('v-inspect-status-badge').innerHTML = `
+        <span class="admin-badge ${isSusp ? 'admin-badge-danger' : 'admin-badge-success'}" style="font-size:0.8rem; padding:0.35rem 0.85rem;">
+          <span class="admin-badge-dot"></span> ${v.status || 'Active'}
+        </span>
+      `;
+
+      // Stats
+      const orgsList = orgsByVendor[v.id] || [];
+      document.getElementById('v-stat-orgs').textContent = orgsList.length;
+      document.getElementById('v-stat-routes').textContent = routesByVendor[v.id] || 0;
+      document.getElementById('v-stat-buses').textContent = busesByVendor[v.id] || 0;
+      document.getElementById('v-stat-conductors').textContent = conductorsByVendor[v.id] || 0;
+      document.getElementById('v-stat-passes').textContent = passesByVendor[v.id] || 0;
+
+      // Render Orgs
+      const orgsContainer = document.getElementById('v-inspect-orgs-list');
+      if (orgsList.length === 0) {
+        orgsContainer.innerHTML = `<span style="color:var(--admin-text-muted);">No partner institutions assigned yet.</span>`;
+      } else {
+        orgsContainer.innerHTML = orgsList.map(o => `
+          <div style="padding:0.35rem 0; border-bottom:1px solid #F1F5F9; display:flex; justify-content:space-between;">
+            <strong>${o.name}</strong>
+            <span class="admin-badge admin-badge-secondary">${o.code || 'INST'}</span>
+          </div>
+        `).join('');
+      }
+
+      // Action button in footer
+      const toggleBtn = document.getElementById('v-toggle-status-btn');
+      if (isSusp) {
+        toggleBtn.className = 'admin-btn admin-btn-success';
+        toggleBtn.innerHTML = '<i class="fas fa-check"></i> Reactivate Operator';
+        toggleBtn.onclick = () => {
+          closeModal('vendor-inspect-modal');
+          promptToggleVendorStatus(v.id, v.businessName || v.name, v.status);
+        };
+      } else {
+        toggleBtn.className = 'admin-btn admin-btn-danger';
+        toggleBtn.innerHTML = '<i class="fas fa-ban"></i> Suspend Operator';
+        toggleBtn.onclick = () => {
+          closeModal('vendor-inspect-modal');
+          promptToggleVendorStatus(v.id, v.businessName || v.name, v.status);
+        };
+      }
+
+      openModal('vendor-inspect-modal');
+    }
+
+    // Suspend / Reactivate Action with Confirmation & Audit Log
+    function promptToggleVendorStatus(vendorId, vendorName, currentStatus) {
+      const isSuspended = currentStatus === 'Suspended';
+      const actionTitle = isSuspended ? 'Reactivate Vendor Account' : 'Suspend Vendor Account';
+      const actionVerb = isSuspended ? 'reactivate' : 'suspend';
+      const newStatus = isSuspended ? 'Active' : 'Suspended';
+
+      const message = `Are you sure you want to <strong>${actionVerb}</strong> vendor "<strong>${vendorName}</strong>"? ${
+        isSuspended 
+          ? 'They will regain access to their operational portal, fleet management, and conductor assignments.' 
+          : 'Their administrative portal access will be temporarily locked. All existing pass and bus records remain safely archived.'
+      }`;
+
+      // Open confirmation modal
+      adminConfirmModal(
+        actionTitle,
+        message,
+        isSuspended ? 'Reactivate Vendor' : 'Confirm Suspension',
+        async (reason) => {
+          try {
+            await db.collection('users').doc(vendorId).update({
+              status: newStatus,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // Permanent audit log
+            await logAdminAction(
+              isSuspended ? 'VENDOR_REACTIVATED' : 'VENDOR_SUSPENDED',
+              'vendor',
+              vendorId,
+              vendorName,
+              { previousStatus: currentStatus, newStatus: newStatus },
+              reason || `Vendor ${newStatus.toLowerCase()} by Super Admin`
+            );
+
+            showToast(`Vendor account successfully ${newStatus.toLowerCase()}!`, "success");
+            loadVendorsData();
+          } catch (e) {
+            console.error("Status update error:", e);
+            throw new Error("Failed to update vendor status: " + e.message);
+          }
+        },
+        !isSuspended // danger if suspending
+      );
+    }
+  </script>
+</body>
+</html>

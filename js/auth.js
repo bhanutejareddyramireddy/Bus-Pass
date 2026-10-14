@@ -664,6 +664,7 @@ function requireAuth(expectedRole, onReady) {
         if (userData.role === 'vendor') window.location.replace(resolveAppPath('vendor-dashboard.html'));
         else if (userData.role === 'student') window.location.replace(resolveAppPath('pages/student-dashboard.html'));
         else if (userData.role === 'conductor') window.location.replace(resolveAppPath('conductor-dashboard.html'));
+        else if (userData.role === 'superadmin') window.location.replace(resolveAppPath('admin-dashboard.html'));
         else window.location.replace(resolveAppPath('index.html'));
         return;
       }

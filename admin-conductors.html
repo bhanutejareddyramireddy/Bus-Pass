@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conductors Directory | BusPass Super Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+
+  <div class="admin-layout">
+    <div id="admin-sidebar-container"></div>
+
+    <div class="admin-main-wrap">
+      <!-- Topbar -->
+      <header class="admin-topbar">
+        <div class="admin-topbar-left">
+          <button class="admin-mobile-toggle" id="admin-mobile-toggle" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="admin-breadcrumb">
+            <span>BusPass HQ</span>
+            <i class="fas fa-chevron-right admin-breadcrumb-sep"></i>
+            <span class="admin-breadcrumb-current">Conductors Directory</span>
+          </div>
+        </div>
+
+        <div class="admin-topbar-right">
+          <div style="font-size: 0.82rem; font-weight: 600; color: var(--admin-text-main);" id="admin-topbar-email">
+            admin@buspass.local
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="admin-content">
+        <!-- Header -->
+        <div class="admin-page-header">
+          <div class="admin-page-title-wrap">
+            <h1><i class="fas fa-id-badge text-primary"></i> Duty Conductors Directory</h1>
+            <p>Platform-wide overview of all bus conductors, assignments, credentials, and live duty status.</p>
+          </div>
+          <div class="admin-header-actions">
+            <button class="admin-btn admin-btn-secondary" onclick="loadConductorsData()">
+              <i class="fas fa-sync-alt" id="refresh-icon"></i> Refresh List
+            </button>
+          </div>
+        </div>
+
+        <!-- Mini Stats Grid -->
+        <div class="admin-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.5rem;">
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Total Conductors</div>
+            <div class="admin-stat-val" id="mini-total-conds" style="font-size: 1.6rem;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Assigned to Fleet</div>
+            <div class="admin-stat-val" id="mini-assigned-conds" style="font-size: 1.6rem; color: #10B981;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Active / Available</div>
+            <div class="admin-stat-val" id="mini-active-conds" style="font-size: 1.6rem; color: #6366F1;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Employing Vendors</div>
+            <div class="admin-stat-val" id="mini-vendor-conds" style="font-size: 1.6rem; color: #F59E0B;">0</div>
+          </div>
+        </div>
+
+        <!-- Filter / Search Box -->
+        <div class="admin-card" style="margin-bottom: 1.5rem; padding: 1.25rem;">
+          <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+            <div class="admin-search-box" style="flex: 1; min-width: 260px;">
+              <i class="fas fa-search admin-search-icon"></i>
+              <input type="text" id="cond-search-input" class="admin-search-input" placeholder="Search conductor name, phone, email, bus number..." oninput="handleFilterChange()">
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <select id="status-filter" class="admin-form-control" style="width: 150px;" onchange="handleFilterChange()">
+                <option value="all">All Statuses</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive / Suspended</option>
+              </select>
+
+              <select id="vendor-filter" class="admin-form-control" style="width: 220px;" onchange="handleFilterChange()">
+                <option value="all">All Fleet Vendors</option>
+                <!-- Injected dynamically -->
+              </select>
+
+              <button class="admin-btn admin-btn-secondary" onclick="resetFilters()">
+                <i class="fas fa-redo"></i> Reset
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Conductors Table -->
+        <div class="admin-card">
+          <div class="admin-card-header" style="border-bottom: 1px solid var(--admin-border); margin-bottom: 0;">
+            <h3 class="admin-card-title">
+              <i class="fas fa-user-shield text-primary"></i> Conductors Roster
+              <span class="admin-badge admin-badge-info" style="margin-left: 0.5rem;" id="filter-count">0</span>
+            </h3>
+          </div>
+
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Conductor Name</th>
+                  <th>Contact Details</th>
+                  <th>Employing Vendor</th>
+                  <th>Assigned Vehicle</th>
+                  <th>Assigned Transit Route</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="conds-table-body">
+                <tr>
+                  <td colspan="7">
+                    <div class="admin-skeleton" style="height: 50px; margin-bottom: 0.5rem;"></div>
+                    <div class="admin-skeleton" style="height: 50px;"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="conds-pagination" style="padding: 1rem;"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Conductor Dossier Inspector Modal -->
+  <div class="admin-modal-overlay" id="cond-inspect-modal">
+    <div class="admin-modal" style="max-width: 680px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title"><i class="fas fa-id-badge text-primary"></i> Conductor Profile</h3>
+        <button class="admin-modal-close" onclick="closeModal('cond-inspect-modal')">&times;</button>
+      </div>
+      <div class="admin-modal-body" id="cond-inspect-body">
+        <!-- Injected dynamically -->
+      </div>
+      <div class="admin-modal-footer">
+        <button type="button" class="admin-btn admin-btn-secondary" onclick="closeModal('cond-inspect-modal')">Close</button>
+        <button type="button" id="cond-toggle-status-btn" class="admin-btn"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/admin-common.js"></script>
+
+  <script>
+    initAdminShell('conductors');
+
+    let allConductors = [];
+    let filteredConductors = [];
+    let vendorsMap = {};
+    let busesMap = {};
+    let currentPage = 1;
+    const PAGE_SIZE = 10;
+
+    requireSuperAdmin((user, userData) => {
+      loadConductorsData();
+    });
+
+    async function loadConductorsData() {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (refreshIcon) refreshIcon.classList.add('fa-spin');
+
+      try {
+        const [condsSnap, vendorsSnap, busesSnap] = await Promise.all([
+          db.collection('conductors').get(),
+          db.collection('users').where('role', '==', 'vendor').get(),
+          db.collection('buses').get()
+        ]);
+
+        vendorsMap = {};
+        const vendorSelect = document.getElementById('vendor-filter');
+        let vendorOptions = '<option value="all">All Fleet Vendors</option>';
+        vendorsSnap.forEach(doc => {
+          const v = { id: doc.id, ...doc.data() };
+          const name = v.businessName || v.name || v.email;
+          vendorsMap[v.id] = v;
+          vendorOptions += `<option value="${v.id}">${escapeHtml(name)}</option>`;
+        });
+        vendorSelect.innerHTML = vendorOptions;
+
+        busesMap = {};
+        busesSnap.forEach(doc => {
+          busesMap[doc.id] = { id: doc.id, ...doc.data() };
+        });
+
+        allConductors = [];
+        let assignedCount = 0;
+        let activeCount = 0;
+        const vendorIds = new Set();
+
+        condsSnap.forEach(doc => {
+          const c = { id: doc.id, ...doc.data() };
+          allConductors.push(c);
+          if (c.busId || c.assignedBus) assignedCount++;
+          if (c.status !== 'Inactive' && c.status !== 'Suspended') activeCount++;
+          if (c.vendorId) vendorIds.add(c.vendorId);
+        });
+
+        document.getElementById('mini-total-conds').textContent = allConductors.length;
+        document.getElementById('mini-assigned-conds').textContent = assignedCount;
+        document.getElementById('mini-active-conds').textContent = activeCount;
+        document.getElementById('mini-vendor-conds').textContent = vendorIds.size;
+
+        handleFilterChange();
+      } catch (err) {
+        console.error("Error loading conductors:", err);
+        showToast("Failed to load conductors roster: " + err.message, "error");
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+      }
+    }
+
+    function handleFilterChange() {
+      const query = document.getElementById('cond-search-input').value.toLowerCase().trim();
+      const statusFilter = document.getElementById('status-filter').value;
+      const vendorFilter = document.getElementById('vendor-filter').value;
+
+      filteredConductors = allConductors.filter(c => {
+        const isInactive = c.status === 'Inactive' || c.status === 'Suspended';
+        if (statusFilter === 'Active' && isInactive) return false;
+        if (statusFilter === 'Inactive' && !isInactive) return false;
+        if (vendorFilter !== 'all' && c.vendorId !== vendorFilter) return false;
+
+        if (query) {
+          const name = (c.name || '').toLowerCase();
+          const email = (c.email || '').toLowerCase();
+          const phone = (c.phone || c.mobile || '').toLowerCase();
+          const bus = (c.busNumber || c.assignedBus || '').toLowerCase();
+          const vendor = (vendorsMap[c.vendorId]?.businessName || vendorsMap[c.vendorId]?.name || '').toLowerCase();
+          if (!name.includes(query) && !email.includes(query) && !phone.includes(query) && !bus.includes(query) && !vendor.includes(query)) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      document.getElementById('filter-count').textContent = filteredConductors.length;
+      currentPage = 1;
+      renderConductorsTable();
+    }
+
+    function resetFilters() {
+      document.getElementById('cond-search-input').value = '';
+      document.getElementById('status-filter').value = 'all';
+      document.getElementById('vendor-filter').value = 'all';
+      handleFilterChange();
+    }
+
+    function renderConductorsTable() {
+      const tbody = document.getElementById('conds-table-body');
+      const paginationContainer = document.getElementById('conds-pagination');
+
+      if (filteredConductors.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7">
+              <div class="admin-empty-state">
+                <div class="admin-empty-icon"><i class="fas fa-id-badge"></i></div>
+                <h4 class="admin-empty-title">No Conductors Found</h4>
+                <p class="admin-empty-desc">No conductor accounts match your current filter or search criteria.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        paginationContainer.innerHTML = '';
+        return;
+      }
+
+      const paginated = paginateTable(filteredConductors, currentPage, PAGE_SIZE);
+
+      tbody.innerHTML = paginated.items.map(c => {
+        const v = vendorsMap[c.vendorId];
+        const vName = v ? (v.businessName || v.name || v.email) : 'Unassigned';
+        const isInactive = c.status === 'Inactive' || c.status === 'Suspended';
+        const assignedBus = c.busNumber || (busesMap[c.busId]?.busNumber) || 'Unassigned';
+        const assignedRoute = c.routeName || (busesMap[c.busId]?.routeName) || 'Unassigned';
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight: 600; color: var(--admin-text-main); font-size: 0.95rem;">
+                ${escapeHtml(c.name || 'Unnamed Conductor')}
+              </div>
+              <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-family: monospace;">
+                ID: ${c.id.substring(0, 8)}...
+              </div>
+            </td>
+            <td>
+              <div><i class="fas fa-envelope" style="font-size: 0.75rem; color: var(--admin-text-muted); margin-right: 4px;"></i> ${escapeHtml(c.email || 'N/A')}</div>
+              <div style="font-size: 0.8rem; color: var(--admin-text-muted); margin-top: 2px;">
+                <i class="fas fa-phone" style="font-size: 0.75rem; margin-right: 4px;"></i> ${escapeHtml(c.phone || c.mobile || 'N/A')}
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 500;"><i class="fas fa-building" style="font-size: 0.75rem; color: var(--admin-primary); margin-right: 4px;"></i> ${escapeHtml(vName)}</div>
+            </td>
+            <td>
+              <span class="admin-badge ${assignedBus !== 'Unassigned' ? 'admin-badge-info' : 'admin-badge-secondary'}">
+                <i class="fas fa-bus"></i> ${escapeHtml(assignedBus)}
+              </span>
+            </td>
+            <td>
+              <div style="font-size: 0.85rem; color: var(--admin-text-main);">
+                ${escapeHtml(assignedRoute)}
+              </div>
+            </td>
+            <td>
+              <span class="admin-badge ${isInactive ? 'admin-badge-danger' : 'admin-badge-success'}">
+                <i class="fas fa-circle" style="font-size: 0.5rem; vertical-align: middle;"></i> ${isInactive ? 'Inactive' : 'Active'}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
+                <button class="admin-btn admin-btn-sm admin-btn-secondary" onclick="inspectConductor('${c.id}')">
+                  <i class="fas fa-eye"></i> View
+                </button>
+                <button class="admin-btn admin-btn-sm ${isInactive ? 'admin-btn-primary' : 'admin-btn-danger'}"
+                  onclick="promptToggleConductorStatus('${c.id}', '${escapeHtml(c.name || 'Conductor')}', '${c.status || 'Active'}')">
+                  <i class="fas ${isInactive ? 'fa-check' : 'fa-ban'}"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      renderPaginationControls('conds-pagination', paginated, (newPage) => {
+        currentPage = newPage;
+        renderConductorsTable();
+      });
+    }
+
+    function inspectConductor(condId) {
+      const c = allConductors.find(x => x.id === condId);
+      if (!c) return;
+
+      const v = vendorsMap[c.vendorId];
+      const vName = v ? (v.businessName || v.name || v.email) : 'Unassigned';
+      const isInactive = c.status === 'Inactive' || c.status === 'Suspended';
+      const assignedBus = c.busNumber || (busesMap[c.busId]?.busNumber) || 'Unassigned';
+      const assignedRoute = c.routeName || (busesMap[c.busId]?.routeName) || 'Unassigned';
+
+      const body = document.getElementById('cond-inspect-body');
+      body.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--admin-border);">
+          <div style="width: 54px; height: 54px; border-radius: 50%; background: #EEF2FF; color: var(--admin-primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700;">
+            ${(c.name || 'C').charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 1.25rem;">${escapeHtml(c.name || 'Conductor')}</h3>
+            <div style="font-size: 0.85rem; color: var(--admin-text-muted);">
+              ID: <code>${c.id}</code> &bull; Vendor: ${escapeHtml(vName)}
+            </div>
+          </div>
+          <div style="margin-left: auto;">
+            <span class="admin-badge ${isInactive ? 'admin-badge-danger' : 'admin-badge-success'}">
+              ${isInactive ? 'Inactive / Suspended' : 'Active Duty'}
+            </span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">LOGIN EMAIL / USERNAME</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(c.email || 'N/A')}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">MOBILE NUMBER</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(c.phone || c.mobile || 'N/A')}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">ASSIGNED VEHICLE</div>
+            <div style="font-weight: 600; margin-top: 2px; color: var(--admin-primary);">${escapeHtml(assignedBus)}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">ASSIGNED CORRIDOR</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(assignedRoute)}</div>
+          </div>
+        </div>
+      `;
+
+      const toggleBtn = document.getElementById('cond-toggle-status-btn');
+      if (isInactive) {
+        toggleBtn.className = 'admin-btn admin-btn-primary';
+        toggleBtn.innerHTML = '<i class="fas fa-check"></i> Reactivate Conductor';
+        toggleBtn.onclick = () => {
+          closeModal('cond-inspect-modal');
+          promptToggleConductorStatus(c.id, c.name || 'Conductor', c.status);
+        };
+      } else {
+        toggleBtn.className = 'admin-btn admin-btn-danger';
+        toggleBtn.innerHTML = '<i class="fas fa-ban"></i> Suspend Conductor';
+        toggleBtn.onclick = () => {
+          closeModal('cond-inspect-modal');
+          promptToggleConductorStatus(c.id, c.name || 'Conductor', c.status);
+        };
+      }
+
+      openModal('cond-inspect-modal');
+    }
+
+    function promptToggleConductorStatus(condId, condName, currentStatus) {
+      const isInactive = currentStatus === 'Inactive' || currentStatus === 'Suspended';
+      const actionVerb = isInactive ? 'reactivate' : 'suspend';
+      const newStatus = isInactive ? 'Active' : 'Inactive';
+
+      adminConfirmModal(
+        isInactive ? 'Reactivate Conductor' : 'Suspend Conductor',
+        `Are you sure you want to <strong>${actionVerb}</strong> conductor "<strong>${escapeHtml(condName)}</strong>"?`,
+        isInactive ? 'Reactivate' : 'Confirm Suspension',
+        async (reason) => {
+          try {
+            await db.collection('conductors').doc(condId).update({
+              status: newStatus,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            await logAdminAction(
+              isInactive ? 'CONDUCTOR_REACTIVATED' : 'CONDUCTOR_SUSPENDED',
+              'conductor',
+              condId,
+              condName,
+              { previousStatus: currentStatus, newStatus: newStatus },
+              reason || `Conductor ${newStatus.toLowerCase()} by Super Admin`
+            );
+
+            showToast(`Conductor successfully ${newStatus.toLowerCase()}!`, "success");
+            loadConductorsData();
+          } catch (e) {
+            console.error("Status update error:", e);
+            throw new Error("Failed to update conductor: " + e.message);
+          }
+        },
+        !isInactive
+      );
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Partner Institutions | BusPass Super Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+
+  <div class="admin-layout">
+    <div id="admin-sidebar-container"></div>
+
+    <div class="admin-main-wrap">
+      <!-- Topbar -->
+      <header class="admin-topbar">
+        <div class="admin-topbar-left">
+          <button class="admin-mobile-toggle" id="admin-mobile-toggle" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="admin-breadcrumb">
+            <span>BusPass HQ</span>
+            <i class="fas fa-chevron-right admin-breadcrumb-sep"></i>
+            <span class="admin-breadcrumb-current">Partner Institutions</span>
+          </div>
+        </div>
+
+        <div class="admin-topbar-right">
+          <div style="font-size: 0.82rem; font-weight: 600; color: var(--admin-text-main);" id="admin-topbar-email">
+            admin@buspass.local
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="admin-content">
+        <!-- Header -->
+        <div class="admin-page-header">
+          <div class="admin-page-title-wrap">
+            <h1><i class="fas fa-university text-primary"></i> Partner Institutions & Colleges</h1>
+            <p>Platform-wide directory of educational institutions, universities, and corporate client organizations.</p>
+          </div>
+          <div class="admin-header-actions">
+            <button class="admin-btn admin-btn-secondary" onclick="loadOrgsData()">
+              <i class="fas fa-sync-alt" id="refresh-icon"></i> Refresh List
+            </button>
+          </div>
+        </div>
+
+        <!-- Mini Stats Grid -->
+        <div class="admin-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.5rem;">
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Total Institutions</div>
+            <div class="admin-stat-val" id="mini-total-orgs" style="font-size: 1.6rem;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Servicing Vendors</div>
+            <div class="admin-stat-val" id="mini-vendor-count" style="font-size: 1.6rem; color: #10B981;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Affiliated Transit Routes</div>
+            <div class="admin-stat-val" id="mini-routes-count" style="font-size: 1.6rem; color: #6366F1;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Enrolled Commuters</div>
+            <div class="admin-stat-val" id="mini-commuters-count" style="font-size: 1.6rem; color: #F59E0B;">0</div>
+          </div>
+        </div>
+
+        <!-- Filter / Search Box -->
+        <div class="admin-card" style="margin-bottom: 1.5rem; padding: 1.25rem;">
+          <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+            <div class="admin-search-box" style="flex: 1; min-width: 260px;">
+              <i class="fas fa-search admin-search-icon"></i>
+              <input type="text" id="org-search-input" class="admin-search-input" placeholder="Search by institution name, code, city, vendor..." oninput="handleFilterChange()">
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <select id="vendor-filter" class="admin-form-control" style="width: 220px;" onchange="handleFilterChange()">
+                <option value="all">All Fleet Vendors</option>
+                <!-- Injected dynamically -->
+              </select>
+
+              <select id="sort-select" class="admin-form-control" style="width: 150px;" onchange="handleFilterChange()">
+                <option value="name">Name (A-Z)</option>
+                <option value="newest">Newest First</option>
+                <option value="routes">Most Routes</option>
+              </select>
+
+              <button class="admin-btn admin-btn-secondary" onclick="resetFilters()">
+                <i class="fas fa-redo"></i> Reset
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Organizations Table -->
+        <div class="admin-card">
+          <div class="admin-card-header" style="border-bottom: 1px solid var(--admin-border); margin-bottom: 0;">
+            <h3 class="admin-card-title">
+              <i class="fas fa-building text-primary"></i> Institutions Directory
+              <span class="admin-badge admin-badge-info" style="margin-left: 0.5rem;" id="filter-count">0</span>
+            </h3>
+          </div>
+
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Institution Name</th>
+                  <th>Assigned Vendor</th>
+                  <th>Location / Address</th>
+                  <th>Connected Routes</th>
+                  <th>Enrolled Commuters</th>
+                  <th>Created Date</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="orgs-table-body">
+                <tr>
+                  <td colspan="7">
+                    <div class="admin-skeleton" style="height: 50px; margin-bottom: 0.5rem;"></div>
+                    <div class="admin-skeleton" style="height: 50px; margin-bottom: 0.5rem;"></div>
+                    <div class="admin-skeleton" style="height: 50px;"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="orgs-pagination" style="padding: 1rem;"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Organization Inspection Modal -->
+  <div class="admin-modal-overlay" id="org-inspect-modal">
+    <div class="admin-modal" style="max-width: 750px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title"><i class="fas fa-university text-primary"></i> Institution Details</h3>
+        <button class="admin-modal-close" onclick="closeModal('org-inspect-modal')">&times;</button>
+      </div>
+      <div class="admin-modal-body" id="org-inspect-body">
+        <!-- Injected dynamically -->
+      </div>
+      <div class="admin-modal-footer">
+        <button type="button" class="admin-btn admin-btn-secondary" onclick="closeModal('org-inspect-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/admin-common.js"></script>
+
+  <script>
+    initAdminShell('organizations');
+
+    let allOrgs = [];
+    let filteredOrgs = [];
+    let vendorsMap = {};
+    let routesByOrg = {};
+    let studentsByOrg = {};
+    let currentPage = 1;
+    const PAGE_SIZE = 10;
+
+    requireSuperAdmin((user, userData) => {
+      loadOrgsData();
+    });
+
+    async function loadOrgsData() {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (refreshIcon) refreshIcon.classList.add('fa-spin');
+
+      try {
+        const [orgsSnap, vendorsSnap, routesSnap, usersSnap] = await Promise.all([
+          db.collection('organizations').get(),
+          db.collection('users').where('role', '==', 'vendor').get(),
+          db.collection('routes').get(),
+          db.collection('users').where('role', '==', 'student').get()
+        ]);
+
+        vendorsMap = {};
+        const vendorSelect = document.getElementById('vendor-filter');
+        let vendorOptions = '<option value="all">All Fleet Vendors</option>';
+        vendorsSnap.forEach(doc => {
+          const v = { id: doc.id, ...doc.data() };
+          const name = v.businessName || v.name || v.email || 'Unnamed Vendor';
+          vendorsMap[v.id] = v;
+          vendorOptions += `<option value="${v.id}">${escapeHtml(name)}</option>`;
+        });
+        vendorSelect.innerHTML = vendorOptions;
+
+        // Map routes to orgs
+        routesByOrg = {};
+        let totalAffiliatedRoutes = 0;
+        routesSnap.forEach(doc => {
+          const r = { id: doc.id, ...doc.data() };
+          const orgId = r.organizationId || r.organization;
+          if (orgId) {
+            if (!routesByOrg[orgId]) routesByOrg[orgId] = [];
+            routesByOrg[orgId].push(r);
+            totalAffiliatedRoutes++;
+          }
+        });
+
+        // Map students to orgs
+        studentsByOrg = {};
+        usersSnap.forEach(doc => {
+          const s = { id: doc.id, ...doc.data() };
+          const sOrg = (s.organization || s.college || s.school || '').toLowerCase().trim();
+          if (sOrg) {
+            if (!studentsByOrg[sOrg]) studentsByOrg[sOrg] = [];
+            studentsByOrg[sOrg].push(s);
+          }
+        });
+
+        allOrgs = [];
+        const vendorIdsWithOrgs = new Set();
+        orgsSnap.forEach(doc => {
+          const org = { id: doc.id, ...doc.data() };
+          allOrgs.push(org);
+          if (org.vendorId) vendorIdsWithOrgs.add(org.vendorId);
+        });
+
+        document.getElementById('mini-total-orgs').textContent = allOrgs.length;
+        document.getElementById('mini-vendor-count').textContent = vendorIdsWithOrgs.size;
+        document.getElementById('mini-routes-count').textContent = totalAffiliatedRoutes;
+        document.getElementById('mini-commuters-count').textContent = usersSnap.size;
+
+        handleFilterChange();
+      } catch (err) {
+        console.error("Error loading organizations:", err);
+        showToast("Failed to load organizations: " + err.message, "error");
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+      }
+    }
+
+    function handleFilterChange() {
+      const query = document.getElementById('org-search-input').value.toLowerCase().trim();
+      const vendorFilter = document.getElementById('vendor-filter').value;
+      const sortBy = document.getElementById('sort-select').value;
+
+      filteredOrgs = allOrgs.filter(org => {
+        if (vendorFilter !== 'all' && org.vendorId !== vendorFilter) return false;
+
+        if (query) {
+          const name = (org.name || '').toLowerCase();
+          const code = (org.code || '').toLowerCase();
+          const city = (org.city || org.address || '').toLowerCase();
+          const vendor = (vendorsMap[org.vendorId]?.businessName || vendorsMap[org.vendorId]?.name || '').toLowerCase();
+          if (!name.includes(query) && !code.includes(query) && !city.includes(query) && !vendor.includes(query)) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      // Sorting
+      filteredOrgs.sort((a, b) => {
+        if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '');
+        if (sortBy === 'newest') return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+        if (sortBy === 'routes') {
+          const countA = (routesByOrg[a.id] || routesByOrg[a.name] || []).length;
+          const countB = (routesByOrg[b.id] || routesByOrg[b.name] || []).length;
+          return countB - countA;
+        }
+        return 0;
+      });
+
+      document.getElementById('filter-count').textContent = filteredOrgs.length;
+      currentPage = 1;
+      renderOrgsTable();
+    }
+
+    function resetFilters() {
+      document.getElementById('org-search-input').value = '';
+      document.getElementById('vendor-filter').value = 'all';
+      document.getElementById('sort-select').value = 'name';
+      handleFilterChange();
+    }
+
+    function renderOrgsTable() {
+      const tbody = document.getElementById('orgs-table-body');
+      const paginationContainer = document.getElementById('orgs-pagination');
+
+      if (filteredOrgs.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7">
+              <div class="admin-empty-state">
+                <div class="admin-empty-icon"><i class="fas fa-university"></i></div>
+                <h4 class="admin-empty-title">No Institutions Found</h4>
+                <p class="admin-empty-desc">No organizations match your current search or vendor filter.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        paginationContainer.innerHTML = '';
+        return;
+      }
+
+      const paginated = paginateTable(filteredOrgs, currentPage, PAGE_SIZE);
+
+      tbody.innerHTML = paginated.items.map(org => {
+        const vendor = vendorsMap[org.vendorId];
+        const vendorName = vendor ? (vendor.businessName || vendor.name || vendor.email) : 'Direct / Unassigned';
+        const routes = (routesByOrg[org.id] || routesByOrg[org.name] || []);
+        
+        // Students lookup by ID or name
+        const orgNameLower = (org.name || '').toLowerCase();
+        const students = studentsByOrg[orgNameLower] || studentsByOrg[org.id] || [];
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight: 600; color: var(--admin-text-main); font-size: 0.95rem;">
+                ${escapeHtml(org.name || 'Unnamed Institution')}
+              </div>
+              ${org.code ? `<div style="font-size: 0.75rem; color: var(--admin-text-muted); font-family: monospace;">Code: ${escapeHtml(org.code)}</div>` : ''}
+            </td>
+            <td>
+              <div style="font-weight: 500;">
+                <i class="fas fa-building" style="font-size: 0.75rem; color: var(--admin-primary); margin-right: 4px;"></i>
+                ${escapeHtml(vendorName)}
+              </div>
+            </td>
+            <td>
+              <div style="font-size: 0.85rem; color: var(--admin-text-muted);">
+                <i class="fas fa-map-marker-alt" style="font-size: 0.75rem; margin-right: 4px;"></i>
+                ${escapeHtml(org.address || org.city || 'Address unlisted')}
+              </div>
+            </td>
+            <td>
+              <span class="admin-badge ${routes.length > 0 ? 'admin-badge-info' : 'admin-badge-secondary'}">
+                <i class="fas fa-route"></i> ${routes.length} Route(s)
+              </span>
+            </td>
+            <td>
+              <span class="admin-badge ${students.length > 0 ? 'admin-badge-primary' : 'admin-badge-secondary'}">
+                <i class="fas fa-users"></i> ${students.length} Commuter(s)
+              </span>
+            </td>
+            <td>
+              <div style="font-size: 0.85rem;">${formatDate(org.createdAt)}</div>
+            </td>
+            <td style="text-align: right;">
+              <button class="admin-btn admin-btn-sm admin-btn-secondary" onclick="inspectOrg('${org.id}')">
+                <i class="fas fa-eye"></i> Details
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      renderPaginationControls('orgs-pagination', paginated, (newPage) => {
+        currentPage = newPage;
+        renderOrgsTable();
+      });
+    }
+
+    function inspectOrg(orgId) {
+      const org = allOrgs.find(o => o.id === orgId);
+      if (!org) return;
+
+      const vendor = vendorsMap[org.vendorId];
+      const vendorName = vendor ? (vendor.businessName || vendor.name || vendor.email) : 'Direct / Unassigned';
+      const routes = (routesByOrg[org.id] || routesByOrg[org.name] || []);
+      const orgNameLower = (org.name || '').toLowerCase();
+      const students = studentsByOrg[orgNameLower] || studentsByOrg[org.id] || [];
+
+      const body = document.getElementById('org-inspect-body');
+      body.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--admin-border);">
+          <div style="width: 54px; height: 54px; border-radius: 10px; background: #EEF2FF; color: var(--admin-primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+            <i class="fas fa-university"></i>
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 1.25rem;">${escapeHtml(org.name || 'Unnamed Institution')}</h3>
+            <div style="font-size: 0.85rem; color: var(--admin-text-muted);">
+              ID: <code>${org.id}</code> &bull; Created: ${formatDate(org.createdAt)}
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">ASSIGNED FLEET VENDOR</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(vendorName)}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">CAMPUS ADDRESS / CITY</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(org.address || org.city || 'Unlisted')}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">INSTITUTION CODE</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(org.code || 'None')}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">CONTACT PERSON</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(org.contactPerson || org.phone || 'N/A')}</div>
+          </div>
+        </div>
+
+        <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">
+          <i class="fas fa-route text-primary"></i> Servicing Bus Routes (${routes.length})
+        </h4>
+        ${routes.length === 0 ? '<p style="color: var(--admin-text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">No designated transit routes registered under this institution.</p>' : `
+          <div class="admin-table-container" style="margin-bottom: 1.5rem;">
+            <table class="admin-table" style="font-size: 0.82rem;">
+              <thead>
+                <tr>
+                  <th>Route Name</th>
+                  <th>Origin &rarr; Destination</th>
+                  <th>Stops</th>
+                  <th>Base Fare</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${routes.map(r => `
+                  <tr>
+                    <td><strong>${escapeHtml(r.name || r.routeName || 'Unnamed Route')}</strong></td>
+                    <td>${escapeHtml(r.source || r.startPoint || 'Origin')} &rarr; ${escapeHtml(r.destination || r.endPoint || 'Destination')}</td>
+                    <td>${(r.stops || []).length} stops</td>
+                    <td>${formatCurrency(r.baseFare || r.fare || 0)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `}
+
+        <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">
+          <i class="fas fa-users text-primary"></i> Enrolled Commuters (${students.length})
+        </h4>
+        ${students.length === 0 ? '<p style="color: var(--admin-text-muted); font-size: 0.85rem;">No students enrolled under this institution yet.</p>' : `
+          <div class="admin-table-container">
+            <table class="admin-table" style="font-size: 0.82rem;">
+              <thead>
+                <tr>
+                  <th>Student Name</th>
+                  <th>Email</th>
+                  <th>PRN / Roll No</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${students.slice(0, 10).map(s => `
+                  <tr>
+                    <td><strong>${escapeHtml(s.name || s.fullName || 'Student')}</strong></td>
+                    <td>${escapeHtml(s.email || 'N/A')}</td>
+                    <td>${escapeHtml(s.prn || s.rollNo || 'N/A')}</td>
+                    <td>
+                      <span class="admin-badge ${s.status === 'Suspended' ? 'admin-badge-danger' : 'admin-badge-success'}">
+                        ${escapeHtml(s.status || 'Active')}
+                      </span>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            ${students.length > 10 ? `<div style="padding: 0.5rem; text-align: center; font-size: 0.8rem; color: var(--admin-text-muted);">+ ${students.length - 10} more students enrolled</div>` : ''}
+          </div>
+        `}
+      `;
+
+      openModal('org-inspect-modal');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activity & Audit Trail | BusPass Super Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+
+  <div class="admin-layout">
+    <div id="admin-sidebar-container"></div>
+
+    <div class="admin-main-wrap">
+      <!-- Topbar -->
+      <header class="admin-topbar">
+        <div class="admin-topbar-left">
+          <button class="admin-mobile-toggle" id="admin-mobile-toggle" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="admin-breadcrumb">
+            <span>BusPass HQ</span>
+            <i class="fas fa-chevron-right admin-breadcrumb-sep"></i>
+            <span class="admin-breadcrumb-current">Security & Audit Logs</span>
+          </div>
+        </div>
+
+        <div class="admin-topbar-right">
+          <div style="font-size: 0.82rem; font-weight: 600; color: var(--admin-text-main);" id="admin-topbar-email">
+            admin@buspass.local
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="admin-content">
+        <!-- Header -->
+        <div class="admin-page-header">
+          <div class="admin-page-title-wrap">
+            <h1><i class="fas fa-shield-alt text-primary"></i> Activity Logs & Immutable Audit Trail</h1>
+            <p>Cryptographic, append-only security logs recording privileged platform events, overrides, and account suspensions.</p>
+          </div>
+          <div class="admin-header-actions">
+            <button class="admin-btn admin-btn-secondary" onclick="exportAuditLogs()">
+              <i class="fas fa-file-export"></i> Export Audit JSON
+            </button>
+            <button class="admin-btn admin-btn-primary" onclick="loadAuditLogs()">
+              <i class="fas fa-sync-alt" id="refresh-icon"></i> Refresh Trail
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter / Search Card -->
+        <div class="admin-card" style="margin-bottom: 1.5rem; padding: 1.25rem;">
+          <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+            <div class="admin-search-box" style="flex: 1; min-width: 260px;">
+              <i class="fas fa-search admin-search-icon"></i>
+              <input type="text" id="audit-search-input" class="admin-search-input" placeholder="Search by actor, target entity, action, or reason..." oninput="handleFilterChange()">
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <select id="action-filter" class="admin-form-control" style="width: 200px;" onchange="handleFilterChange()">
+                <option value="all">All Action Types</option>
+                <option value="SUSPENDED">Suspensions</option>
+                <option value="REACTIVATED">Reactivations</option>
+                <option value="OVERRIDE">Privileged Overrides</option>
+                <option value="SETTINGS">Settings Changes</option>
+                <option value="LOGIN">Admin Logins</option>
+              </select>
+
+              <select id="target-filter" class="admin-form-control" style="width: 170px;" onchange="handleFilterChange()">
+                <option value="all">All Target Entities</option>
+                <option value="vendor">Vendor</option>
+                <option value="student">Commuter</option>
+                <option value="conductor">Conductor</option>
+                <option value="application">Application</option>
+                <option value="system">System / Settings</option>
+              </select>
+
+              <button class="admin-btn admin-btn-secondary" onclick="resetFilters()">
+                <i class="fas fa-redo"></i> Reset
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audit Table -->
+        <div class="admin-card">
+          <div class="admin-card-header" style="border-bottom: 1px solid var(--admin-border); margin-bottom: 0;">
+            <h3 class="admin-card-title">
+              <i class="fas fa-clipboard-list text-primary"></i> System Event Ledger
+              <span class="admin-badge admin-badge-info" style="margin-left: 0.5rem;" id="filter-count">0</span>
+            </h3>
+          </div>
+
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Action</th>
+                  <th>Operator / Actor</th>
+                  <th>Affected Entity</th>
+                  <th>Reason / Context</th>
+                  <th style="text-align: right;">Inspect</th>
+                </tr>
+              </thead>
+              <tbody id="audit-table-body">
+                <tr>
+                  <td colspan="6">
+                    <div class="admin-skeleton" style="height: 50px; margin-bottom: 0.5rem;"></div>
+                    <div class="admin-skeleton" style="height: 50px; margin-bottom: 0.5rem;"></div>
+                    <div class="admin-skeleton" style="height: 50px;"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="audit-pagination" style="padding: 1rem;"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Raw Log Modal -->
+  <div class="admin-modal-overlay" id="log-detail-modal">
+    <div class="admin-modal" style="max-width: 650px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title"><i class="fas fa-terminal text-primary"></i> Audit Record Payload</h3>
+        <button class="admin-modal-close" onclick="closeModal('log-detail-modal')">&times;</button>
+      </div>
+      <div class="admin-modal-body">
+        <pre id="log-raw-json" style="background: #0F172A; color: #38BDF8; padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.85rem; max-height: 400px; overflow-y: auto; white-space: pre-wrap;"></pre>
+      </div>
+      <div class="admin-modal-footer">
+        <button type="button" class="admin-btn admin-btn-secondary" onclick="closeModal('log-detail-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/admin-common.js"></script>
+
+  <script>
+    initAdminShell('audit-logs');
+
+    let allLogs = [];
+    let filteredLogs = [];
+    let currentPage = 1;
+    const PAGE_SIZE = 15;
+
+    requireSuperAdmin((user, userData) => {
+      loadAuditLogs();
+    });
+
+    async function loadAuditLogs() {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (refreshIcon) refreshIcon.classList.add('fa-spin');
+
+      try {
+        const snap = await db.collection('auditLogs')
+          .orderBy('timestamp', 'desc')
+          .limit(200)
+          .get();
+
+        allLogs = [];
+        snap.forEach(doc => {
+          allLogs.push({ id: doc.id, ...doc.data() });
+        });
+
+        handleFilterChange();
+      } catch (err) {
+        console.error("Error loading audit logs:", err);
+        // Fallback without orderBy in case index is pending
+        try {
+          const snap2 = await db.collection('auditLogs').limit(150).get();
+          allLogs = [];
+          snap2.forEach(doc => allLogs.push({ id: doc.id, ...doc.data() }));
+          allLogs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+          handleFilterChange();
+        } catch (e2) {
+          showToast("Failed to load audit logs: " + e2.message, "error");
+        }
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+      }
+    }
+
+    function handleFilterChange() {
+      const q = document.getElementById('audit-search-input').value.toLowerCase().trim();
+      const actionFilter = document.getElementById('action-filter').value;
+      const targetFilter = document.getElementById('target-filter').value;
+
+      filteredLogs = allLogs.filter(log => {
+        if (actionFilter !== 'all') {
+          const act = (log.action || '').toUpperCase();
+          if (!act.includes(actionFilter)) return false;
+        }
+
+        if (targetFilter !== 'all') {
+          const tg = (log.targetType || '').toLowerCase();
+          if (!tg.includes(targetFilter)) return false;
+        }
+
+        if (q) {
+          const act = (log.action || '').toLowerCase();
+          const email = (log.actorEmail || '').toLowerCase();
+          const target = (log.targetName || log.targetId || '').toLowerCase();
+          const reason = (log.reason || '').toLowerCase();
+          if (!act.includes(q) && !email.includes(q) && !target.includes(q) && !reason.includes(q)) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      document.getElementById('filter-count').textContent = filteredLogs.length;
+      currentPage = 1;
+      renderAuditTable();
+    }
+
+    function resetFilters() {
+      document.getElementById('audit-search-input').value = '';
+      document.getElementById('action-filter').value = 'all';
+      document.getElementById('target-filter').value = 'all';
+      handleFilterChange();
+    }
+
+    function renderAuditTable() {
+      const tbody = document.getElementById('audit-table-body');
+      const paginationContainer = document.getElementById('audit-pagination');
+
+      if (filteredLogs.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6">
+              <div class="admin-empty-state">
+                <div class="admin-empty-icon"><i class="fas fa-shield-alt"></i></div>
+                <h4 class="admin-empty-title">No Audit Records Found</h4>
+                <p class="admin-empty-desc">No events match your current filter settings.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        paginationContainer.innerHTML = '';
+        return;
+      }
+
+      const paginated = paginateTable(filteredLogs, currentPage, PAGE_SIZE);
+
+      tbody.innerHTML = paginated.items.map(log => {
+        const action = log.action || 'UNKNOWN_ACTION';
+        let badgeClass = 'admin-badge-secondary';
+        if (action.includes('SUSPEND') || action.includes('OVERRIDE')) badgeClass = 'admin-badge-danger';
+        else if (action.includes('REACTIVATE') || action.includes('LOGIN')) badgeClass = 'admin-badge-success';
+        else if (action.includes('SETTING') || action.includes('UPDATE')) badgeClass = 'admin-badge-info';
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight: 600; font-size: 0.85rem; color: var(--admin-text-main);">
+                ${formatDate(log.timestamp)}
+              </div>
+              <div style="font-size: 0.75rem; color: var(--admin-text-muted);">${timeAgo(log.timestamp)}</div>
+            </td>
+            <td>
+              <span class="admin-badge ${badgeClass}" style="font-family: monospace; font-size: 0.75rem;">
+                ${escapeHtml(action)}
+              </span>
+            </td>
+            <td>
+              <div style="font-weight: 500; font-size: 0.85rem;">${escapeHtml(log.actorEmail || 'System SuperAdmin')}</div>
+              <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-family: monospace;">UID: ${(log.actorUid || 'N/A').substring(0, 8)}...</div>
+            </td>
+            <td>
+              <div style="font-weight: 600; font-size: 0.85rem;">${escapeHtml(log.targetName || log.targetId || 'N/A')}</div>
+              <div style="font-size: 0.75rem; color: var(--admin-text-muted); text-transform: uppercase;">${escapeHtml(log.targetType || 'entity')}</div>
+            </td>
+            <td>
+              <div style="font-size: 0.85rem; color: var(--admin-text-main); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${escapeHtml(log.reason || 'Routine administrative action')}
+              </div>
+            </td>
+            <td style="text-align: right;">
+              <button class="admin-btn admin-btn-sm admin-btn-secondary" onclick="viewLogPayload('${log.id}')">
+                <i class="fas fa-code"></i> JSON
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      renderPaginationControls('audit-pagination', paginated, (newPage) => {
+        currentPage = newPage;
+        renderAuditTable();
+      });
+    }
+
+    function viewLogPayload(logId) {
+      const log = allLogs.find(l => l.id === logId);
+      if (!log) return;
+
+      document.getElementById('log-raw-json').textContent = JSON.stringify(log, null, 2);
+      openModal('log-detail-modal');
+    }
+
+    function exportAuditLogs() {
+      const jsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allLogs, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", jsonStr);
+      downloadAnchor.setAttribute("download", `buspass-audit-trail-${new Date().toISOString().slice(0, 10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast("Full audit log exported in JSON format!", "success");
+    }
+  </script>
+</body>
+</html>

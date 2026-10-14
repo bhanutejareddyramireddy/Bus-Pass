@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Overview | BusPass Super Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+
+  <div class="admin-layout">
+    <div id="admin-sidebar-container"></div>
+
+    <div class="admin-main-wrap">
+      <!-- Topbar -->
+      <header class="admin-topbar">
+        <div class="admin-topbar-left">
+          <button class="admin-mobile-toggle" id="admin-mobile-toggle" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="admin-breadcrumb">
+            <span>BusPass HQ</span>
+            <i class="fas fa-chevron-right admin-breadcrumb-sep"></i>
+            <span class="admin-breadcrumb-current">Financial Overview</span>
+          </div>
+        </div>
+
+        <div class="admin-topbar-right">
+          <div style="font-size: 0.82rem; font-weight: 600; color: var(--admin-text-main);" id="admin-topbar-email">
+            admin@buspass.local
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="admin-content">
+        <!-- Header -->
+        <div class="admin-page-header">
+          <div class="admin-page-title-wrap">
+            <h1><i class="fas fa-wallet text-primary"></i> Platform Financial Overview</h1>
+            <p>Comprehensive accounting of commuter pass collections, vendor transaction volumes, and pending receipts.</p>
+          </div>
+          <div class="admin-header-actions">
+            <button class="admin-btn admin-btn-secondary" onclick="loadFinancialData()">
+              <i class="fas fa-sync-alt" id="refresh-icon"></i> Refresh Financials
+            </button>
+          </div>
+        </div>
+
+        <!-- Financial Notice Banner -->
+        <div class="admin-card" style="background: #F0FDF4; border-left: 4px solid #10B981; padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+          <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+            <i class="fas fa-info-circle" style="color: #10B981; font-size: 1.2rem; margin-top: 2px;"></i>
+            <div style="font-size: 0.88rem; color: #065F46; line-height: 1.5;">
+              <strong>Financial Architecture Notice:</strong> Commuter pass payments are remitted directly to respective transit operators/vendors.
+              Platform fee deduction and subscription settlement metrics will reflect your platform commission contract once configured.
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial KPI Cards -->
+        <div class="admin-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 1.5rem;">
+          <div class="admin-stat-card">
+            <div class="admin-stat-header">
+              <span class="admin-stat-label">Gross Commuter Collections</span>
+              <div class="admin-stat-icon" style="background: #D1FAE5; color: #059669;">
+                <i class="fas fa-coins"></i>
+              </div>
+            </div>
+            <div class="admin-stat-val" id="kpi-gross-revenue" style="color: #059669;">₹0</div>
+            <div class="admin-stat-help">Verified pass fees across all operators</div>
+          </div>
+
+          <div class="admin-stat-card">
+            <div class="admin-stat-header">
+              <span class="admin-stat-label">Pending Verifications</span>
+              <div class="admin-stat-icon" style="background: #FEF3C7; color: #D97706;">
+                <i class="fas fa-hourglass-half"></i>
+              </div>
+            </div>
+            <div class="admin-stat-val" id="kpi-pending-revenue" style="color: #D97706;">₹0</div>
+            <div class="admin-stat-help" id="kpi-pending-count">0 submissions pending review</div>
+          </div>
+
+          <div class="admin-stat-card">
+            <div class="admin-stat-header">
+              <span class="admin-stat-label">Verified Transactions</span>
+              <div class="admin-stat-icon" style="background: #EEF2FF; color: #6366F1;">
+                <i class="fas fa-receipt"></i>
+              </div>
+            </div>
+            <div class="admin-stat-val" id="kpi-verified-txs">0</div>
+            <div class="admin-stat-help">Successfully issued passes</div>
+          </div>
+
+          <div class="admin-stat-card">
+            <div class="admin-stat-header">
+              <span class="admin-stat-label">Platform Take Rate</span>
+              <div class="admin-stat-icon" style="background: #F3F4F6; color: #6B7280;">
+                <i class="fas fa-percentage"></i>
+              </div>
+            </div>
+            <div class="admin-stat-val" style="color: #6B7280;">Direct Operator</div>
+            <div class="admin-stat-help">100% direct vendor remittance model</div>
+          </div>
+        </div>
+
+        <!-- Vendor Revenue Breakdown Table -->
+        <div class="admin-card" style="margin-bottom: 2rem;">
+          <div class="admin-card-header" style="border-bottom: 1px solid var(--admin-border); margin-bottom: 0;">
+            <h3 class="admin-card-title">
+              <i class="fas fa-building text-primary"></i> Collections Breakdown by Fleet Operator
+            </h3>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Fleet Vendor</th>
+                  <th>Verified Collections</th>
+                  <th>Verified Passes</th>
+                  <th>Pending Review</th>
+                  <th>Avg Pass Price</th>
+                  <th>Settlement Model</th>
+                </tr>
+              </thead>
+              <tbody id="vendor-finance-table-body">
+                <tr>
+                  <td colspan="6">
+                    <div class="admin-skeleton" style="height: 50px; margin-bottom: 0.5rem;"></div>
+                    <div class="admin-skeleton" style="height: 50px;"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Verified Transactions Ledger -->
+        <div class="admin-card">
+          <div class="admin-card-header" style="border-bottom: 1px solid var(--admin-border); margin-bottom: 0;">
+            <h3 class="admin-card-title">
+              <i class="fas fa-history text-primary"></i> Verified Pass Transactions Ledger
+              <span class="admin-badge admin-badge-info" style="margin-left: 0.5rem;" id="ledger-filter-count">0</span>
+            </h3>
+          </div>
+
+          <!-- Filters -->
+          <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--admin-border); display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+            <div class="admin-search-box" style="flex: 1; min-width: 260px;">
+              <i class="fas fa-search admin-search-icon"></i>
+              <input type="text" id="tx-search-input" class="admin-search-input" placeholder="Search by commuter, pass no, or transaction reference..." oninput="handleFilterChange()">
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+              <select id="vendor-filter" class="admin-form-control" style="width: 200px;" onchange="handleFilterChange()">
+                <option value="all">All Fleet Vendors</option>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
+
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Pass / Transaction ID</th>
+                  <th>Commuter</th>
+                  <th>Operator & Corridor</th>
+                  <th>Amount</th>
+                  <th>Issued Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="tx-table-body">
+                <tr>
+                  <td colspan="6">
+                    <div class="admin-skeleton" style="height: 50px; margin-bottom: 0.5rem;"></div>
+                    <div class="admin-skeleton" style="height: 50px;"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="tx-pagination" style="padding: 1rem;"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/admin-common.js"></script>
+
+  <script>
+    initAdminShell('finance');
+
+    let allPasses = [];
+    let allApps = [];
+    let allVendors = [];
+    let filteredTxs = [];
+    let vendorsMap = {};
+    let usersMap = {};
+    let currentPage = 1;
+    const PAGE_SIZE = 10;
+
+    requireSuperAdmin((user, userData) => {
+      loadFinancialData();
+    });
+
+    async function loadFinancialData() {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (refreshIcon) refreshIcon.classList.add('fa-spin');
+
+      try {
+        const [passesSnap, appsSnap, vendorsSnap, usersSnap] = await Promise.all([
+          db.collection('passes').get(),
+          db.collection('applications').get(),
+          db.collection('users').where('role', '==', 'vendor').get(),
+          db.collection('users').where('role', '==', 'student').get()
+        ]);
+
+        vendorsMap = {};
+        allVendors = [];
+        const vendorSelect = document.getElementById('vendor-filter');
+        let vendorOptions = '<option value="all">All Fleet Vendors</option>';
+        vendorsSnap.forEach(doc => {
+          const v = { id: doc.id, ...doc.data() };
+          allVendors.push(v);
+          vendorsMap[v.id] = v;
+          const name = v.businessName || v.name || v.email;
+          vendorOptions += `<option value="${v.id}">${escapeHtml(name)}</option>`;
+        });
+        vendorSelect.innerHTML = vendorOptions;
+
+        usersMap = {};
+        usersSnap.forEach(doc => {
+          usersMap[doc.id] = { id: doc.id, ...doc.data() };
+        });
+
+        allPasses = [];
+        let grossCollections = 0;
+        passesSnap.forEach(doc => {
+          const p = { id: doc.id, ...doc.data() };
+          allPasses.push(p);
+          const amt = parseFloat(p.amount || p.price || 0);
+          if (!isNaN(amt)) grossCollections += amt;
+        });
+
+        allApps = [];
+        let pendingCollections = 0;
+        let pendingCount = 0;
+        appsSnap.forEach(doc => {
+          const a = { id: doc.id, ...doc.data() };
+          allApps.push(a);
+          if (a.status === 'Pending') {
+            pendingCount++;
+            const amt = parseFloat(a.amount || a.fare || a.passPrice || 0);
+            if (!isNaN(amt)) pendingCollections += amt;
+          }
+        });
+
+        document.getElementById('kpi-gross-revenue').textContent = formatCurrency(grossCollections);
+        document.getElementById('kpi-pending-revenue').textContent = formatCurrency(pendingCollections);
+        document.getElementById('kpi-pending-count').textContent = `${pendingCount} submissions pending review`;
+        document.getElementById('kpi-verified-txs').textContent = allPasses.length;
+
+        renderVendorBreakdown();
+        handleFilterChange();
+      } catch (err) {
+        console.error("Error loading financial data:", err);
+        showToast("Failed to load financials: " + err.message, "error");
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+      }
+    }
+
+    function renderVendorBreakdown() {
+      const tbody = document.getElementById('vendor-finance-table-body');
+      
+      const statsByVendor = {};
+      allVendors.forEach(v => {
+        statsByVendor[v.id] = {
+          vendor: v,
+          verifiedAmount: 0,
+          verifiedPasses: 0,
+          pendingAmount: 0,
+          pendingCount: 0
+        };
+      });
+
+      allPasses.forEach(p => {
+        if (p.vendorId && statsByVendor[p.vendorId]) {
+          statsByVendor[p.vendorId].verifiedPasses++;
+          statsByVendor[p.vendorId].verifiedAmount += parseFloat(p.amount || p.price || 0) || 0;
+        }
+      });
+
+      allApps.forEach(a => {
+        if (a.vendorId && statsByVendor[a.vendorId] && a.status === 'Pending') {
+          statsByVendor[a.vendorId].pendingCount++;
+          statsByVendor[a.vendorId].pendingAmount += parseFloat(a.amount || a.fare || a.passPrice || 0) || 0;
+        }
+      });
+
+      const rows = Object.values(statsByVendor);
+      if (rows.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--admin-text-muted); padding: 2rem;">
+              No registered fleet vendors found.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      // Sort by collections descending
+      rows.sort((a, b) => b.verifiedAmount - a.verifiedAmount);
+
+      tbody.innerHTML = rows.map(item => {
+        const v = item.vendor;
+        const avgPass = item.verifiedPasses > 0 ? (item.verifiedAmount / item.verifiedPasses) : 0;
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight: 600; color: var(--admin-text-main);">
+                ${escapeHtml(v.businessName || v.name || 'Unnamed Operator')}
+              </div>
+              <div style="font-size: 0.75rem; color: var(--admin-text-muted);">${escapeHtml(v.email || '')}</div>
+            </td>
+            <td>
+              <div style="font-weight: 700; color: #059669; font-size: 1rem;">
+                ${formatCurrency(item.verifiedAmount)}
+              </div>
+            </td>
+            <td>
+              <span class="admin-badge admin-badge-success">${item.verifiedPasses} passes</span>
+            </td>
+            <td>
+              <span class="admin-badge ${item.pendingCount > 0 ? 'admin-badge-warning' : 'admin-badge-secondary'}">
+                ${item.pendingCount} (${formatCurrency(item.pendingAmount)})
+              </span>
+            </td>
+            <td>
+              <div style="font-weight: 500;">${formatCurrency(avgPass)}</div>
+            </td>
+            <td>
+              <span class="admin-badge admin-badge-secondary">Direct Remit</span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function handleFilterChange() {
+      const query = document.getElementById('tx-search-input').value.toLowerCase().trim();
+      const vendorFilter = document.getElementById('vendor-filter').value;
+
+      filteredTxs = allPasses.filter(p => {
+        if (vendorFilter !== 'all' && p.vendorId !== vendorFilter) return false;
+
+        if (query) {
+          const student = usersMap[p.studentId || p.userId];
+          const sName = (student?.name || student?.fullName || p.studentName || '').toLowerCase();
+          const passNo = (p.passNumber || p.id || '').toLowerCase();
+          const txRef = (p.transactionId || p.utr || '').toLowerCase();
+          if (!sName.includes(query) && !passNo.includes(query) && !txRef.includes(query)) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      filteredTxs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      document.getElementById('ledger-filter-count').textContent = filteredTxs.length;
+      currentPage = 1;
+      renderTxTable();
+    }
+
+    function renderTxTable() {
+      const tbody = document.getElementById('tx-table-body');
+      const paginationContainer = document.getElementById('tx-pagination');
+
+      if (filteredTxs.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6">
+              <div class="admin-empty-state">
+                <div class="admin-empty-icon"><i class="fas fa-receipt"></i></div>
+                <h4 class="admin-empty-title">No Transactions Recorded</h4>
+                <p class="admin-empty-desc">No verified pass payments match your filter settings.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        paginationContainer.innerHTML = '';
+        return;
+      }
+
+      const paginated = paginateTable(filteredTxs, currentPage, PAGE_SIZE);
+
+      tbody.innerHTML = paginated.items.map(p => {
+        const student = usersMap[p.studentId || p.userId];
+        const sName = student?.name || student?.fullName || p.studentName || 'Pass Holder';
+        const v = vendorsMap[p.vendorId];
+        const vName = v ? (v.businessName || v.name) : 'Fleet Operator';
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight: 700; color: var(--admin-primary); font-family: monospace;">
+                ${escapeHtml(p.passNumber || p.id.substring(0, 10))}
+              </div>
+              ${p.transactionId ? `<div style="font-size: 0.75rem; color: var(--admin-text-muted); font-family: monospace;">UTR: ${escapeHtml(p.transactionId)}</div>` : ''}
+            </td>
+            <td>
+              <div style="font-weight: 600;">${escapeHtml(sName)}</div>
+            </td>
+            <td>
+              <div style="font-weight: 500;">${escapeHtml(p.routeName || 'Corridor')}</div>
+              <div style="font-size: 0.75rem; color: var(--admin-text-muted);">${escapeHtml(vName)}</div>
+            </td>
+            <td>
+              <div style="font-weight: 700; color: #059669;">
+                ${formatCurrency(p.amount || p.price || 0)}
+              </div>
+            </td>
+            <td>
+              <div style="font-size: 0.85rem;">${formatDate(p.createdAt || p.issueDate)}</div>
+            </td>
+            <td>
+              <span class="admin-badge admin-badge-success">
+                <i class="fas fa-check-circle"></i> Verified
+              </span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      renderPaginationControls('tx-pagination', paginated, (newPage) => {
+        currentPage = newPage;
+        renderTxTable();
+      });
+    }
+  </script>
+</body>
+</html>

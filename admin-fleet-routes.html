@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fleet & Routes | BusPass Super Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+
+  <div class="admin-layout">
+    <div id="admin-sidebar-container"></div>
+
+    <div class="admin-main-wrap">
+      <!-- Topbar -->
+      <header class="admin-topbar">
+        <div class="admin-topbar-left">
+          <button class="admin-mobile-toggle" id="admin-mobile-toggle" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="admin-breadcrumb">
+            <span>BusPass HQ</span>
+            <i class="fas fa-chevron-right admin-breadcrumb-sep"></i>
+            <span class="admin-breadcrumb-current">Fleet & Routes</span>
+          </div>
+        </div>
+
+        <div class="admin-topbar-right">
+          <div style="font-size: 0.82rem; font-weight: 600; color: var(--admin-text-main);" id="admin-topbar-email">
+            admin@buspass.local
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="admin-content">
+        <!-- Header -->
+        <div class="admin-page-header">
+          <div class="admin-page-title-wrap">
+            <h1><i class="fas fa-route text-primary"></i> Transit Routes & Fleet Vehicles</h1>
+            <p>Platform-wide monitoring of designated transit corridors, stop fare stages, and registered buses.</p>
+          </div>
+          <div class="admin-header-actions">
+            <button class="admin-btn admin-btn-secondary" onclick="loadFleetRoutesData()">
+              <i class="fas fa-sync-alt" id="refresh-icon"></i> Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- Mini Stats Grid -->
+        <div class="admin-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.5rem;">
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Total Routes</div>
+            <div class="admin-stat-val" id="mini-total-routes" style="font-size: 1.6rem;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Total Fleet Buses</div>
+            <div class="admin-stat-val" id="mini-total-buses" style="font-size: 1.6rem; color: #10B981;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Intermediate Stops</div>
+            <div class="admin-stat-val" id="mini-total-stops" style="font-size: 1.6rem; color: #6366F1;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Avg Fleet Capacity</div>
+            <div class="admin-stat-val" id="mini-avg-capacity" style="font-size: 1.6rem; color: #F59E0B;">0</div>
+          </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="admin-tabs" style="margin-bottom: 1.5rem;">
+          <button class="admin-tab active" id="tab-btn-routes" onclick="switchView('routes')">
+            <i class="fas fa-route"></i> Transit Corridors & Routes (<span id="tab-count-routes">0</span>)
+          </button>
+          <button class="admin-tab" id="tab-btn-buses" onclick="switchView('buses')">
+            <i class="fas fa-bus"></i> Fleet Vehicles (<span id="tab-count-buses">0</span>)
+          </button>
+        </div>
+
+        <!-- Filter / Search Box -->
+        <div class="admin-card" style="margin-bottom: 1.5rem; padding: 1.25rem;">
+          <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+            <div class="admin-search-box" style="flex: 1; min-width: 260px;">
+              <i class="fas fa-search admin-search-icon"></i>
+              <input type="text" id="fleet-search-input" class="admin-search-input" placeholder="Search routes, buses, stops, vendors..." oninput="handleFilterChange()">
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <select id="vendor-filter" class="admin-form-control" style="width: 220px;" onchange="handleFilterChange()">
+                <option value="all">All Fleet Vendors</option>
+                <!-- Injected dynamically -->
+              </select>
+
+              <button class="admin-btn admin-btn-secondary" onclick="resetFilters()">
+                <i class="fas fa-redo"></i> Reset
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- View 1: Routes Section -->
+        <div id="routes-section" class="admin-card">
+          <div class="admin-card-header" style="border-bottom: 1px solid var(--admin-border); margin-bottom: 0;">
+            <h3 class="admin-card-title">
+              <i class="fas fa-route text-primary"></i> Designated Transit Corridors
+              <span class="admin-badge admin-badge-info" style="margin-left: 0.5rem;" id="routes-filter-count">0</span>
+            </h3>
+          </div>
+
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Route Name & Number</th>
+                  <th>Origin &rarr; Destination</th>
+                  <th>Fleet Vendor</th>
+                  <th>Stops / Fare Stages</th>
+                  <th>Pass Fare Plan</th>
+                  <th>Assigned Buses</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="routes-table-body">
+                <tr>
+                  <td colspan="7">
+                    <div class="admin-skeleton" style="height: 50px; margin-bottom: 0.5rem;"></div>
+                    <div class="admin-skeleton" style="height: 50px;"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="routes-pagination" style="padding: 1rem;"></div>
+        </div>
+
+        <!-- View 2: Buses Section -->
+        <div id="buses-section" class="admin-card" style="display: none;">
+          <div class="admin-card-header" style="border-bottom: 1px solid var(--admin-border); margin-bottom: 0;">
+            <h3 class="admin-card-title">
+              <i class="fas fa-bus text-primary"></i> Registered Bus Inventory
+              <span class="admin-badge admin-badge-info" style="margin-left: 0.5rem;" id="buses-filter-count">0</span>
+            </h3>
+          </div>
+
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Vehicle Number / Plate</th>
+                  <th>Fleet Vendor</th>
+                  <th>Assigned Route</th>
+                  <th>Seating Capacity</th>
+                  <th>Conductor in Charge</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="buses-table-body">
+                <tr>
+                  <td colspan="7">
+                    <div class="admin-skeleton" style="height: 50px; margin-bottom: 0.5rem;"></div>
+                    <div class="admin-skeleton" style="height: 50px;"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="buses-pagination" style="padding: 1rem;"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Route Inspector Modal -->
+  <div class="admin-modal-overlay" id="route-inspect-modal">
+    <div class="admin-modal" style="max-width: 760px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title"><i class="fas fa-route text-primary"></i> Route Transit Details</h3>
+        <button class="admin-modal-close" onclick="closeModal('route-inspect-modal')">&times;</button>
+      </div>
+      <div class="admin-modal-body" id="route-inspect-body">
+        <!-- Injected -->
+      </div>
+      <div class="admin-modal-footer">
+        <button type="button" class="admin-btn admin-btn-secondary" onclick="closeModal('route-inspect-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bus Inspector Modal -->
+  <div class="admin-modal-overlay" id="bus-inspect-modal">
+    <div class="admin-modal" style="max-width: 700px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title"><i class="fas fa-bus text-primary"></i> Fleet Vehicle Details</h3>
+        <button class="admin-modal-close" onclick="closeModal('bus-inspect-modal')">&times;</button>
+      </div>
+      <div class="admin-modal-body" id="bus-inspect-body">
+        <!-- Injected -->
+      </div>
+      <div class="admin-modal-footer">
+        <button type="button" class="admin-btn admin-btn-secondary" onclick="closeModal('bus-inspect-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/admin-common.js"></script>
+
+  <script>
+    initAdminShell('fleet-routes');
+
+    let currentView = 'routes'; // 'routes' or 'buses'
+    let allRoutes = [];
+    let filteredRoutes = [];
+    let allBuses = [];
+    let filteredBuses = [];
+    let vendorsMap = {};
+    let conductorsMap = {};
+    let busesByRoute = {};
+
+    let routesCurrentPage = 1;
+    let busesCurrentPage = 1;
+    const PAGE_SIZE = 10;
+
+    requireSuperAdmin((user, userData) => {
+      loadFleetRoutesData();
+    });
+
+    async function loadFleetRoutesData() {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (refreshIcon) refreshIcon.classList.add('fa-spin');
+
+      try {
+        const [routesSnap, busesSnap, vendorsSnap, condsSnap] = await Promise.all([
+          db.collection('routes').get(),
+          db.collection('buses').get(),
+          db.collection('users').where('role', '==', 'vendor').get(),
+          db.collection('conductors').get()
+        ]);
+
+        vendorsMap = {};
+        const vendorSelect = document.getElementById('vendor-filter');
+        let vendorOptions = '<option value="all">All Fleet Vendors</option>';
+        vendorsSnap.forEach(doc => {
+          const v = { id: doc.id, ...doc.data() };
+          const name = v.businessName || v.name || v.email;
+          vendorsMap[v.id] = v;
+          vendorOptions += `<option value="${v.id}">${escapeHtml(name)}</option>`;
+        });
+        vendorSelect.innerHTML = vendorOptions;
+
+        conductorsMap = {};
+        condsSnap.forEach(doc => {
+          conductorsMap[doc.id] = { id: doc.id, ...doc.data() };
+        });
+
+        allBuses = [];
+        busesByRoute = {};
+        let totalCapacity = 0;
+        busesSnap.forEach(doc => {
+          const b = { id: doc.id, ...doc.data() };
+          allBuses.push(b);
+          const rId = b.routeId || b.route;
+          if (rId) {
+            if (!busesByRoute[rId]) busesByRoute[rId] = [];
+            busesByRoute[rId].push(b);
+          }
+          totalCapacity += parseInt(b.capacity || b.seats || 0);
+        });
+
+        allRoutes = [];
+        let totalStops = 0;
+        routesSnap.forEach(doc => {
+          const r = { id: doc.id, ...doc.data() };
+          allRoutes.push(r);
+          totalStops += (r.stops || []).length;
+        });
+
+        document.getElementById('mini-total-routes').textContent = allRoutes.length;
+        document.getElementById('mini-total-buses').textContent = allBuses.length;
+        document.getElementById('mini-total-stops').textContent = totalStops;
+        document.getElementById('mini-avg-capacity').textContent = allBuses.length > 0 
+          ? Math.round(totalCapacity / allBuses.length) + ' Seats' 
+          : '0 Seats';
+
+        document.getElementById('tab-count-routes').textContent = allRoutes.length;
+        document.getElementById('tab-count-buses').textContent = allBuses.length;
+
+        handleFilterChange();
+      } catch (err) {
+        console.error("Error loading fleet & routes:", err);
+        showToast("Failed to load fleet & routes: " + err.message, "error");
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+      }
+    }
+
+    function switchView(view) {
+      currentView = view;
+      document.getElementById('tab-btn-routes').classList.toggle('active', view === 'routes');
+      document.getElementById('tab-btn-buses').classList.toggle('active', view === 'buses');
+
+      document.getElementById('routes-section').style.display = view === 'routes' ? 'block' : 'none';
+      document.getElementById('buses-section').style.display = view === 'buses' ? 'block' : 'none';
+
+      handleFilterChange();
+    }
+
+    function handleFilterChange() {
+      const query = document.getElementById('fleet-search-input').value.toLowerCase().trim();
+      const vendorFilter = document.getElementById('vendor-filter').value;
+
+      if (currentView === 'routes') {
+        filteredRoutes = allRoutes.filter(r => {
+          if (vendorFilter !== 'all' && r.vendorId !== vendorFilter) return false;
+          if (query) {
+            const name = (r.name || r.routeName || '').toLowerCase();
+            const src = (r.source || r.startPoint || '').toLowerCase();
+            const dst = (r.destination || r.endPoint || '').toLowerCase();
+            const vendor = (vendorsMap[r.vendorId]?.businessName || vendorsMap[r.vendorId]?.name || '').toLowerCase();
+            if (!name.includes(query) && !src.includes(query) && !dst.includes(query) && !vendor.includes(query)) {
+              return false;
+            }
+          }
+          return true;
+        });
+
+        document.getElementById('routes-filter-count').textContent = filteredRoutes.length;
+        routesCurrentPage = 1;
+        renderRoutesTable();
+      } else {
+        filteredBuses = allBuses.filter(b => {
+          if (vendorFilter !== 'all' && b.vendorId !== vendorFilter) return false;
+          if (query) {
+            const plate = (b.busNumber || b.plateNumber || b.registrationNo || '').toLowerCase();
+            const model = (b.model || b.type || '').toLowerCase();
+            const vendor = (vendorsMap[b.vendorId]?.businessName || vendorsMap[b.vendorId]?.name || '').toLowerCase();
+            if (!plate.includes(query) && !model.includes(query) && !vendor.includes(query)) {
+              return false;
+            }
+          }
+          return true;
+        });
+
+        document.getElementById('buses-filter-count').textContent = filteredBuses.length;
+        busesCurrentPage = 1;
+        renderBusesTable();
+      }
+    }
+
+    function resetFilters() {
+      document.getElementById('fleet-search-input').value = '';
+      document.getElementById('vendor-filter').value = 'all';
+      handleFilterChange();
+    }
+
+    function renderRoutesTable() {
+      const tbody = document.getElementById('routes-table-body');
+      const paginationContainer = document.getElementById('routes-pagination');
+
+      if (filteredRoutes.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7">
+              <div class="admin-empty-state">
+                <div class="admin-empty-icon"><i class="fas fa-route"></i></div>
+                <h4 class="admin-empty-title">No Routes Found</h4>
+                <p class="admin-empty-desc">No transit routes match your search or vendor filter.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        paginationContainer.innerHTML = '';
+        return;
+      }
+
+      const paginated = paginateTable(filteredRoutes, routesCurrentPage, PAGE_SIZE);
+
+      tbody.innerHTML = paginated.items.map(r => {
+        const v = vendorsMap[r.vendorId];
+        const vName = v ? (v.businessName || v.name || v.email) : 'Unassigned';
+        const stopsCount = (r.stops || []).length;
+        const assignedBuses = (busesByRoute[r.id] || busesByRoute[r.name] || []);
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight: 600; color: var(--admin-text-main); font-size: 0.95rem;">
+                ${escapeHtml(r.name || r.routeName || 'Unnamed Route')}
+              </div>
+              ${r.routeNumber ? `<div style="font-size: 0.75rem; color: var(--admin-text-muted); font-family: monospace;">No: ${escapeHtml(r.routeNumber)}</div>` : ''}
+            </td>
+            <td>
+              <div style="font-weight: 500;">
+                <i class="fas fa-map-marker-alt" style="color: #10B981; font-size: 0.75rem; margin-right: 4px;"></i>
+                ${escapeHtml(r.source || r.startPoint || 'Origin')}
+              </div>
+              <div style="font-size: 0.85rem; color: var(--admin-text-muted); margin-top: 2px;">
+                <i class="fas fa-flag-checkered" style="color: #EF4444; font-size: 0.75rem; margin-right: 4px;"></i>
+                ${escapeHtml(r.destination || r.endPoint || 'Destination')}
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 500;"><i class="fas fa-building" style="font-size: 0.75rem; color: var(--admin-primary); margin-right: 4px;"></i> ${escapeHtml(vName)}</div>
+            </td>
+            <td>
+              <span class="admin-badge admin-badge-info">
+                <i class="fas fa-map-pin"></i> ${stopsCount} Stops
+              </span>
+            </td>
+            <td>
+              <div style="font-weight: 600; color: #10B981;">${formatCurrency(r.baseFare || r.fare || 0)}</div>
+              ${r.monthlyPassPrice ? `<div style="font-size: 0.75rem; color: var(--admin-text-muted);">Pass: ${formatCurrency(r.monthlyPassPrice)}/mo</div>` : ''}
+            </td>
+            <td>
+              <span class="admin-badge ${assignedBuses.length > 0 ? 'admin-badge-success' : 'admin-badge-secondary'}">
+                <i class="fas fa-bus"></i> ${assignedBuses.length} Bus(es)
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <button class="admin-btn admin-btn-sm admin-btn-secondary" onclick="inspectRoute('${r.id}')">
+                <i class="fas fa-eye"></i> Details
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      renderPaginationControls('routes-pagination', paginated, (newPage) => {
+        routesCurrentPage = newPage;
+        renderRoutesTable();
+      });
+    }
+
+    function renderBusesTable() {
+      const tbody = document.getElementById('buses-table-body');
+      const paginationContainer = document.getElementById('buses-pagination');
+
+      if (filteredBuses.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7">
+              <div class="admin-empty-state">
+                <div class="admin-empty-icon"><i class="fas fa-bus"></i></div>
+                <h4 class="admin-empty-title">No Buses Found</h4>
+                <p class="admin-empty-desc">No fleet vehicles match your search or vendor filter.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        paginationContainer.innerHTML = '';
+        return;
+      }
+
+      const paginated = paginateTable(filteredBuses, busesCurrentPage, PAGE_SIZE);
+
+      tbody.innerHTML = paginated.items.map(b => {
+        const v = vendorsMap[b.vendorId];
+        const vName = v ? (v.businessName || v.name || v.email) : 'Unassigned';
+        const cond = conductorsMap[b.conductorId] || conductorsMap[b.assignedConductor];
+        const condName = cond ? (cond.name || cond.email) : 'Unassigned';
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight: 700; color: var(--admin-text-main); font-family: monospace; font-size: 0.95rem;">
+                ${escapeHtml(b.busNumber || b.plateNumber || b.registrationNo || 'UNREGISTERED')}
+              </div>
+              <div style="font-size: 0.75rem; color: var(--admin-text-muted);">
+                ${escapeHtml(b.model || b.type || 'Standard Bus')}
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 500;"><i class="fas fa-building" style="font-size: 0.75rem; color: var(--admin-primary); margin-right: 4px;"></i> ${escapeHtml(vName)}</div>
+            </td>
+            <td>
+              <div style="font-weight: 500;">
+                <i class="fas fa-route" style="font-size: 0.75rem; margin-right: 4px; color: var(--admin-text-muted);"></i>
+                ${escapeHtml(b.routeName || b.route || 'Unassigned Route')}
+              </div>
+            </td>
+            <td>
+              <span class="admin-badge admin-badge-secondary">
+                <i class="fas fa-chair"></i> ${b.capacity || b.seats || '40'} Seats
+              </span>
+            </td>
+            <td>
+              <div style="font-weight: 500;">
+                <i class="fas fa-id-badge" style="font-size: 0.75rem; margin-right: 4px; color: var(--admin-primary);"></i>
+                ${escapeHtml(condName)}
+              </div>
+            </td>
+            <td>
+              <span class="admin-badge ${b.status === 'Inactive' ? 'admin-badge-danger' : 'admin-badge-success'}">
+                <i class="fas fa-circle" style="font-size: 0.5rem; vertical-align: middle;"></i> ${escapeHtml(b.status || 'Active')}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <button class="admin-btn admin-btn-sm admin-btn-secondary" onclick="inspectBus('${b.id}')">
+                <i class="fas fa-eye"></i> Details
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      renderPaginationControls('buses-pagination', paginated, (newPage) => {
+        busesCurrentPage = newPage;
+        renderBusesTable();
+      });
+    }
+
+    function inspectRoute(routeId) {
+      const r = allRoutes.find(x => x.id === routeId);
+      if (!r) return;
+
+      const v = vendorsMap[r.vendorId];
+      const vName = v ? (v.businessName || v.name || v.email) : 'Unassigned';
+      const assignedBuses = (busesByRoute[r.id] || busesByRoute[r.name] || []);
+      const stops = r.stops || [];
+
+      const body = document.getElementById('route-inspect-body');
+      body.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--admin-border);">
+          <div style="width: 54px; height: 54px; border-radius: 10px; background: #EEF2FF; color: var(--admin-primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+            <i class="fas fa-route"></i>
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 1.25rem;">${escapeHtml(r.name || r.routeName || 'Unnamed Route')}</h3>
+            <div style="font-size: 0.85rem; color: var(--admin-text-muted);">
+              Route ID: <code>${r.id}</code> &bull; Vendor: ${escapeHtml(vName)}
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">TERMINUS A (ORIGIN)</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(r.source || r.startPoint || 'N/A')}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">TERMINUS B (DESTINATION)</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(r.destination || r.endPoint || 'N/A')}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">SINGLE FARE</div>
+            <div style="font-weight: 600; margin-top: 2px; color: #10B981;">${formatCurrency(r.baseFare || r.fare || 0)}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">MONTHLY PASS RATE</div>
+            <div style="font-weight: 600; margin-top: 2px; color: var(--admin-primary);">${formatCurrency(r.monthlyPassPrice || 0)}</div>
+          </div>
+        </div>
+
+        <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">
+          <i class="fas fa-map-pin text-primary"></i> Sequence of Intermediate Stops (${stops.length})
+        </h4>
+        ${stops.length === 0 ? '<p style="color: var(--admin-text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">No designated intermediate stops defined.</p>' : `
+          <div style="background: var(--admin-bg); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; max-height: 200px; overflow-y: auto;">
+            <ol style="margin: 0; padding-left: 1.25rem;">
+              ${stops.map(s => {
+                const sName = typeof s === 'string' ? s : (s.name || s.stopName || 'Stop');
+                const sFare = s.fare ? ` (${formatCurrency(s.fare)})` : '';
+                return `<li style="padding: 0.25rem 0; font-size: 0.88rem;"><strong>${escapeHtml(sName)}</strong>${sFare}</li>`;
+              }).join('')}
+            </ol>
+          </div>
+        `}
+
+        <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">
+          <i class="fas fa-bus text-primary"></i> Assigned Buses on this Route (${assignedBuses.length})
+        </h4>
+        ${assignedBuses.length === 0 ? '<p style="color: var(--admin-text-muted); font-size: 0.85rem;">No buses currently assigned to this transit route.</p>' : `
+          <div class="admin-table-container">
+            <table class="admin-table" style="font-size: 0.82rem;">
+              <thead>
+                <tr>
+                  <th>Plate Number</th>
+                  <th>Model</th>
+                  <th>Capacity</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${assignedBuses.map(b => `
+                  <tr>
+                    <td><strong>${escapeHtml(b.busNumber || b.plateNumber || 'Bus')}</strong></td>
+                    <td>${escapeHtml(b.model || 'Standard')}</td>
+                    <td>${b.capacity || 40} seats</td>
+                    <td><span class="admin-badge admin-badge-success">${escapeHtml(b.status || 'Active')}</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `}
+      `;
+
+      openModal('route-inspect-modal');
+    }
+
+    function inspectBus(busId) {
+      const b = allBuses.find(x => x.id === busId);
+      if (!b) return;
+
+      const v = vendorsMap[b.vendorId];
+      const vName = v ? (v.businessName || v.name || v.email) : 'Unassigned';
+      const cond = conductorsMap[b.conductorId] || conductorsMap[b.assignedConductor];
+      const condName = cond ? (cond.name || cond.email) : 'Unassigned';
+
+      const body = document.getElementById('bus-inspect-body');
+      body.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--admin-border);">
+          <div style="width: 54px; height: 54px; border-radius: 10px; background: #EEF2FF; color: var(--admin-primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+            <i class="fas fa-bus"></i>
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 1.25rem;">${escapeHtml(b.busNumber || b.plateNumber || 'Bus Vehicle')}</h3>
+            <div style="font-size: 0.85rem; color: var(--admin-text-muted);">
+              ID: <code>${b.id}</code> &bull; Vendor: ${escapeHtml(vName)}
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">ASSIGNED CORRIDOR</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(b.routeName || b.route || 'Unassigned')}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">SEATING CAPACITY</div>
+            <div style="font-weight: 600; margin-top: 2px;">${b.capacity || b.seats || '40'} Passengers</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">PRIMARY CONDUCTOR</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(condName)}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">FLEET STATUS</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(b.status || 'Active')}</div>
+          </div>
+        </div>
+      `;
+
+      openModal('bus-inspect-modal');
+    }
+  </script>
+</body>
+</html>

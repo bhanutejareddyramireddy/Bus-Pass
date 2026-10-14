@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics & Trends | BusPass Super Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+
+  <div class="admin-layout">
+    <div id="admin-sidebar-container"></div>
+
+    <div class="admin-main-wrap">
+      <!-- Topbar -->
+      <header class="admin-topbar">
+        <div class="admin-topbar-left">
+          <button class="admin-mobile-toggle" id="admin-mobile-toggle" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="admin-breadcrumb">
+            <span>BusPass HQ</span>
+            <i class="fas fa-chevron-right admin-breadcrumb-sep"></i>
+            <span class="admin-breadcrumb-current">Analytics & Growth Trends</span>
+          </div>
+        </div>
+
+        <div class="admin-topbar-right">
+          <div style="font-size: 0.82rem; font-weight: 600; color: var(--admin-text-main);" id="admin-topbar-email">
+            admin@buspass.local
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="admin-content">
+        <!-- Header -->
+        <div class="admin-page-header">
+          <div class="admin-page-title-wrap">
+            <h1><i class="fas fa-chart-line text-primary"></i> Platform Analytics & Growth Trends</h1>
+            <p>Comprehensive telemetry on user acquisition, commuter application flows, route demand, and operator performance.</p>
+          </div>
+          <div class="admin-header-actions">
+            <button class="admin-btn admin-btn-secondary" onclick="exportAnalyticsReport()">
+              <i class="fas fa-file-csv"></i> Export CSV Summary
+            </button>
+            <button class="admin-btn admin-btn-primary" onclick="loadAnalyticsData()">
+              <i class="fas fa-sync-alt" id="refresh-icon"></i> Refresh Charts
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Mini Grid -->
+        <div class="admin-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.5rem;">
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Total Registered Commuters</div>
+            <div class="admin-stat-val" id="stat-total-students" style="font-size: 1.6rem; color: #6366F1;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Total Fleet Agencies</div>
+            <div class="admin-stat-val" id="stat-total-vendors" style="font-size: 1.6rem; color: #10B981;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">All-Time Pass Applications</div>
+            <div class="admin-stat-val" id="stat-total-apps" style="font-size: 1.6rem; color: #F59E0B;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Application Approval Rate</div>
+            <div class="admin-stat-val" id="stat-approval-rate" style="font-size: 1.6rem; color: #059669;">0%</div>
+          </div>
+        </div>
+
+        <!-- Charts Grid 1: Growth & Application Funnel -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;" id="analytics-grid-1">
+          <!-- User Acquisition Timeline -->
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div>
+                <h3 class="admin-card-title"><i class="fas fa-user-plus text-primary"></i> User Acquisition Over Time</h3>
+                <p class="admin-card-subtitle">Commuter vs Vendor registration timestamps</p>
+              </div>
+            </div>
+            <div style="height: 280px; position: relative;">
+              <canvas id="growthChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Application Status Breakdown -->
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div>
+                <h3 class="admin-card-title"><i class="fas fa-filter text-primary"></i> Application Funnel</h3>
+                <p class="admin-card-subtitle">Pass verification outcomes</p>
+              </div>
+            </div>
+            <div style="height: 280px; position: relative;">
+              <canvas id="funnelChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Grid 2: Corridor Demand & Operator Volume -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;" id="analytics-grid-2">
+          <!-- Top Routes by Demand -->
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div>
+                <h3 class="admin-card-title"><i class="fas fa-route text-primary"></i> High-Demand Transit Corridors</h3>
+                <p class="admin-card-subtitle">Corridors with highest pass applications</p>
+              </div>
+            </div>
+            <div style="height: 260px; position: relative;">
+              <canvas id="routesDemandChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Operator Volume Share -->
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div>
+                <h3 class="admin-card-title"><i class="fas fa-building text-primary"></i> Operator Pass Issuance Share</h3>
+                <p class="admin-card-subtitle">Market distribution among transport vendors</p>
+              </div>
+            </div>
+            <div style="height: 260px; position: relative;">
+              <canvas id="vendorShareChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/admin-common.js"></script>
+
+  <script>
+    initAdminShell('analytics');
+
+    let growthChartInstance = null;
+    let funnelChartInstance = null;
+    let routesDemandChartInstance = null;
+    let vendorShareChartInstance = null;
+
+    let studentsList = [];
+    let vendorsList = [];
+    let appsList = [];
+    let passesList = [];
+    let routesList = [];
+
+    requireSuperAdmin((user, userData) => {
+      loadAnalyticsData();
+    });
+
+    async function loadAnalyticsData() {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (refreshIcon) refreshIcon.classList.add('fa-spin');
+
+      try {
+        const [usersSnap, appsSnap, passesSnap, routesSnap] = await Promise.all([
+          db.collection('users').get(),
+          db.collection('applications').get(),
+          db.collection('passes').get(),
+          db.collection('routes').get()
+        ]);
+
+        studentsList = [];
+        vendorsList = [];
+        usersSnap.forEach(doc => {
+          const d = { id: doc.id, ...doc.data() };
+          if (d.role === 'student') studentsList.push(d);
+          else if (d.role === 'vendor') vendorsList.push(d);
+        });
+
+        appsList = [];
+        let approvedCount = 0;
+        appsSnap.forEach(doc => {
+          const a = { id: doc.id, ...doc.data() };
+          appsList.push(a);
+          if (a.status === 'Approved') approvedCount++;
+        });
+
+        passesList = [];
+        passesSnap.forEach(doc => passesList.push({ id: doc.id, ...doc.data() }));
+
+        routesList = [];
+        routesSnap.forEach(doc => routesList.push({ id: doc.id, ...doc.data() }));
+
+        // Mini KPI cards
+        document.getElementById('stat-total-students').textContent = studentsList.length;
+        document.getElementById('stat-total-vendors').textContent = vendorsList.length;
+        document.getElementById('stat-total-apps').textContent = appsList.length;
+        const approvalRate = appsList.length > 0 ? Math.round((approvedCount / appsList.length) * 100) : 0;
+        document.getElementById('stat-approval-rate').textContent = `${approvalRate}%`;
+
+        renderGrowthChart();
+        renderFunnelChart();
+        renderRoutesDemandChart();
+        renderVendorShareChart();
+      } catch (err) {
+        console.error("Error loading analytics:", err);
+        showToast("Failed to load analytics: " + err.message, "error");
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+      }
+    }
+
+    function renderGrowthChart() {
+      const months = [];
+      const now = new Date();
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push({
+          label: d.toLocaleString('default', { month: 'short' }),
+          year: d.getFullYear(),
+          month: d.getMonth()
+        });
+      }
+
+      const studentCounts = months.map(m => {
+        return studentsList.filter(s => {
+          const cd = s.createdAt?.toDate ? s.createdAt.toDate() : (s.createdAt?.seconds ? new Date(s.createdAt.seconds * 1000) : null);
+          return cd && cd.getFullYear() === m.year && cd.getMonth() === m.month;
+        }).length;
+      });
+
+      const vendorCounts = months.map(m => {
+        return vendorsList.filter(v => {
+          const cd = v.createdAt?.toDate ? v.createdAt.toDate() : (v.createdAt?.seconds ? new Date(v.createdAt.seconds * 1000) : null);
+          return cd && cd.getFullYear() === m.year && cd.getMonth() === m.month;
+        }).length;
+      });
+
+      const ctx = document.getElementById('growthChart').getContext('2d');
+      if (growthChartInstance) growthChartInstance.destroy();
+
+      growthChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: months.map(m => m.label),
+          datasets: [
+            {
+              label: 'Commuters',
+              data: studentCounts,
+              borderColor: '#6366F1',
+              backgroundColor: 'rgba(99, 102, 241, 0.1)',
+              fill: true,
+              tension: 0.35,
+              borderWidth: 2
+            },
+            {
+              label: 'Fleet Vendors',
+              data: vendorCounts,
+              borderColor: '#10B981',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              tension: 0.35
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top', labels: { boxWidth: 12, font: { family: 'Inter' } } }
+          },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#F1F5F9' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function renderFunnelChart() {
+      let pending = 0;
+      let approved = 0;
+      let rejected = 0;
+
+      appsList.forEach(a => {
+        const st = (a.status || 'Pending').toLowerCase();
+        if (st === 'approved') approved++;
+        else if (st === 'rejected') rejected++;
+        else pending++;
+      });
+
+      const ctx = document.getElementById('funnelChart').getContext('2d');
+      if (funnelChartInstance) funnelChartInstance.destroy();
+
+      funnelChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Approved', 'Pending Review', 'Rejected'],
+          datasets: [{
+            data: [approved, pending, rejected],
+            backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+            borderWidth: 2,
+            borderColor: '#FFFFFF'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Inter' } } }
+          },
+          cutout: '70%'
+        }
+      });
+    }
+
+    function renderRoutesDemandChart() {
+      const countsByRoute = {};
+      appsList.forEach(a => {
+        const rName = a.routeName || a.route || 'General Transit';
+        countsByRoute[rName] = (countsByRoute[rName] || 0) + 1;
+      });
+
+      const sorted = Object.entries(countsByRoute).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      const labels = sorted.map(x => x[0]);
+      const data = sorted.map(x => x[1]);
+
+      const ctx = document.getElementById('routesDemandChart').getContext('2d');
+      if (routesDemandChartInstance) routesDemandChartInstance.destroy();
+
+      routesDemandChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels.length > 0 ? labels : ['No Data'],
+          datasets: [{
+            label: 'Pass Applications',
+            data: data.length > 0 ? data : [0],
+            backgroundColor: '#4F46E5',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#F1F5F9' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function renderVendorShareChart() {
+      const countsByVendor = {};
+      const vendorNameMap = {};
+      vendorsList.forEach(v => {
+        vendorNameMap[v.id] = v.businessName || v.name || v.email;
+      });
+
+      passesList.forEach(p => {
+        const vId = p.vendorId || 'direct';
+        const vName = vendorNameMap[vId] || 'Other Fleet';
+        countsByVendor[vName] = (countsByVendor[vName] || 0) + 1;
+      });
+
+      const sorted = Object.entries(countsByVendor).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      const labels = sorted.map(x => x[0]);
+      const data = sorted.map(x => x[1]);
+
+      const ctx = document.getElementById('vendorShareChart').getContext('2d');
+      if (vendorShareChartInstance) vendorShareChartInstance.destroy();
+
+      vendorShareChartInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels.length > 0 ? labels : ['No Passes Issued'],
+          datasets: [{
+            data: data.length > 0 ? data : [1],
+            backgroundColor: ['#6366F1', '#10B981', '#F59E0B', '#3B82F6', '#8B5CF6'],
+            borderWidth: 2,
+            borderColor: '#FFFFFF'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Inter' } } }
+          }
+        }
+      });
+    }
+
+    function exportAnalyticsReport() {
+      let csv = "Metric,Value\n";
+      csv += `Total Registered Commuters,${studentsList.length}\n`;
+      csv += `Total Transport Vendors,${vendorsList.length}\n`;
+      csv += `Total Pass Applications,${appsList.length}\n`;
+      csv += `Total Issued Passes,${passesList.length}\n`;
+      csv += `Total Designated Routes,${routesList.length}\n\n`;
+
+      csv += "Top Corridors,Applications\n";
+      const countsByRoute = {};
+      appsList.forEach(a => {
+        const rName = a.routeName || a.route || 'General';
+        countsByRoute[rName] = (countsByRoute[rName] || 0) + 1;
+      });
+      Object.entries(countsByRoute).sort((a, b) => b[1] - a[1]).forEach(([r, c]) => {
+        csv += `"${r}",${c}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `buspass-analytics-${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("Analytics summary report downloaded!", "success");
+    }
+  </script>
+</body>
+</html>

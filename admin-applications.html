@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Applications & Passes | BusPass Super Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+
+  <div class="admin-layout">
+    <div id="admin-sidebar-container"></div>
+
+    <div class="admin-main-wrap">
+      <!-- Topbar -->
+      <header class="admin-topbar">
+        <div class="admin-topbar-left">
+          <button class="admin-mobile-toggle" id="admin-mobile-toggle" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="admin-breadcrumb">
+            <span>BusPass HQ</span>
+            <i class="fas fa-chevron-right admin-breadcrumb-sep"></i>
+            <span class="admin-breadcrumb-current">Applications & Passes</span>
+          </div>
+        </div>
+
+        <div class="admin-topbar-right">
+          <div style="font-size: 0.82rem; font-weight: 600; color: var(--admin-text-main);" id="admin-topbar-email">
+            admin@buspass.local
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="admin-content">
+        <!-- Header -->
+        <div class="admin-page-header">
+          <div class="admin-page-title-wrap">
+            <h1><i class="fas fa-ticket-alt text-primary"></i> Applications & Digital Passes</h1>
+            <p>Platform-wide oversight of student commuter pass applications, payment proofs, and issued passes.</p>
+          </div>
+          <div class="admin-header-actions">
+            <button class="admin-btn admin-btn-secondary" onclick="loadAppsData()">
+              <i class="fas fa-sync-alt" id="refresh-icon"></i> Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- Mini Stats Grid -->
+        <div class="admin-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.5rem;">
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Total Applications</div>
+            <div class="admin-stat-val" id="mini-total-apps" style="font-size: 1.6rem;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Pending Review</div>
+            <div class="admin-stat-val" id="mini-pending-apps" style="font-size: 1.6rem; color: #F59E0B;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Active Digital Passes</div>
+            <div class="admin-stat-val" id="mini-active-passes" style="font-size: 1.6rem; color: #10B981;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Rejected / Expired</div>
+            <div class="admin-stat-val" id="mini-rejected-apps" style="font-size: 1.6rem; color: #EF4444;">0</div>
+          </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="admin-tabs" style="margin-bottom: 1.5rem;">
+          <button class="admin-tab active" id="tab-btn-apps" onclick="switchView('apps')">
+            <i class="fas fa-file-signature"></i> Commuter Applications (<span id="tab-count-apps">0</span>)
+          </button>
+          <button class="admin-tab" id="tab-btn-passes" onclick="switchView('passes')">
+            <i class="fas fa-id-card"></i> Issued Digital Passes (<span id="tab-count-passes">0</span>)
+          </button>
+        </div>
+
+        <!-- Filter / Search Box -->
+        <div class="admin-card" style="margin-bottom: 1.5rem; padding: 1.25rem;">
+          <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+            <div class="admin-search-box" style="flex: 1; min-width: 260px;">
+              <i class="fas fa-search admin-search-icon"></i>
+              <input type="text" id="app-search-input" class="admin-search-input" placeholder="Search by student, email, pass no, route..." oninput="handleFilterChange()">
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <select id="status-filter" class="admin-form-control" style="width: 160px;" onchange="handleFilterChange()">
+                <option value="all">All Statuses</option>
+                <option value="Pending">Pending Review</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+
+              <select id="vendor-filter" class="admin-form-control" style="width: 200px;" onchange="handleFilterChange()">
+                <option value="all">All Fleet Vendors</option>
+                <!-- Injected dynamically -->
+              </select>
+
+              <button class="admin-btn admin-btn-secondary" onclick="resetFilters()">
+                <i class="fas fa-redo"></i> Reset
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- View 1: Applications Section -->
+        <div id="apps-section" class="admin-card">
+          <div class="admin-card-header" style="border-bottom: 1px solid var(--admin-border); margin-bottom: 0;">
+            <h3 class="admin-card-title">
+              <i class="fas fa-file-alt text-primary"></i> Bus Pass Applications
+              <span class="admin-badge admin-badge-info" style="margin-left: 0.5rem;" id="apps-filter-count">0</span>
+            </h3>
+          </div>
+
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Commuter / Applicant</th>
+                  <th>Fleet Vendor & Route</th>
+                  <th>Submitted Date</th>
+                  <th>Pass Fare</th>
+                  <th>Payment Proof</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="apps-table-body">
+                <tr>
+                  <td colspan="7">
+                    <div class="admin-skeleton" style="height: 50px; margin-bottom: 0.5rem;"></div>
+                    <div class="admin-skeleton" style="height: 50px;"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="apps-pagination" style="padding: 1rem;"></div>
+        </div>
+
+        <!-- View 2: Passes Section -->
+        <div id="passes-section" class="admin-card" style="display: none;">
+          <div class="admin-card-header" style="border-bottom: 1px solid var(--admin-border); margin-bottom: 0;">
+            <h3 class="admin-card-title">
+              <i class="fas fa-ticket-alt text-primary"></i> Digital Passes Ledger
+              <span class="admin-badge admin-badge-info" style="margin-left: 0.5rem;" id="passes-filter-count">0</span>
+            </h3>
+          </div>
+
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Pass Number</th>
+                  <th>Pass Holder</th>
+                  <th>Corridor & Vendor</th>
+                  <th>Validity Period</th>
+                  <th>Amount Paid</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="passes-table-body">
+                <tr>
+                  <td colspan="7">
+                    <div class="admin-skeleton" style="height: 50px; margin-bottom: 0.5rem;"></div>
+                    <div class="admin-skeleton" style="height: 50px;"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="passes-pagination" style="padding: 1rem;"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Application Details & Payment Proof Inspector Modal -->
+  <div class="admin-modal-overlay" id="app-inspect-modal">
+    <div class="admin-modal" style="max-width: 740px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title"><i class="fas fa-file-invoice text-primary"></i> Application Dossier & Proof</h3>
+        <button class="admin-modal-close" onclick="closeModal('app-inspect-modal')">&times;</button>
+      </div>
+      <div class="admin-modal-body" id="app-inspect-body">
+        <!-- Injected -->
+      </div>
+      <div class="admin-modal-footer">
+        <button type="button" class="admin-btn admin-btn-secondary" onclick="closeModal('app-inspect-modal')">Close</button>
+        <button type="button" id="app-override-btn" class="admin-btn admin-btn-danger" style="display: none;">
+          <i class="fas fa-shield-alt"></i> Privileged Override
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pass Details Inspector Modal -->
+  <div class="admin-modal-overlay" id="pass-inspect-modal">
+    <div class="admin-modal" style="max-width: 650px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title"><i class="fas fa-ticket-alt text-primary"></i> Digital Pass Verification</h3>
+        <button class="admin-modal-close" onclick="closeModal('pass-inspect-modal')">&times;</button>
+      </div>
+      <div class="admin-modal-body" id="pass-inspect-body">
+        <!-- Injected -->
+      </div>
+      <div class="admin-modal-footer">
+        <button type="button" class="admin-btn admin-btn-secondary" onclick="closeModal('pass-inspect-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/admin-common.js"></script>
+
+  <script>
+    initAdminShell('applications');
+
+    let currentView = 'apps'; // 'apps' or 'passes'
+    let allApps = [];
+    let filteredApps = [];
+    let allPasses = [];
+    let filteredPasses = [];
+    let vendorsMap = {};
+    let usersMap = {};
+
+    let appsCurrentPage = 1;
+    let passesCurrentPage = 1;
+    const PAGE_SIZE = 10;
+
+    requireSuperAdmin((user, userData) => {
+      loadAppsData();
+    });
+
+    async function loadAppsData() {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (refreshIcon) refreshIcon.classList.add('fa-spin');
+
+      try {
+        const [appsSnap, passesSnap, vendorsSnap, usersSnap] = await Promise.all([
+          db.collection('applications').get(),
+          db.collection('passes').get(),
+          db.collection('users').where('role', '==', 'vendor').get(),
+          db.collection('users').where('role', '==', 'student').get()
+        ]);
+
+        vendorsMap = {};
+        const vendorSelect = document.getElementById('vendor-filter');
+        let vendorOptions = '<option value="all">All Fleet Vendors</option>';
+        vendorsSnap.forEach(doc => {
+          const v = { id: doc.id, ...doc.data() };
+          const name = v.businessName || v.name || v.email;
+          vendorsMap[v.id] = v;
+          vendorOptions += `<option value="${v.id}">${escapeHtml(name)}</option>`;
+        });
+        vendorSelect.innerHTML = vendorOptions;
+
+        usersMap = {};
+        usersSnap.forEach(doc => {
+          usersMap[doc.id] = { id: doc.id, ...doc.data() };
+        });
+
+        allApps = [];
+        let pendingCount = 0;
+        let rejectedCount = 0;
+        appsSnap.forEach(doc => {
+          const a = { id: doc.id, ...doc.data() };
+          allApps.push(a);
+          const st = a.status || 'Pending';
+          if (st === 'Pending') pendingCount++;
+          else if (st === 'Rejected') rejectedCount++;
+        });
+
+        allPasses = [];
+        let activePassesCount = 0;
+        passesSnap.forEach(doc => {
+          const p = { id: doc.id, ...doc.data() };
+          allPasses.push(p);
+          const st = p.status || 'Active';
+          if (st === 'Active' || st === 'active') activePassesCount++;
+          else rejectedCount++;
+        });
+
+        document.getElementById('mini-total-apps').textContent = allApps.length;
+        document.getElementById('mini-pending-apps').textContent = pendingCount;
+        document.getElementById('mini-active-passes').textContent = activePassesCount;
+        document.getElementById('mini-rejected-apps').textContent = rejectedCount;
+
+        document.getElementById('tab-count-apps').textContent = allApps.length;
+        document.getElementById('tab-count-passes').textContent = allPasses.length;
+
+        handleFilterChange();
+      } catch (err) {
+        console.error("Error loading applications:", err);
+        showToast("Failed to load applications: " + err.message, "error");
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+      }
+    }
+
+    function switchView(view) {
+      currentView = view;
+      document.getElementById('tab-btn-apps').classList.toggle('active', view === 'apps');
+      document.getElementById('tab-btn-passes').classList.toggle('active', view === 'passes');
+
+      document.getElementById('apps-section').style.display = view === 'apps' ? 'block' : 'none';
+      document.getElementById('passes-section').style.display = view === 'passes' ? 'block' : 'none';
+
+      handleFilterChange();
+    }
+
+    function handleFilterChange() {
+      const query = document.getElementById('app-search-input').value.toLowerCase().trim();
+      const statusFilter = document.getElementById('status-filter').value;
+      const vendorFilter = document.getElementById('vendor-filter').value;
+
+      if (currentView === 'apps') {
+        filteredApps = allApps.filter(a => {
+          const st = a.status || 'Pending';
+          if (statusFilter !== 'all' && st.toLowerCase() !== statusFilter.toLowerCase()) return false;
+          if (vendorFilter !== 'all' && a.vendorId !== vendorFilter) return false;
+
+          if (query) {
+            const student = usersMap[a.studentId || a.userId];
+            const sName = (student?.name || student?.fullName || a.studentName || '').toLowerCase();
+            const sEmail = (student?.email || a.studentEmail || '').toLowerCase();
+            const rName = (a.routeName || a.route || '').toLowerCase();
+            const id = a.id.toLowerCase();
+            if (!sName.includes(query) && !sEmail.includes(query) && !rName.includes(query) && !id.includes(query)) {
+              return false;
+            }
+          }
+          return true;
+        });
+
+        filteredApps.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        document.getElementById('apps-filter-count').textContent = filteredApps.length;
+        appsCurrentPage = 1;
+        renderAppsTable();
+      } else {
+        filteredPasses = allPasses.filter(p => {
+          const st = p.status || 'Active';
+          if (statusFilter === 'Pending') return false;
+          if (statusFilter === 'Approved' && st !== 'Active' && st !== 'active') return false;
+          if (statusFilter === 'Rejected' && st !== 'Expired' && st !== 'expired' && st !== 'Revoked') return false;
+          if (vendorFilter !== 'all' && p.vendorId !== vendorFilter) return false;
+
+          if (query) {
+            const student = usersMap[p.studentId || p.userId];
+            const sName = (student?.name || student?.fullName || p.studentName || '').toLowerCase();
+            const passNo = (p.passNumber || p.id || '').toLowerCase();
+            const rName = (p.routeName || p.route || '').toLowerCase();
+            if (!sName.includes(query) && !passNo.includes(query) && !rName.includes(query)) {
+              return false;
+            }
+          }
+          return true;
+        });
+
+        filteredPasses.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        document.getElementById('passes-filter-count').textContent = filteredPasses.length;
+        passesCurrentPage = 1;
+        renderPassesTable();
+      }
+    }
+
+    function resetFilters() {
+      document.getElementById('app-search-input').value = '';
+      document.getElementById('status-filter').value = 'all';
+      document.getElementById('vendor-filter').value = 'all';
+      handleFilterChange();
+    }
+
+    function renderAppsTable() {
+      const tbody = document.getElementById('apps-table-body');
+      const paginationContainer = document.getElementById('apps-pagination');
+
+      if (filteredApps.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7">
+              <div class="admin-empty-state">
+                <div class="admin-empty-icon"><i class="fas fa-file-signature"></i></div>
+                <h4 class="admin-empty-title">No Applications Found</h4>
+                <p class="admin-empty-desc">No applications match your filter criteria.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        paginationContainer.innerHTML = '';
+        return;
+      }
+
+      const paginated = paginateTable(filteredApps, appsCurrentPage, PAGE_SIZE);
+
+      tbody.innerHTML = paginated.items.map(a => {
+        const s = usersMap[a.studentId || a.userId];
+        const sName = s?.name || s?.fullName || a.studentName || 'Commuter';
+        const sEmail = s?.email || a.studentEmail || 'N/A';
+        const v = vendorsMap[a.vendorId];
+        const vName = v ? (v.businessName || v.name || v.email) : 'General Fleet';
+        const st = a.status || 'Pending';
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight: 600; color: var(--admin-text-main); font-size: 0.95rem;">
+                ${escapeHtml(sName)}
+              </div>
+              <div style="font-size: 0.8rem; color: var(--admin-text-muted);">${escapeHtml(sEmail)}</div>
+            </td>
+            <td>
+              <div style="font-weight: 500;">
+                <i class="fas fa-route" style="font-size: 0.75rem; color: var(--admin-primary); margin-right: 4px;"></i>
+                ${escapeHtml(a.routeName || a.route || 'General Transit')}
+              </div>
+              <div style="font-size: 0.75rem; color: var(--admin-text-muted);">
+                <i class="fas fa-building" style="font-size: 0.7rem; margin-right: 2px;"></i> ${escapeHtml(vName)}
+              </div>
+            </td>
+            <td>
+              <div style="font-size: 0.85rem;">${formatDate(a.createdAt || a.submittedAt)}</div>
+            </td>
+            <td>
+              <div style="font-weight: 600; color: #10B981;">${formatCurrency(a.amount || a.fare || a.passPrice || 0)}</div>
+            </td>
+            <td>
+              ${a.paymentProofUrl 
+                ? `<a href="${a.paymentProofUrl}" target="_blank" class="admin-btn admin-btn-sm admin-btn-secondary" style="font-size: 0.75rem; padding: 2px 8px;">
+                     <i class="fas fa-receipt"></i> View Proof
+                   </a>`
+                : `<span style="font-size: 0.8rem; color: var(--admin-text-muted);">No File</span>`
+              }
+            </td>
+            <td>
+              <span class="admin-badge ${st === 'Approved' ? 'admin-badge-success' : (st === 'Rejected' ? 'admin-badge-danger' : 'admin-badge-warning')}">
+                ${escapeHtml(st)}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <button class="admin-btn admin-btn-sm admin-btn-secondary" onclick="inspectApp('${a.id}')">
+                <i class="fas fa-eye"></i> Details
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      renderPaginationControls('apps-pagination', paginated, (newPage) => {
+        appsCurrentPage = newPage;
+        renderAppsTable();
+      });
+    }
+
+    function renderPassesTable() {
+      const tbody = document.getElementById('passes-table-body');
+      const paginationContainer = document.getElementById('passes-pagination');
+
+      if (filteredPasses.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7">
+              <div class="admin-empty-state">
+                <div class="admin-empty-icon"><i class="fas fa-ticket-alt"></i></div>
+                <h4 class="admin-empty-title">No Digital Passes Found</h4>
+                <p class="admin-empty-desc">No issued passes match your filter criteria.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        paginationContainer.innerHTML = '';
+        return;
+      }
+
+      const paginated = paginateTable(filteredPasses, passesCurrentPage, PAGE_SIZE);
+
+      tbody.innerHTML = paginated.items.map(p => {
+        const s = usersMap[p.studentId || p.userId];
+        const sName = s?.name || s?.fullName || p.studentName || 'Pass Holder';
+        const v = vendorsMap[p.vendorId];
+        const vName = v ? (v.businessName || v.name || v.email) : 'General Fleet';
+        const st = p.status || 'Active';
+        const isActive = st === 'Active' || st === 'active';
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight: 700; color: var(--admin-primary); font-family: monospace; font-size: 0.95rem;">
+                ${escapeHtml(p.passNumber || p.id.substring(0, 10))}
+              </div>
+              <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-family: monospace;">
+                ID: ${p.id.substring(0, 8)}...
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 600; color: var(--admin-text-main); font-size: 0.95rem;">
+                ${escapeHtml(sName)}
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 500;">${escapeHtml(p.routeName || p.route || 'Transit Corridor')}</div>
+              <div style="font-size: 0.75rem; color: var(--admin-text-muted);">${escapeHtml(vName)}</div>
+            </td>
+            <td>
+              <div style="font-size: 0.85rem;">
+                ${formatDate(p.validFrom)} &rarr; ${formatDate(p.validUntil || p.expiryDate)}
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 600; color: #10B981;">${formatCurrency(p.amount || p.price || 0)}</div>
+            </td>
+            <td>
+              <span class="admin-badge ${isActive ? 'admin-badge-success' : 'admin-badge-secondary'}">
+                <i class="fas fa-circle" style="font-size: 0.5rem; vertical-align: middle;"></i> ${escapeHtml(st)}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <button class="admin-btn admin-btn-sm admin-btn-secondary" onclick="inspectPass('${p.id}')">
+                <i class="fas fa-eye"></i> Details
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      renderPaginationControls('passes-pagination', paginated, (newPage) => {
+        passesCurrentPage = newPage;
+        renderPassesTable();
+      });
+    }
+
+    function inspectApp(appId) {
+      const a = allApps.find(x => x.id === appId);
+      if (!a) return;
+
+      const s = usersMap[a.studentId || a.userId];
+      const sName = s?.name || s?.fullName || a.studentName || 'Commuter';
+      const sEmail = s?.email || a.studentEmail || 'N/A';
+      const v = vendorsMap[a.vendorId];
+      const vName = v ? (v.businessName || v.name || v.email) : 'General Fleet';
+      const st = a.status || 'Pending';
+
+      const body = document.getElementById('app-inspect-body');
+      body.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--admin-border);">
+          <div style="width: 54px; height: 54px; border-radius: 10px; background: #EEF2FF; color: var(--admin-primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+            <i class="fas fa-file-alt"></i>
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 1.25rem;">Application Dossier</h3>
+            <div style="font-size: 0.85rem; color: var(--admin-text-muted);">
+              App ID: <code>${a.id}</code> &bull; Submitted: ${formatDate(a.createdAt || a.submittedAt)}
+            </div>
+          </div>
+          <div style="margin-left: auto;">
+            <span class="admin-badge ${st === 'Approved' ? 'admin-badge-success' : (st === 'Rejected' ? 'admin-badge-danger' : 'admin-badge-warning')}">
+              ${escapeHtml(st)}
+            </span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">COMMUTER</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(sName)}</div>
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted);">${escapeHtml(sEmail)}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">ASSIGNED VENDOR</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(vName)}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">REQUESTED ROUTE</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(a.routeName || a.route || 'General')}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">PASS FARE AMOUNT</div>
+            <div style="font-weight: 600; margin-top: 2px; color: #10B981;">${formatCurrency(a.amount || a.fare || a.passPrice || 0)}</div>
+          </div>
+        </div>
+
+        <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">
+          <i class="fas fa-receipt text-primary"></i> Payment Proof & Transaction Details
+        </h4>
+        <div style="background: var(--admin-bg); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+          <div style="font-size: 0.85rem; margin-bottom: 0.5rem;">
+            <strong>Transaction ID / UTR:</strong> <code>${escapeHtml(a.transactionId || a.utr || 'Not specified')}</code>
+          </div>
+          ${a.paymentProofUrl ? `
+            <div style="text-align: center; margin-top: 0.75rem;">
+              <a href="${a.paymentProofUrl}" target="_blank">
+                <img src="${a.paymentProofUrl}" alt="Proof of Payment" style="max-height: 250px; max-width: 100%; border-radius: 8px; border: 1px solid var(--admin-border); object-fit: contain;">
+              </a>
+              <div style="font-size: 0.75rem; color: var(--admin-text-muted); margin-top: 4px;">Click image to inspect full size</div>
+            </div>
+          ` : '<p style="color: var(--admin-text-muted); font-size: 0.85rem;">No payment receipt screenshot was attached to this application.</p>'}
+        </div>
+      `;
+
+      // Privileged override button setup
+      const overrideBtn = document.getElementById('app-override-btn');
+      overrideBtn.style.display = 'inline-flex';
+      overrideBtn.onclick = () => {
+        closeModal('app-inspect-modal');
+        promptPrivilegedAppOverride(a.id, sName, a.status);
+      };
+
+      openModal('app-inspect-modal');
+    }
+
+    function inspectPass(passId) {
+      const p = allPasses.find(x => x.id === passId);
+      if (!p) return;
+
+      const s = usersMap[p.studentId || p.userId];
+      const sName = s?.name || s?.fullName || p.studentName || 'Pass Holder';
+      const v = vendorsMap[p.vendorId];
+      const vName = v ? (v.businessName || v.name || v.email) : 'General Fleet';
+
+      const body = document.getElementById('pass-inspect-body');
+      body.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--admin-border);">
+          <div style="width: 54px; height: 54px; border-radius: 10px; background: #EEF2FF; color: var(--admin-primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+            <i class="fas fa-ticket-alt"></i>
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 1.25rem;">${escapeHtml(p.passNumber || p.id)}</h3>
+            <div style="font-size: 0.85rem; color: var(--admin-text-muted);">
+              Issued: ${formatDate(p.createdAt || p.issueDate)} &bull; Vendor: ${escapeHtml(vName)}
+            </div>
+          </div>
+          <div style="margin-left: auto;">
+            <span class="admin-badge ${p.status === 'Active' || p.status === 'active' ? 'admin-badge-success' : 'admin-badge-secondary'}">
+              ${escapeHtml(p.status || 'Active')}
+            </span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">PASS HOLDER</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(sName)}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">VALIDITY WINDOW</div>
+            <div style="font-weight: 600; margin-top: 2px;">${formatDate(p.validFrom)} &rarr; ${formatDate(p.validUntil || p.expiryDate)}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">CORRIDOR</div>
+            <div style="font-weight: 600; margin-top: 2px;">${escapeHtml(p.routeName || p.route || 'General')}</div>
+          </div>
+          <div style="background: var(--admin-bg); padding: 0.85rem; border-radius: 8px;">
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); font-weight: 600;">FEE RECORDED</div>
+            <div style="font-weight: 600; margin-top: 2px; color: #10B981;">${formatCurrency(p.amount || p.price || 0)}</div>
+          </div>
+        </div>
+
+        ${p.qrCodeUrl || p.qrToken ? `
+          <div style="text-align: center; padding: 1rem; background: var(--admin-bg); border-radius: 8px;">
+            <div style="font-size: 0.8rem; font-weight: 600; color: var(--admin-text-muted); margin-bottom: 0.5rem;">SECURE QR TOKEN</div>
+            <div style="font-family: monospace; font-size: 0.85rem; color: var(--admin-primary);">${escapeHtml(p.qrToken || p.qrCode || 'TOKEN_ACTIVE')}</div>
+          </div>
+        ` : ''}
+      `;
+
+      openModal('pass-inspect-modal');
+    }
+
+    // Privileged Super Admin override with audit record
+    function promptPrivilegedAppOverride(appId, studentName, currentStatus) {
+      adminConfirmModal(
+        'Privileged Application Override',
+        `You are about to execute a <strong>Super Admin Privileged Override</strong> on application <code>${appId}</code> for commuter <strong>${escapeHtml(studentName)}</strong>.<br><br>
+         Please select the target status and provide a mandatory audit reason. This action will be permanently logged in the immutable security audit trail.`,
+        'Execute Override',
+        async (reason) => {
+          if (!reason || reason.trim().length < 5) {
+            throw new Error("A clear audit reason (min 5 characters) is required for privileged overrides.");
+          }
+
+          const newStatus = currentStatus === 'Approved' ? 'Rejected' : 'Approved';
+
+          try {
+            await db.collection('applications').doc(appId).update({
+              status: newStatus,
+              adminOverride: true,
+              adminOverrideBy: currentAdminUser.email,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            await logAdminAction(
+              'APPLICATION_PRIVILEGED_OVERRIDE',
+              'application',
+              appId,
+              `App for ${studentName}`,
+              { previousStatus: currentStatus, newStatus: newStatus },
+              reason
+            );
+
+            showToast(`Application successfully updated to ${newStatus}!`, "success");
+            loadAppsData();
+          } catch (e) {
+            console.error("Override error:", e);
+            throw new Error("Failed to execute override: " + e.message);
+          }
+        },
+        true // dangerous action
+      );
+    }
+  </script>
+</body>
+</html>

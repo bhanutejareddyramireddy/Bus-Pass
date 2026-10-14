@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Global Live Fleet | BusPass Super Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <style>
+    #admin-map-container {
+      height: 520px;
+      width: 100%;
+      border-radius: var(--admin-radius);
+      z-index: 1;
+    }
+    .fleet-badge-live {
+      background: #DCFCE7;
+      color: #15803D;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .fleet-badge-stale {
+      background: #FEF3C7;
+      color: #B45309;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .fleet-badge-offline {
+      background: #F1F5F9;
+      color: #64748B;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .bus-custom-marker {
+      background: #6366F1;
+      color: white;
+      border: 2px solid white;
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .bus-marker-pulse {
+      animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+      70% { box-shadow: 0 0 0 12px rgba(99, 102, 241, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+    }
+  </style>
+</head>
+<body class="admin-body">
+
+  <div class="admin-layout">
+    <div id="admin-sidebar-container"></div>
+
+    <div class="admin-main-wrap">
+      <!-- Topbar -->
+      <header class="admin-topbar">
+        <div class="admin-topbar-left">
+          <button class="admin-mobile-toggle" id="admin-mobile-toggle" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="admin-breadcrumb">
+            <span>BusPass HQ</span>
+            <i class="fas fa-chevron-right admin-breadcrumb-sep"></i>
+            <span class="admin-breadcrumb-current">Global Live Fleet GPS</span>
+          </div>
+        </div>
+
+        <div class="admin-topbar-right">
+          <div style="font-size: 0.82rem; font-weight: 600; color: var(--admin-text-main);" id="admin-topbar-email">
+            admin@buspass.local
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="admin-content">
+        <!-- Header -->
+        <div class="admin-page-header">
+          <div class="admin-page-title-wrap">
+            <h1><i class="fas fa-map-marked-alt text-primary"></i> Global Fleet Telematics & GPS</h1>
+            <p>Real-time transit monitoring across all fleet operators, active conductor duties, and vehicle GPS beacons.</p>
+          </div>
+          <div class="admin-header-actions">
+            <button class="admin-btn admin-btn-secondary" onclick="recenterMap()">
+              <i class="fas fa-crosshairs"></i> Recenter Map
+            </button>
+          </div>
+        </div>
+
+        <!-- Mini Stats Grid -->
+        <div class="admin-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.5rem;">
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Total Fleet Trackers</div>
+            <div class="admin-stat-val" id="mini-total-fleet" style="font-size: 1.6rem;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Active On-Duty Buses</div>
+            <div class="admin-stat-val" id="mini-live-buses" style="font-size: 1.6rem; color: #10B981;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Stale Coordinate Beacons</div>
+            <div class="admin-stat-val" id="mini-stale-buses" style="font-size: 1.6rem; color: #F59E0B;">0</div>
+          </div>
+          <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-label">Offline Vehicles</div>
+            <div class="admin-stat-val" id="mini-offline-buses" style="font-size: 1.6rem; color: #64748B;">0</div>
+          </div>
+        </div>
+
+        <!-- Main Map and Side Panel Layout -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;" id="fleet-grid-layout">
+          <!-- Left: Leaflet Interactive Map -->
+          <div class="admin-card" style="padding: 1rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+              <h3 style="font-size: 1rem; font-weight: 700; margin: 0; color: var(--admin-text-main);">
+                <i class="fas fa-satellite-dish text-primary"></i> Real-Time Telematics Map
+              </h3>
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <span class="fleet-badge-live"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> Active Duty</span>
+                <span class="fleet-badge-stale"><i class="fas fa-exclamation-triangle" style="font-size: 0.6rem;"></i> Stale (&gt;5m)</span>
+                <span class="fleet-badge-offline"><i class="fas fa-power-off" style="font-size: 0.6rem;"></i> Offline</span>
+              </div>
+            </div>
+
+            <div id="admin-map-container"></div>
+          </div>
+
+          <!-- Right: Fleet Sidebar Directory -->
+          <div class="admin-card" style="padding: 1rem; display: flex; flex-direction: column;">
+            <h3 style="font-size: 1rem; font-weight: 700; margin: 0 0 0.75rem 0; color: var(--admin-text-main);">
+              <i class="fas fa-list text-primary"></i> Fleet Status Roster (<span id="fleet-roster-count">0</span>)
+            </h3>
+
+            <!-- Filters -->
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem;">
+              <input type="text" id="fleet-filter-input" class="admin-search-input" placeholder="Filter bus or route..." oninput="handleFleetFilter()" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;">
+              
+              <div style="display: flex; gap: 0.5rem;">
+                <select id="status-filter" class="admin-form-control" style="font-size: 0.8rem; padding: 0.4rem;" onchange="handleFleetFilter()">
+                  <option value="all">All Statuses</option>
+                  <option value="live">Live Only</option>
+                  <option value="stale">Stale Only</option>
+                  <option value="offline">Offline Only</option>
+                </select>
+
+                <select id="vendor-filter" class="admin-form-control" style="font-size: 0.8rem; padding: 0.4rem;" onchange="handleFleetFilter()">
+                  <option value="all">All Fleet Vendors</option>
+                  <!-- Dynamically populated -->
+                </select>
+              </div>
+            </div>
+
+            <!-- Scrollable Vehicle List -->
+            <div id="fleet-list-container" style="flex: 1; overflow-y: auto; max-height: 400px; display: flex; flex-direction: column; gap: 0.5rem;">
+              <div class="admin-skeleton" style="height: 60px;"></div>
+              <div class="admin-skeleton" style="height: 60px;"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Leaflet CDN -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Firebase Compat CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/admin-common.js"></script>
+
+  <script>
+    initAdminShell('live-fleet');
+
+    let map = null;
+    let markers = {};
+    let allFleetDocs = [];
+    let filteredFleet = [];
+    let vendorsMap = {};
+    let fleetUnsubscribe = null;
+
+    requireSuperAdmin((user, userData) => {
+      initMap();
+      loadVendorsAndListen();
+    });
+
+    window.addEventListener('beforeunload', () => {
+      if (fleetUnsubscribe) fleetUnsubscribe();
+    });
+
+    function initMap() {
+      // Default center: India central coordinates (approx latitude 20.5937, 78.9629)
+      map = L.map('admin-map-container').setView([20.5937, 78.9629], 5);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+    }
+
+    async function loadVendorsAndListen() {
+      try {
+        const vSnap = await db.collection('users').where('role', '==', 'vendor').get();
+        vendorsMap = {};
+        const vSelect = document.getElementById('vendor-filter');
+        let vOptions = '<option value="all">All Fleet Vendors</option>';
+        vSnap.forEach(doc => {
+          const v = { id: doc.id, ...doc.data() };
+          vendorsMap[v.id] = v;
+          const name = v.businessName || v.name || v.email;
+          vOptions += `<option value="${v.id}">${escapeHtml(name)}</option>`;
+        });
+        vSelect.innerHTML = vOptions;
+
+        // Global real-time listener on liveBusLocations
+        fleetUnsubscribe = db.collection('liveBusLocations').onSnapshot(snap => {
+          allFleetDocs = [];
+          snap.forEach(doc => {
+            allFleetDocs.push({ id: doc.id, ...doc.data() });
+          });
+
+          computeFleetStats();
+          handleFleetFilter();
+        }, err => {
+          console.error("Live fleet tracking listener error:", err);
+          showToast("Live telematics stream error: " + err.message, "error");
+        });
+      } catch (e) {
+        console.error("Initialization error:", e);
+      }
+    }
+
+    function getBusStatus(b) {
+      if (!b.isLive) return 'offline';
+      
+      const lastUpdate = b.updatedAt?.toMillis ? b.updatedAt.toMillis() : (b.updatedAt?.seconds ? b.updatedAt.seconds * 1000 : 0);
+      const diffMs = Date.now() - lastUpdate;
+      
+      // If updated within 5 minutes (300,000 ms), it's strictly live
+      if (lastUpdate > 0 && diffMs > 300000) return 'stale';
+      return 'live';
+    }
+
+    function computeFleetStats() {
+      let live = 0;
+      let stale = 0;
+      let offline = 0;
+
+      allFleetDocs.forEach(b => {
+        const status = getBusStatus(b);
+        if (status === 'live') live++;
+        else if (status === 'stale') stale++;
+        else offline++;
+      });
+
+      document.getElementById('mini-total-fleet').textContent = allFleetDocs.length;
+      document.getElementById('mini-live-buses').textContent = live;
+      document.getElementById('mini-stale-buses').textContent = stale;
+      document.getElementById('mini-offline-buses').textContent = offline;
+    }
+
+    function handleFleetFilter() {
+      const q = document.getElementById('fleet-filter-input').value.toLowerCase().trim();
+      const stFilter = document.getElementById('status-filter').value;
+      const vFilter = document.getElementById('vendor-filter').value;
+
+      filteredFleet = allFleetDocs.filter(b => {
+        const st = getBusStatus(b);
+        if (stFilter !== 'all' && st !== stFilter) return false;
+        if (vFilter !== 'all' && b.vendorId !== vFilter) return false;
+
+        if (q) {
+          const num = (b.busNumber || b.plateNumber || '').toLowerCase();
+          const rName = (b.routeName || '').toLowerCase();
+          const cond = (b.conductorName || '').toLowerCase();
+          if (!num.includes(q) && !rName.includes(q) && !cond.includes(q)) return false;
+        }
+        return true;
+      });
+
+      document.getElementById('fleet-roster-count').textContent = filteredFleet.length;
+      renderFleetList();
+      renderMapMarkers();
+    }
+
+    function renderFleetList() {
+      const container = document.getElementById('fleet-list-container');
+      if (filteredFleet.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; color: var(--admin-text-muted); padding: 2rem 1rem;">
+            <i class="fas fa-bus-alt" style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block;"></i>
+            No fleet vehicles match current filter.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filteredFleet.map(b => {
+        const st = getBusStatus(b);
+        const v = vendorsMap[b.vendorId];
+        const vName = v ? (v.businessName || v.name) : 'Fleet Operator';
+
+        let badgeHtml = '';
+        if (st === 'live') {
+          badgeHtml = `<span class="fleet-badge-live"><i class="fas fa-circle" style="font-size: 0.45rem;"></i> Live</span>`;
+        } else if (st === 'stale') {
+          badgeHtml = `<span class="fleet-badge-stale"><i class="fas fa-exclamation-triangle" style="font-size: 0.5rem;"></i> Stale</span>`;
+        } else {
+          badgeHtml = `<span class="fleet-badge-offline"><i class="fas fa-power-off" style="font-size: 0.5rem;"></i> Offline</span>`;
+        }
+
+        const hasCoords = b.latitude && b.longitude;
+
+        return `
+          <div style="background: var(--admin-bg); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--admin-border); cursor: pointer; transition: all 0.2s;"
+               onclick="focusOnBus('${b.id}')" onmouseenter="this.style.borderColor='var(--admin-primary)'" onmouseleave="this.style.borderColor='var(--admin-border)'">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.25rem;">
+              <span style="font-weight: 700; color: var(--admin-text-main); font-family: monospace;">${escapeHtml(b.busNumber || 'Vehicle')}</span>
+              ${badgeHtml}
+            </div>
+            <div style="font-size: 0.8rem; color: var(--admin-text-muted);">
+              <i class="fas fa-route" style="font-size: 0.7rem; margin-right: 2px;"></i> ${escapeHtml(b.routeName || 'Assigned Corridor')}
+            </div>
+            <div style="font-size: 0.75rem; color: var(--admin-text-muted); display: flex; justify-content: space-between; margin-top: 4px;">
+              <span><i class="fas fa-building" style="font-size: 0.7rem;"></i> ${escapeHtml(vName)}</span>
+              <span>${hasCoords ? '<i class="fas fa-location-arrow text-primary"></i> GPS Tracked' : 'No Coordinates'}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderMapMarkers() {
+      if (!map) return;
+
+      const activeIds = [];
+
+      filteredFleet.forEach(b => {
+        const id = b.id;
+        const st = getBusStatus(b);
+        const hasCoords = b.latitude && b.longitude && !isNaN(b.latitude) && !isNaN(b.longitude);
+
+        if (hasCoords) {
+          activeIds.push(id);
+          const lat = parseFloat(b.latitude);
+          const lng = parseFloat(b.longitude);
+
+          const v = vendorsMap[b.vendorId];
+          const vName = v ? (v.businessName || v.name) : 'Fleet Operator';
+
+          let iconBg = '#64748B';
+          let pulseClass = '';
+          if (st === 'live') {
+            iconBg = '#10B981';
+            pulseClass = 'bus-marker-pulse';
+          } else if (st === 'stale') {
+            iconBg = '#F59E0B';
+          }
+
+          const customIcon = L.divIcon({
+            className: 'custom-bus-icon',
+            html: `<div class="bus-custom-marker ${pulseClass}" style="width: 32px; height: 32px; background: ${iconBg};"><i class="fas fa-bus"></i></div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
+          });
+
+          const popupHtml = `
+            <div style="font-family: inherit; font-size: 0.85rem; padding: 4px; min-width: 180px;">
+              <div style="font-weight: 700; font-size: 1rem; color: var(--admin-primary); margin-bottom: 2px;">
+                ${escapeHtml(b.busNumber || 'Fleet Vehicle')}
+              </div>
+              <div style="font-size: 0.8rem; color: #4B5563; margin-bottom: 4px;">
+                <strong>Route:</strong> ${escapeHtml(b.routeName || 'Transit Route')}<br>
+                <strong>Vendor:</strong> ${escapeHtml(vName)}<br>
+                <strong>Conductor:</strong> ${escapeHtml(b.conductorName || 'Staff Assigned')}
+              </div>
+              <div style="margin-top: 6px;">
+                <span style="font-size: 0.75rem; font-weight: 700; color: ${st === 'live' ? '#059669' : (st === 'stale' ? '#D97706' : '#6B7280')};">
+                  ${st === 'live' ? '● Active Live Duty' : (st === 'stale' ? '▲ Stale Beacon Coordinates' : '■ Vehicle Offline')}
+                </span>
+              </div>
+            </div>
+          `;
+
+          if (markers[id]) {
+            markers[id].setLatLng([lat, lng]);
+            markers[id].setIcon(customIcon);
+            markers[id].getPopup().setContent(popupHtml);
+          } else {
+            const marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
+            marker.bindPopup(popupHtml);
+            markers[id] = marker;
+          }
+        }
+      });
+
+      // Cleanup removed markers
+      Object.keys(markers).forEach(id => {
+        if (!activeIds.includes(id)) {
+          map.removeLayer(markers[id]);
+          delete markers[id];
+        }
+      });
+    }
+
+    function focusOnBus(busId) {
+      const b = allFleetDocs.find(x => x.id === busId);
+      if (!b) return;
+
+      if (b.latitude && b.longitude && markers[busId]) {
+        map.setView([b.latitude, b.longitude], 15);
+        markers[busId].openPopup();
+      } else {
+        showToast("No active GPS coordinates available for vehicle " + (b.busNumber || busId), "warning");
+      }
+    }
+
+    function recenterMap() {
+      const coordBuses = allFleetDocs.filter(b => b.latitude && b.longitude);
+      if (coordBuses.length > 0) {
+        const bounds = L.latLngBounds(coordBuses.map(b => [b.latitude, b.longitude]));
+        map.fitBounds(bounds, { padding: [50, 50] });
+      } else {
+        map.setView([20.5937, 78.9629], 5);
+      }
+    }
+  </script>
+</body>
+</html>
