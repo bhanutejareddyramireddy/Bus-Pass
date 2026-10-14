@@ -21,7 +21,7 @@ async function loginSuperAdmin(email, password) {
     let userData;
 
     if (!userDoc.exists) {
-      if (cleanEmail === 'admin@buspass.local') {
+      if (cleanEmail === 'admin@buspass.local' || cleanEmail === 'superadmin@buspass.local') {
         // Auto-provision primary administrator document on first successful login
         userData = {
           uid: user.uid,

@@ -15,6 +15,7 @@ service cloud.firestore {
       return isAuthenticated() && (
         request.auth.token.role == 'superadmin' ||
         request.auth.token.email == 'admin@buspass.local' ||
+        request.auth.token.email == 'superadmin@buspass.local' ||
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin'
       );
     }
