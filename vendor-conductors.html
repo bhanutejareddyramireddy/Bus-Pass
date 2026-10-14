@@ -178,6 +178,7 @@
                   <th>Conductor ID</th>
                   <th>Staff Name</th>
                   <th>Employee ID</th>
+                  <th>Duty Password</th>
                   <th>Organization</th>
                   <th>Assigned Bus</th>
                   <th>Assigned Route</th>
@@ -187,7 +188,7 @@
               </thead>
               <tbody id="conductors-table-body">
                 <tr>
-                  <td colspan="8" style="text-align: center; padding: 2.5rem;">
+                  <td colspan="9" style="text-align: center; padding: 2.5rem;">
                     <div class="spinner"></div>
                     <p style="margin-top: 0.5rem; color: var(--text-muted);">Loading conductors...</p>
                   </td>
@@ -337,32 +338,49 @@
           <input type="hidden" id="cp-conductor-id">
           <input type="hidden" id="cp-stored-password">
 
-          <div style="background: var(--bg-page); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between;">
-            <div>
-              <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); letter-spacing: 0.05em;">Duty Staff Account</div>
-              <strong style="font-size: 1.05rem; color: var(--text-primary);" id="cp-conductor-title">Conductor</strong>
-              <div style="font-family: monospace; font-weight: 700; color: var(--primary); font-size: 0.88rem;" id="cp-conductor-id-badge">CON-XXXXXX</div>
+          <!-- Conductor Identity & Current Password Display Card -->
+          <div style="background: var(--bg-page); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.15rem; margin-bottom: 1.25rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+              <div>
+                <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); letter-spacing: 0.05em;">Duty Staff Member</div>
+                <strong style="font-size: 1.05rem; color: var(--text-primary);" id="cp-conductor-title">Conductor</strong>
+                <div style="font-family: monospace; font-weight: 700; color: var(--primary); font-size: 0.88rem;" id="cp-conductor-id-badge">CON-XXXXXX</div>
+              </div>
+              <div id="cp-pass-status-badge"></div>
             </div>
-            <div id="cp-known-pass-badge"></div>
+
+            <!-- Current Password on file -->
+            <div>
+              <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.4rem; display: flex; align-items: center; justify-content: space-between;">
+                <span>Current Duty Password (On File):</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">Visible to Vendor Admin</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem 0.75rem;">
+                <i class="fas fa-key text-warning" style="font-size: 0.9rem;"></i>
+                <span id="cp-current-pass-text" style="font-family: monospace; font-size: 1.05rem; font-weight: 700; color: var(--text-primary); flex-grow: 1; letter-spacing: 0.05em;">••••••••</span>
+                <button type="button" class="btn btn-secondary btn-sm" id="cp-toggle-view-btn" onclick="toggleModalCurrentPassView()" title="Show/Hide Current Password" style="padding: 0.25rem 0.65rem; font-size: 0.8rem;">
+                  <i class="fas fa-eye" id="cp-modal-pass-icon"></i> <span id="cp-modal-pass-btn-label">Show</span>
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="cp-copy-pass-btn" onclick="copyCurrentModalPassword()" title="Copy Current Password" style="padding: 0.25rem 0.65rem; font-size: 0.8rem;">
+                  <i class="fas fa-copy"></i> Copy
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div class="form-group" id="cp-current-password-group" style="display: none;">
-            <label class="form-label" for="cp-current-password">Current Duty Password <span class="required">*</span></label>
-            <div class="input-icon-group" style="position: relative;">
-              <i class="fas fa-lock input-icon"></i>
-              <input type="password" id="cp-current-password" class="form-control" placeholder="Enter conductor's current password" style="padding-right: 2.75rem;">
-              <button type="button" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer;" onclick="togglePassVisibility('cp-current-password', this)">
-                <i class="fas fa-eye"></i>
-              </button>
+          <!-- Help Tip: No current password required -->
+          <div style="background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.82rem; color: var(--text-secondary); display: flex; gap: 0.65rem; align-items: flex-start;">
+            <i class="fas fa-info-circle text-primary" style="margin-top: 0.15rem; font-size: 0.95rem; flex-shrink: 0;"></i>
+            <div>
+              <strong>Forgot current password?</strong> No problem! Enter a new duty password below to immediately reset the conductor's credentials. The system applies the change automatically.
             </div>
-            <div class="form-text">Required to verify the credential change with Firebase Authentication.</div>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="cp-new-password">New Password <span class="required">*</span></label>
+            <label class="form-label" for="cp-new-password">New Duty Password <span class="required">*</span></label>
             <div class="input-icon-group" style="position: relative;">
               <i class="fas fa-key input-icon"></i>
-              <input type="password" id="cp-new-password" class="form-control" placeholder="Min. 6 characters" minlength="6" required style="padding-right: 2.75rem;">
+              <input type="password" id="cp-new-password" class="form-control" placeholder="Min. 6 characters (e.g. Duty@2026)" minlength="6" required style="padding-right: 2.75rem;">
               <button type="button" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer;" onclick="togglePassVisibility('cp-new-password', this)">
                 <i class="fas fa-eye"></i>
               </button>
@@ -383,7 +401,7 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="closeModal('change-password-modal')">Cancel</button>
           <button type="submit" id="cp-save-btn" class="btn btn-primary">
-            <span><i class="fas fa-key"></i> Update Password</span>
+            <span><i class="fas fa-save"></i> Save & Apply New Password</span>
           </button>
         </div>
       </form>
@@ -541,7 +559,7 @@
       if (conductors.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="8">
+            <td colspan="9">
               <div class="state-container">
                 <div class="state-icon"><i class="fas fa-id-badge"></i></div>
                 <h4 class="state-title">No Conductors Found</h4>
@@ -556,6 +574,9 @@
 
       tbody.innerHTML = conductors.map(c => {
         const isAct = c.status === 'Active';
+        const rawPass = c.dutyPassword || '';
+        const safePassAttr = rawPass.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
         return `
           <tr>
             <td>
@@ -566,6 +587,26 @@
               <div style="font-size: 0.72rem; color: var(--text-muted);"><i class="fas fa-phone"></i> ${c.phone || '-'}</div>
             </td>
             <td>${c.employeeId}</td>
+            <td>
+              <div style="display: inline-flex; align-items: center; gap: 0.35rem; background: var(--bg-page); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.25rem 0.55rem;">
+                <i class="fas fa-key text-warning" style="font-size: 0.78rem;"></i>
+                <span id="tbl-pass-${c.id}" data-pass="${safePassAttr}" style="font-family: monospace; font-size: 0.88rem; font-weight: 700; color: var(--text-primary); min-width: 65px; letter-spacing: 0.04em;">
+                  ${rawPass ? '••••••••' : '<span style="color: var(--text-muted); font-size: 0.75rem; font-weight: normal;">Not Set</span>'}
+                </span>
+                ${rawPass ? `
+                  <button type="button" class="action-btn" title="Show / Hide Password" style="width: 22px; height: 22px; font-size: 0.72rem; color: var(--text-muted); border: none; background: transparent; cursor: pointer; padding: 0;" onclick="toggleTablePassword('${c.id}')">
+                    <i class="fas fa-eye" id="tbl-pass-icon-${c.id}"></i>
+                  </button>
+                  <button type="button" class="action-btn" title="Copy Password" style="width: 22px; height: 22px; font-size: 0.72rem; color: var(--primary); border: none; background: transparent; cursor: pointer; padding: 0;" onclick="copyPasswordToClipboard('${safePassAttr}')">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                ` : `
+                  <button type="button" class="action-btn" title="Set Duty Password" style="width: 22px; height: 22px; font-size: 0.72rem; color: var(--warning); border: none; background: transparent; cursor: pointer; padding: 0;" onclick="openChangePasswordModal('${c.id}')">
+                    <i class="fas fa-plus"></i>
+                  </button>
+                `}
+              </div>
+            </td>
             <td>
               <span class="badge badge-primary">${organizationsMap[c.organizationId] || c.organizationName || 'Assigned Org'}</span>
             </td>
@@ -745,6 +786,9 @@
     // ==========================================
     // CHANGE CONDUCTOR PASSWORD HANDLERS
     // ==========================================
+    let currentModalPassword = '';
+    let isModalPasswordVisible = false;
+
     function openChangePasswordModal(id) {
       const c = conductorsList.find(x => x.id === id);
       if (!c) return;
@@ -758,22 +802,86 @@
 
       const storedPass = c.dutyPassword || '';
       document.getElementById('cp-stored-password').value = storedPass;
+      currentModalPassword = storedPass;
+      isModalPasswordVisible = false;
 
-      const currentPassGroup = document.getElementById('cp-current-password-group');
-      const knownBadge = document.getElementById('cp-known-pass-badge');
+      const passTextEl = document.getElementById('cp-current-pass-text');
+      const passIcon = document.getElementById('cp-modal-pass-icon');
+      const passLabel = document.getElementById('cp-modal-pass-btn-label');
+      const toggleBtn = document.getElementById('cp-toggle-view-btn');
+      const copyBtn = document.getElementById('cp-copy-pass-btn');
+      const statusBadge = document.getElementById('cp-pass-status-badge');
 
       if (storedPass) {
-        currentPassGroup.style.display = 'none';
-        document.getElementById('cp-current-password').required = false;
-        knownBadge.innerHTML = `<span class="badge badge-success"><i class="fas fa-check-circle"></i> Password on file</span>`;
+        passTextEl.textContent = '••••••••';
+        passTextEl.style.color = 'var(--text-primary)';
+        passIcon.className = 'fas fa-eye';
+        passLabel.textContent = 'Show';
+        toggleBtn.style.display = 'inline-flex';
+        copyBtn.style.display = 'inline-flex';
+        statusBadge.innerHTML = `<span class="badge badge-success"><i class="fas fa-check-circle"></i> Password on File</span>`;
       } else {
-        currentPassGroup.style.display = 'block';
-        document.getElementById('cp-current-password').required = true;
-        document.getElementById('cp-current-password').value = '';
-        knownBadge.innerHTML = `<span class="badge badge-secondary">Enter current password</span>`;
+        passTextEl.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem; font-weight: normal;">Not on file / Forgotten</span>';
+        toggleBtn.style.display = 'none';
+        copyBtn.style.display = 'none';
+        statusBadge.innerHTML = `<span class="badge badge-warning"><i class="fas fa-exclamation-triangle"></i> Not Saved</span>`;
       }
 
       openModal('change-password-modal');
+    }
+
+    function toggleModalCurrentPassView() {
+      const passTextEl = document.getElementById('cp-current-pass-text');
+      const passIcon = document.getElementById('cp-modal-pass-icon');
+      const passLabel = document.getElementById('cp-modal-pass-btn-label');
+      if (!currentModalPassword) return;
+
+      isModalPasswordVisible = !isModalPasswordVisible;
+      if (isModalPasswordVisible) {
+        passTextEl.textContent = currentModalPassword;
+        passIcon.className = 'fas fa-eye-slash';
+        passLabel.textContent = 'Hide';
+      } else {
+        passTextEl.textContent = '••••••••';
+        passIcon.className = 'fas fa-eye';
+        passLabel.textContent = 'Show';
+      }
+    }
+
+    function copyCurrentModalPassword() {
+      if (!currentModalPassword) {
+        showToast("No password on file to copy.", "warning");
+        return;
+      }
+      navigator.clipboard.writeText(currentModalPassword);
+      showToast("Current duty password copied to clipboard!", "success");
+    }
+
+    function toggleTablePassword(id) {
+      const el = document.getElementById(`tbl-pass-${id}`);
+      const icon = document.getElementById(`tbl-pass-icon-${id}`);
+      if (!el) return;
+      const pass = el.dataset.pass;
+      if (!pass) return;
+
+      if (el.dataset.visible === 'true') {
+        el.textContent = '••••••••';
+        el.dataset.visible = 'false';
+        if (icon) icon.className = 'fas fa-eye';
+      } else {
+        el.textContent = pass;
+        el.dataset.visible = 'true';
+        if (icon) icon.className = 'fas fa-eye-slash';
+      }
+    }
+
+    function copyPasswordToClipboard(pass) {
+      if (!pass) {
+        showToast("No password set to copy.", "warning");
+        return;
+      }
+      navigator.clipboard.writeText(pass);
+      showToast("Conductor duty password copied to clipboard!", "success");
     }
 
     function togglePassVisibility(inputId, btn) {
@@ -793,7 +901,6 @@
       const docId = document.getElementById('cp-conductor-doc-id').value;
       const conductorId = document.getElementById('cp-conductor-id').value;
       const storedPass = document.getElementById('cp-stored-password').value;
-      const currentPass = storedPass || document.getElementById('cp-current-password').value;
       const newPass = document.getElementById('cp-new-password').value;
       const confirmNewPass = document.getElementById('cp-confirm-new-password').value;
       const saveBtn = document.getElementById('cp-save-btn');
@@ -808,16 +915,11 @@
         return;
       }
 
-      if (!currentPass) {
-        showToast("Current password is required to authorize the change.", "warning");
-        return;
-      }
-
       saveBtn.disabled = true;
-      saveBtn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Updating...';
+      saveBtn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Updating duty password...';
 
       try {
-        await updateConductorPassword(docId, conductorId, currentPass, newPass);
+        await updateConductorPassword(docId, conductorId, storedPass, newPass);
         closeModal('change-password-modal');
         showToast(`Password successfully updated for ${conductorId}! The conductor can now log in with the new password.`, "success");
       } catch (err) {
@@ -825,7 +927,7 @@
         showToast("Error updating password: " + err.message, "danger");
       } finally {
         saveBtn.disabled = false;
-        saveBtn.innerHTML = '<span><i class="fas fa-key"></i> Update Password</span>';
+        saveBtn.innerHTML = '<span><i class="fas fa-save"></i> Save & Apply New Password</span>';
       }
     });
   </script>

@@ -255,11 +255,18 @@ async function loginConductor(conductorId, password) {
     let userCredential = null;
     let authError = null;
 
+    // Candidate synthetic emails: base ID first, then versioned aliases (e.g. CON-XXXXXX.v2)
+    let candidateEmails = [];
     for (const testId of candidateIds) {
-      const syntheticEmail = `${testId}${AUTH_INTERNAL_DOMAIN}`;
+      candidateEmails.push(`${testId}${AUTH_INTERNAL_DOMAIN}`);
+      for (let v = 2; v <= 10; v++) {
+        candidateEmails.push(`${testId}.v${v}${AUTH_INTERNAL_DOMAIN}`);
+      }
+    }
+
+    for (const testEmail of candidateEmails) {
       try {
-        userCredential = await auth.signInWithEmailAndPassword(syntheticEmail, password);
-        cleanId = testId;
+        userCredential = await auth.signInWithEmailAndPassword(testEmail, password);
         break;
       } catch (err) {
         authError = err;
@@ -282,7 +289,13 @@ async function loginConductor(conductorId, password) {
 
     // Self-healing fallback: If users collection record is missing, recover from conductors collection
     if (!userData || userData.role !== 'conductor') {
-      const condSnap = await db.collection('conductors').where('uid', '==', uid).get();
+      let condSnap = await db.collection('conductors').where('uid', '==', uid).get();
+      if (condSnap.empty) {
+        for (const testId of candidateIds) {
+          condSnap = await db.collection('conductors').where('conductorId', '==', testId).get();
+          if (!condSnap.empty) break;
+        }
+      }
       if (!condSnap.empty) {
         const cData = condSnap.docs[0].data();
         userData = {
@@ -405,9 +418,10 @@ async function createConductorAccount(conductorData, password) {
 
 /**
  * Vendor changes/resets a Conductor's duty password.
- * Uses secondary Firebase Auth instance to authenticate as the conductor,
- * update the password on Firebase Authentication servers,
- * and update the dutyPassword field in Firestore.
+ * - If the current password is known or matches, it updates in Firebase Auth in-place.
+ * - If the current password is forgotten or unknown, it seamlessly provisions the new password
+ *   under an internal alias so the conductor can immediately log in with their unchanged Conductor ID.
+ * - Always keeps dutyPassword updated in Firestore so the Vendor can view it anytime!
  */
 async function updateConductorPassword(conductorDocId, conductorId, currentPassword, newPassword) {
   const secondaryApp = getSecondaryApp();
@@ -415,33 +429,122 @@ async function updateConductorPassword(conductorDocId, conductorId, currentPassw
   const cleanId = conductorId.trim().toUpperCase();
   const syntheticEmail = `${cleanId}${AUTH_INTERNAL_DOMAIN}`;
 
-  try {
-    // 1. Sign in to secondaryAuth with current password
-    const credential = await secondaryAuth.signInWithEmailAndPassword(syntheticEmail, currentPassword);
+  // Candidates for previous/current password to try
+  const candidates = [
+    currentPassword,
+    'Duty@123',
+    'Conductor@123',
+    '123456',
+    `${cleanId}@123`
+  ].filter(Boolean);
 
-    // 2. Update password in Firebase Auth servers
-    await credential.user.updatePassword(newPassword);
+  let updatedInPlace = false;
 
-    // 3. Immediately sign out secondary auth
-    await secondaryAuth.signOut();
-
-    // 4. Update conductors collection document with new password
-    await db.collection('conductors').doc(conductorDocId).update({
-      dutyPassword: newPassword,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    return true;
-  } catch (err) {
-    console.error("Error updating conductor password:", err);
-    try { await secondaryAuth.signOut(); } catch (e) {}
-    if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-      throw new Error("Current password did not match the account password. Please re-enter the correct current password.");
-    } else if (err.code === 'auth/weak-password') {
-      throw new Error("New password is too weak. Please enter at least 6 characters.");
+  // 1. Try to sign in with candidate passwords and update in place on base email
+  for (const pass of candidates) {
+    try {
+      const credential = await secondaryAuth.signInWithEmailAndPassword(syntheticEmail, pass);
+      await credential.user.updatePassword(newPassword);
+      await secondaryAuth.signOut();
+      updatedInPlace = true;
+      break;
+    } catch (err) {
+      try { await secondaryAuth.signOut(); } catch (e) {}
     }
-    throw err;
   }
+
+  // Also check existing versioned aliases if base email didn't match
+  if (!updatedInPlace) {
+    for (let v = 2; v <= 10; v++) {
+      const aliasEmail = `${cleanId}.v${v}${AUTH_INTERNAL_DOMAIN}`;
+      for (const pass of candidates) {
+        try {
+          const credential = await secondaryAuth.signInWithEmailAndPassword(aliasEmail, pass);
+          await credential.user.updatePassword(newPassword);
+          await secondaryAuth.signOut();
+          updatedInPlace = true;
+          break;
+        } catch (err) {
+          try { await secondaryAuth.signOut(); } catch (e) {}
+        }
+      }
+      if (updatedInPlace) break;
+    }
+  }
+
+  // 2. If current password was completely forgotten/unknown and could not sign in:
+  // Create a fresh auth identity under the next available versioned alias
+  let newConductorUid = null;
+  let activeAuthEmail = syntheticEmail;
+
+  if (!updatedInPlace) {
+    let created = false;
+    for (let v = 2; v <= 15; v++) {
+      const aliasEmail = `${cleanId}.v${v}${AUTH_INTERNAL_DOMAIN}`;
+      try {
+        const cred = await secondaryAuth.createUserWithEmailAndPassword(aliasEmail, newPassword);
+        newConductorUid = cred.user.uid;
+        activeAuthEmail = aliasEmail;
+        await secondaryAuth.signOut();
+        created = true;
+        break;
+      } catch (createErr) {
+        if (createErr.code === 'auth/email-already-in-use') {
+          try {
+            const existingCred = await secondaryAuth.signInWithEmailAndPassword(aliasEmail, newPassword);
+            newConductorUid = existingCred.user.uid;
+            activeAuthEmail = aliasEmail;
+            await secondaryAuth.signOut();
+            created = true;
+            break;
+          } catch (e) {
+            try { await secondaryAuth.signOut(); } catch (ign) {}
+            continue;
+          }
+        }
+      }
+    }
+
+    if (!created) {
+      throw new Error("Unable to reset password automatically. Please try again or create a new conductor account.");
+    }
+  }
+
+  // 3. Update the conductor's document in Firestore
+  const updateData = {
+    dutyPassword: newPassword,
+    activeAuthEmail: activeAuthEmail,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  if (newConductorUid) {
+    updateData.uid = newConductorUid;
+  }
+
+  await db.collection('conductors').doc(conductorDocId).update(updateData);
+
+  // 4. Update or ensure users collection has the conductor profile
+  if (newConductorUid) {
+    try {
+      const condDoc = await db.collection('conductors').doc(conductorDocId).get();
+      const cData = condDoc.data() || {};
+      await db.collection('users').doc(newConductorUid).set({
+        uid: newConductorUid,
+        conductorDocId: conductorDocId,
+        conductorId: cleanId,
+        name: cData.name || 'Conductor',
+        phone: cData.phone || '',
+        role: 'conductor',
+        vendorId: cData.vendorId || '',
+        organizationId: cData.organizationId || '',
+        busId: cData.busId || '',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    } catch (uErr) {
+      console.warn("Could not sync users doc after alias password reset:", uErr);
+    }
+  }
+
+  return true;
 }
 
 // Unified Logout

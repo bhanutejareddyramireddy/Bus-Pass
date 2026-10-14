@@ -101,7 +101,7 @@
         <div class="page-header-row">
           <div>
             <h2 class="page-header-title">Operator Profile & Agency Configuration</h2>
-            <p class="page-header-desc">Manage your transportation business identity, contact channels, cloud database credentials, and security tokens.</p>
+            <p class="page-header-desc">Manage your transportation business identity, contact channels, and account security details.</p>
           </div>
         </div>
 
@@ -199,59 +199,10 @@
               </div>
             </div>
 
-            <!-- Firebase Config Editor -->
-            <div class="card" style="border-color: #C7D2FE; background: #FAFAFF;">
-              <div class="card-header">
-                <h3 class="card-title" style="font-size: 0.95rem; color: var(--primary);">
-                  <i class="fas fa-plug"></i> Firebase Project Setup
-                </h3>
-              </div>
-              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-                Running on active Firebase configuration. If you have your own Firebase project credentials, update them here anytime.
-              </p>
-              <button class="btn btn-outline-primary btn-sm btn-block" onclick="openFirebaseConfigModal()">
-                <i class="fas fa-sliders-h"></i> Configure Firebase Credentials
-              </button>
-            </div>
-
-            <!-- Optional Demo Data Seeder Card -->
-            <div class="card" style="border-color: #86EFAC; background: #F0FDF4;">
-              <div class="card-header">
-                <h3 class="card-title" style="font-size: 0.95rem; color: var(--success);">
-                  <i class="fas fa-magic"></i> Demo Data Seeder
-                </h3>
-              </div>
-              <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
-                Instantly populate sample College Organization, Route with 5 stops and fees, and assigned Fleet Bus for testing and demonstration.
-              </p>
-              <button class="btn btn-success btn-sm btn-block" id="seed-data-btn" onclick="triggerSeedData()">
-                <i class="fas fa-database"></i> Seed Sample Transport Network
-              </button>
-            </div>
           </div>
         </div>
 
       </main>
-    </div>
-  </div>
-
-  <!-- Firebase Config Modal -->
-  <div class="modal-backdrop" id="firebase-modal">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <h3 class="modal-title">Firebase Credentials Setup</h3>
-        <button class="modal-close-btn" onclick="closeModal('firebase-modal')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
-          Paste your <code>firebaseConfig</code> JSON object from Firebase Console (Project Settings &gt; General &gt; Your apps &gt; Web):
-        </p>
-        <textarea id="custom-fb-json" class="form-control" style="font-family: monospace; min-height: 160px;" placeholder='{\n  "apiKey": "AIzaSy...",\n  "authDomain": "your-app.firebaseapp.com",\n  "projectId": "your-app",\n  "storageBucket": "your-app.appspot.com",\n  "messagingSenderId": "...",\n  "appId": "..."\n}'></textarea>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeModal('firebase-modal')">Cancel</button>
-        <button class="btn btn-primary" onclick="saveCustomConfig()">Save & Reload</button>
-      </div>
     </div>
   </div>
 
@@ -336,43 +287,6 @@
         btn.innerHTML = '<i class="fas fa-save"></i> Save Profile Changes';
       }
     });
-
-    function openFirebaseConfigModal() {
-      const stored = localStorage.getItem("BUSPASS_FIREBASE_CONFIG");
-      document.getElementById('custom-fb-json').value = stored || JSON.stringify(firebaseConfig, null, 2);
-      openModal('firebase-modal');
-    }
-
-    function saveCustomConfig() {
-      try {
-        const text = document.getElementById('custom-fb-json').value.trim();
-        const parsed = JSON.parse(text);
-        if (!parsed.apiKey || !parsed.projectId) {
-          throw new Error("Config must contain at least apiKey and projectId");
-        }
-        saveCustomFirebaseConfig(parsed);
-      } catch (e) {
-        showToast("Invalid JSON config: " + e.message, "danger");
-      }
-    }
-
-    async function triggerSeedData() {
-      const btn = document.getElementById('seed-data-btn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Seeding sample fleet...';
-
-      try {
-        await seedSampleVendorData(currentVendorId);
-        showToast("Sample Organization, Route, Stops & Bus created successfully!", "success");
-        setTimeout(() => {
-          window.location.href = 'vendor-dashboard.html';
-        }, 1200);
-      } catch (e) {
-        showToast("Error seeding data: " + e.message, "danger");
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-database"></i> Seed Sample Transport Network';
-      }
-    }
   </script>
 </body>
 </html>
