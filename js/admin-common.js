@@ -535,3 +535,16 @@ function timeAgo(dateInput) {
   const diffDays = Math.floor(diffHrs / 24);
   return `${diffDays}d ago`;
 }
+
+/**
+ * Safely escapes HTML special characters to prevent XSS and rendering errors
+ */
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
