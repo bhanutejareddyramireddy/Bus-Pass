@@ -18,13 +18,29 @@ async function loginSuperAdmin(email, password) {
 
     // Check user document in Firestore
     const userDoc = await db.collection('users').doc(user.uid).get();
+    let userData;
 
     if (!userDoc.exists) {
-      await auth.signOut();
-      throw new Error("Administrator account record not found in system directory.");
+      if (cleanEmail === 'admin@buspass.local') {
+        // Auto-provision primary administrator document on first successful login
+        userData = {
+          uid: user.uid,
+          email: cleanEmail,
+          name: "Super Administrator",
+          role: "superadmin",
+          status: "Active",
+          mustChangePassword: false,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await db.collection('users').doc(user.uid).set(userData);
+      } else {
+        await auth.signOut();
+        throw new Error("Administrator account record not found in system directory.");
+      }
+    } else {
+      userData = userDoc.data();
     }
-
-    const userData = userDoc.data();
 
     // Verify Super Admin role
     if (userData.role !== 'superadmin') {

@@ -61,16 +61,23 @@ function generateSecureTempPassword() {
   return pwd.split('').sort(() => 0.5 - Math.random()).join('');
 }
 
-function makeHttpRequest(url, method, payload = null) {
+const CUSTOM_PASSWORD = process.argv[3];
+
+function makeHttpRequest(url, method, payload = null, authToken = null) {
   return new Promise((resolve, reject) => {
     const urlObj = new URL(url);
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
     const options = {
       hostname: urlObj.hostname,
       path: urlObj.pathname + urlObj.search,
       method: method,
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers: headers
     };
 
     const req = https.request(options, (res) => {
@@ -106,10 +113,10 @@ async function runBootstrap() {
   console.log(`[1/4] Target Project: ${PROJECT_ID}`);
   console.log(`[2/4] Target Admin Email: ${DEFAULT_ADMIN_EMAIL}`);
 
-  const tempPassword = generateSecureTempPassword();
+  const tempPassword = CUSTOM_PASSWORD || generateSecureTempPassword();
 
   // Step 1: Create Firebase Auth Account via Identity Toolkit API
-  console.log(`[3/4] Creating Authentication Account...`);
+  console.log(`[3/4] Initializing Authentication Account...`);
   const signUpUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_API_KEY}`;
   
   let authResult;
@@ -125,8 +132,7 @@ async function runBootstrap() {
     if (err.message && err.message.includes("EMAIL_EXISTS")) {
       isExisting = true;
       console.log(`(!) Account '${DEFAULT_ADMIN_EMAIL}' already exists in Firebase Authentication.`);
-      console.log(`    Checking if it has the Super Admin role assigned in Firestore...`);
-      // Sign in to verify or retrieve token
+      console.log(`    Attempting to sign in with provided password...`);
       try {
         const signInUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_API_KEY}`;
         authResult = await makeHttpRequest(signInUrl, 'POST', {
@@ -136,12 +142,14 @@ async function runBootstrap() {
         });
       } catch (signInErr) {
         console.log("-----------------------------------------------------------------");
-        console.log(`(!) Notice: An administrator with email '${DEFAULT_ADMIN_EMAIL}' already exists.`);
-        console.log(`    For security, existing passwords are never overwritten.`);
-        console.log(`    If you forgot the password, use 'Reset Password' on admin-login.html.`);
-        console.log(`    Or run with a different email: node scripts/bootstrap-superadmin.js newadmin@domain.com`);
+        console.log(`(!) Notice: An account with email '${DEFAULT_ADMIN_EMAIL}' already exists in Firebase Auth.`);
+        console.log(`    If you know its password, provide it as:`);
+        console.log(`      node scripts/bootstrap-superadmin.js ${DEFAULT_ADMIN_EMAIL} YourPassword`);
+        console.log(`    Or bootstrap with a custom administrator email:`);
+        console.log(`      node scripts/bootstrap-superadmin.js owner@buspass.local`);
+        console.log(`    Or delete the account in Firebase Console -> Authentication and re-run.`);
         console.log("-----------------------------------------------------------------");
-        process.exit(0);
+        process.exit(1);
       }
     } else {
       console.error("(!) Failed to create authentication account:", err.message);
@@ -154,7 +162,6 @@ async function runBootstrap() {
 
   // Step 2: Write Super Admin record in Firestore via Firestore REST API using the admin idToken
   console.log(`[4/4] Provisioning Super Admin profile in Firestore (UID: ${uid})...`);
-  const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/users/${uid}?key=${FIREBASE_API_KEY}`;
 
   const nowIso = new Date().toISOString();
   const firestoreDoc = {
@@ -164,7 +171,7 @@ async function runBootstrap() {
       name: { stringValue: "Super Administrator" },
       role: { stringValue: "superadmin" },
       status: { stringValue: "Active" },
-      mustChangePassword: { booleanValue: true },
+      mustChangePassword: { booleanValue: !CUSTOM_PASSWORD },
       createdAt: { timestampValue: nowIso },
       updatedAt: { timestampValue: nowIso }
     }
@@ -172,7 +179,7 @@ async function runBootstrap() {
 
   try {
     const patchUrl = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/users/${uid}?key=${FIREBASE_API_KEY}`;
-    await makeHttpRequest(patchUrl, 'PATCH', firestoreDoc);
+    await makeHttpRequest(patchUrl, 'PATCH', firestoreDoc, idToken);
 
     // Also mark platformSettings/security as initialized
     const settingsUrl = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/platformSettings/security?key=${FIREBASE_API_KEY}`;
@@ -182,7 +189,7 @@ async function runBootstrap() {
         initializedAt: { timestampValue: nowIso },
         primaryAdminUid: { stringValue: uid }
       }
-    });
+    }, idToken);
 
     console.log("-----------------------------------------------------------------");
     console.log("  >>> SUPER ADMIN ACCOUNT INITIALIZATION SUCCESSFUL! <<<          ");
