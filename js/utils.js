@@ -215,8 +215,32 @@ async function sendNotification(userId, type, title, message) {
 class BusLocationTracker {
   constructor() {
     this.watchId = null;
+    this.intervalId = null;
+    this.wakeLock = null;
     this.busId = null;
     this.isTracking = false;
+  }
+
+  async acquireWakeLock() {
+    try {
+      if ('wakeLock' in navigator && !this.wakeLock) {
+        this.wakeLock = await navigator.wakeLock.request('screen');
+        this.wakeLock.addEventListener('release', () => {
+          this.wakeLock = null;
+        });
+      }
+    } catch (e) {
+      console.warn("Screen wake lock request:", e);
+    }
+  }
+
+  releaseWakeLock() {
+    try {
+      if (this.wakeLock) {
+        this.wakeLock.release().catch(() => {});
+        this.wakeLock = null;
+      }
+    } catch (e) {}
   }
 
   start(busData, onUpdate, onError) {
@@ -225,22 +249,44 @@ class BusLocationTracker {
       return false;
     }
 
+    // Clean up any previous session before starting
+    if (this.watchId !== null) {
+      navigator.geolocation.clearWatch(this.watchId);
+      this.watchId = null;
+    }
+    if (this.intervalId !== null) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+
     this.busId = busData.busId;
     this.isTracking = true;
+    this.acquireWakeLock();
 
-    // First do an immediate push
+    // 1. Immediate position push
     navigator.geolocation.getCurrentPosition(
       (pos) => this.pushLocation(pos, busData, onUpdate),
       (err) => { if (onError) onError(err); },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
 
-    // Then start watching continuous updates
+    // 2. Continuous watchPosition listener
     this.watchId = navigator.geolocation.watchPosition(
       (pos) => this.pushLocation(pos, busData, onUpdate),
       (err) => { if (onError) onError(err); },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
     );
+
+    // 3. Periodic fallback interval (ensures location keeps transmitting even if watchPosition throttles)
+    this.intervalId = setInterval(() => {
+      if (this.isTracking && this.busId) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => this.pushLocation(pos, busData, onUpdate),
+          (err) => {},
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 4000 }
+        );
+      }
+    }, 12000);
 
     return true;
   }
@@ -265,6 +311,7 @@ class BusLocationTracker {
       longitude: lng,
       accuracy: accuracy,
       isLive: true,
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
@@ -284,12 +331,19 @@ class BusLocationTracker {
       navigator.geolocation.clearWatch(this.watchId);
       this.watchId = null;
     }
+    if (this.intervalId !== null) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+    this.releaseWakeLock();
     this.isTracking = false;
 
+    // Only set offline when stop is explicitly called
     if (idToStop) {
       try {
         await db.collection('liveBusLocations').doc(idToStop).set({
           isLive: false,
+          lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
       } catch (e) {

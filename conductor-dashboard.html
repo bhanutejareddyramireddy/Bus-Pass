@@ -48,7 +48,7 @@
             <div class="sidebar-user-name" id="sidebar-cond-name">Conductor</div>
             <div class="sidebar-user-role" id="sidebar-cond-id" style="font-family: monospace; color: #86EFAC;">CON-XXXXXX</div>
           </div>
-          <button class="sidebar-logout-btn" onclick="logoutUser()" title="End Shift & Logout">
+          <button class="sidebar-logout-btn" onclick="handleConductorLogout()" title="Logout Shift">
             <i class="fas fa-sign-out-alt"></i>
           </button>
         </div>
@@ -296,11 +296,35 @@
         if (conductorDoc.busId) {
           const locDoc = await db.collection('liveBusLocations').doc(conductorDoc.busId).get();
           if (locDoc.exists && locDoc.data().isLive) {
+            // Automatically resume live GPS duty broadcast upon login or page load!
+            globalBusTracker.start(
+              conductorDoc,
+              (pos) => {},
+              (err) => console.warn("GPS Auto-resume warning:", err)
+            );
             setLiveDutyUI(true);
+            showToast("Active Live Duty detected. Resumed GPS tracking for your bus.", "info");
           }
         }
       } catch (err) {
         console.error("Conductor load error:", err);
+      }
+    }
+
+    function handleConductorLogout() {
+      if (isLiveDutyActive) {
+        confirmAction(
+          "Logout While Live Duty Active?",
+          `Your bus (${conductorDoc.busNumber || 'assigned bus'}) is currently LIVE on duty and visible to students and the transport admin.\n\nLogging out will keep your bus marked as LIVE in the system. The location will only turn off if you explicitly press "Stop Live Duty".\n\nDo you want to log out now?`,
+          () => {
+            // Log out without stopping the bus live duty in Firestore
+            logoutUser();
+          },
+          "Logout (Keep Bus Live)",
+          false
+        );
+      } else {
+        logoutUser();
       }
     }
 

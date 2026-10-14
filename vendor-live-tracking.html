@@ -392,7 +392,7 @@
             </div>
             <div style="margin-top: 0.5rem; font-size: 0.72rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
               <span><i class="fas fa-id-badge"></i> ${b.conductorName || 'Duty Staff'}</span>
-              <span>${b.lastUpdated ? formatDateTime(b.lastUpdated) : 'No telemetry'}</span>
+              <span>${(b.lastUpdated || b.updatedAt) ? formatDateTime(b.lastUpdated || b.updatedAt) : 'No telemetry'}</span>
             </div>
           </div>
         `;

@@ -296,8 +296,9 @@
           if (loc.conductorName) {
             document.getElementById('track-conductor-name').textContent = loc.conductorName;
           }
-          if (loc.updatedAt) {
-            document.getElementById('track-updated-time').textContent = formatDateTime(loc.updatedAt);
+          const locTime = loc.lastUpdated || loc.updatedAt;
+          if (locTime) {
+            document.getElementById('track-updated-time').textContent = formatDateTime(locTime);
           }
 
           if (loc.isLive && loc.latitude && loc.longitude) {
