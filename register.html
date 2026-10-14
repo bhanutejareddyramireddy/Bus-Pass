@@ -117,9 +117,13 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   
+  <!-- EmailJS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  
   <script src="js/firebase-config.js"></script>
   <script src="js/common.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/otp-service.js"></script>
 
   <script>
     const form = document.getElementById('student-register-form');
@@ -127,9 +131,9 @@
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('name').value;
-      const email = document.getElementById('email').value;
-      const phone = document.getElementById('phone').value;
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const phone = document.getElementById('phone').value.trim();
       const password = document.getElementById('password').value;
       const confirmPassword = document.getElementById('confirm-password').value;
 
@@ -138,17 +142,67 @@
         return;
       }
 
+      if (password.length < 6) {
+        showToast("Password must be at least 6 characters long.", "warning");
+        return;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        showToast("Please enter a valid official email address.", "warning");
+        return;
+      }
+
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Creating account...';
+      btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Sending verification OTP...';
 
       try {
-        await registerStudent(name, email, password, phone);
-        showToast("Account created successfully! Welcome to BusPass.", "success");
-        setTimeout(() => {
-          window.location.replace('pages/student-dashboard.html');
-        }, 1000);
+        // 1. Check if email already registered in Firebase Auth
+        try {
+          const methods = await auth.fetchSignInMethodsForEmail(email);
+          if (methods && methods.length > 0) {
+            throw new Error("This email is already registered. Please log in or use Forgot Password.");
+          }
+        } catch (authErr) {
+          if (authErr.message.includes("already registered")) {
+            throw authErr;
+          }
+          console.warn("Auth check note:", authErr);
+        }
+
+        // 2. Generate and dispatch OTP
+        const otp = generate6DigitOtp();
+        await sendOtpEmail({
+          email: email,
+          name: name,
+          otp: otp,
+          type: 'registration'
+        });
+
+        // 3. Open OTP Verification Modal
+        showRegistrationOtpModal({
+          email: email,
+          name: name,
+          title: "Verify Student Email",
+          onVerified: async () => {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Creating account...';
+            try {
+              await registerStudent(name, email, password, phone);
+              showToast("Email verified & student account created! Welcome to BusPass.", "success");
+              setTimeout(() => {
+                window.location.replace('pages/student-dashboard.html');
+              }, 1000);
+            } catch (regErr) {
+              showToast(regErr.message, "danger", "Registration Failed");
+              btn.disabled = false;
+              btn.innerHTML = 'Create Student Account';
+            }
+          }
+        });
       } catch (error) {
-        showToast(error.message, "danger", "Registration Failed");
+        showToast(error.message, "danger", "Verification Error");
+      } finally {
         btn.disabled = false;
         btn.innerHTML = 'Create Student Account';
       }
