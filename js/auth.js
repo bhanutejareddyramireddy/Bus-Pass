@@ -679,3 +679,228 @@ function updateLayoutUserInfo(userData) {
   const initial = (userData.name || 'U').charAt(0).toUpperCase();
   userAvatarEls.forEach(el => el.textContent = initial);
 }
+
+/**
+ * Deletes a Conductor completely from the Firestore database (both conductors and users collections)
+ * and attempts to delete their Firebase Authentication identity via secondaryAuth.
+ */
+async function deleteConductorAccount(conductorDocId, conductorId, conductorUid, dutyPassword = '') {
+  try {
+    // 1. Delete from conductors collection
+    if (conductorDocId) {
+      await db.collection('conductors').doc(conductorDocId).delete().catch(e => console.warn("Conductor doc delete error:", e));
+    }
+
+    // 2. Delete from users collection (by UID and by conductorId query)
+    if (conductorUid) {
+      await db.collection('users').doc(conductorUid).delete().catch(e => console.warn("Users doc delete error:", e));
+    }
+    if (conductorId) {
+      const uSnap = await db.collection('users').where('conductorId', '==', conductorId).get().catch(() => null);
+      if (uSnap && !uSnap.empty) {
+        for (const doc of uSnap.docs) {
+          await doc.ref.delete().catch(() => {});
+        }
+      }
+    }
+
+    // 3. Try deleting from Firebase Auth via secondaryAuth if dutyPassword is known
+    if (conductorId && dutyPassword) {
+      try {
+        const secondaryApp = getSecondaryApp();
+        const secondaryAuth = secondaryApp.auth();
+        const cleanId = conductorId.trim().toUpperCase();
+        const candidates = [
+          `${cleanId}${AUTH_INTERNAL_DOMAIN}`,
+          `${cleanId}.v2${AUTH_INTERNAL_DOMAIN}`,
+          `${cleanId}.v3${AUTH_INTERNAL_DOMAIN}`
+        ];
+        for (const testEmail of candidates) {
+          try {
+            const cred = await secondaryAuth.signInWithEmailAndPassword(testEmail, dutyPassword);
+            await cred.user.delete();
+            await secondaryAuth.signOut();
+            break;
+          } catch (e) {
+            try { await secondaryAuth.signOut(); } catch (ign) {}
+          }
+        }
+      } catch (authErr) {
+        console.warn("Secondary auth user delete warning (conductor record in Firestore was already deleted):", authErr);
+      }
+    }
+
+    return true;
+  } catch (err) {
+    console.error("Error in deleteConductorAccount:", err);
+    throw err;
+  }
+}
+
+/**
+ * Deletes a Student's account from Firestore (users, applications, passes, notifications)
+ * and permanently deletes their Firebase Auth account.
+ */
+async function deleteCurrentStudentAccount(password = null) {
+  const user = auth.currentUser;
+  if (!user) throw new Error("No active authenticated session found.");
+  const uid = user.uid;
+
+  // Re-authenticate if password is provided (prevents auth/requires-recent-login failure)
+  if (password && user.email) {
+    try {
+      const credential = firebase.auth.EmailAuthProvider.credential(user.email, password);
+      await user.reauthenticateWithCredential(credential);
+    } catch (reauthErr) {
+      if (reauthErr.code === 'auth/wrong-password' || reauthErr.code === 'auth/invalid-credential') {
+        throw new Error("Incorrect current password. Please enter your valid password to authorize deletion.");
+      }
+      throw reauthErr;
+    }
+  }
+
+  // 1. Delete student Firestore records
+  try {
+    // Passes
+    const passSnap = await db.collection('passes').where('studentId', '==', uid).get().catch(() => null);
+    if (passSnap && !passSnap.empty) {
+      for (const d of passSnap.docs) await d.ref.delete().catch(() => {});
+    }
+
+    // Applications
+    const appSnap = await db.collection('applications').where('studentId', '==', uid).get().catch(() => null);
+    if (appSnap && !appSnap.empty) {
+      for (const d of appSnap.docs) await d.ref.delete().catch(() => {});
+    }
+
+    // Notifications
+    const notifSnap = await db.collection('notifications').where('userId', '==', uid).get().catch(() => null);
+    if (notifSnap && !notifSnap.empty) {
+      for (const d of notifSnap.docs) await d.ref.delete().catch(() => {});
+    }
+
+    // User doc in users collection
+    await db.collection('users').doc(uid).delete().catch(err => console.warn("User doc delete warning:", err));
+  } catch (dbErr) {
+    console.warn("Firestore cleanup warning:", dbErr);
+  }
+
+  // 2. Delete Firebase Authentication user
+  try {
+    await user.delete();
+  } catch (delErr) {
+    if (delErr.code === 'auth/requires-recent-login') {
+      throw new Error("AUTH_REQUIRES_RECENT_LOGIN");
+    }
+    throw delErr;
+  }
+
+  // 3. Terminate session and redirect to home
+  terminateUserSession();
+  document.documentElement.style.display = 'none';
+  window.location.replace(resolveAppPath('index.html'));
+  return true;
+}
+
+/**
+ * Deletes a Vendor's entire business account and all associated operational records
+ * (organizations, routes, buses, conductors, live bus locations, applications, passes, users doc)
+ * and permanently deletes their Firebase Auth account.
+ */
+async function deleteCurrentVendorAccount(password = null) {
+  const user = auth.currentUser;
+  if (!user) throw new Error("No active authenticated session found.");
+  const uid = user.uid;
+
+  // Re-authenticate if password is provided
+  if (password && user.email) {
+    try {
+      const credential = firebase.auth.EmailAuthProvider.credential(user.email, password);
+      await user.reauthenticateWithCredential(credential);
+    } catch (reauthErr) {
+      if (reauthErr.code === 'auth/wrong-password' || reauthErr.code === 'auth/invalid-credential') {
+        throw new Error("Incorrect current password. Please enter your valid password to authorize deletion.");
+      }
+      throw reauthErr;
+    }
+  }
+
+  // 1. Delete all associated vendor Firestore records
+  try {
+    // Conductors
+    const condSnap = await db.collection('conductors').where('vendorId', '==', uid).get().catch(() => null);
+    if (condSnap && !condSnap.empty) {
+      for (const d of condSnap.docs) {
+        const cData = d.data();
+        if (cData.uid) {
+          await db.collection('users').doc(cData.uid).delete().catch(() => {});
+        }
+        await d.ref.delete().catch(() => {});
+      }
+    }
+
+    // Buses & Live Locations
+    const busSnap = await db.collection('buses').where('vendorId', '==', uid).get().catch(() => null);
+    if (busSnap && !busSnap.empty) {
+      for (const d of busSnap.docs) {
+        await db.collection('liveBusLocations').doc(d.id).delete().catch(() => {});
+        await d.ref.delete().catch(() => {});
+      }
+    }
+
+    // Routes
+    const routeSnap = await db.collection('routes').where('vendorId', '==', uid).get().catch(() => null);
+    if (routeSnap && !routeSnap.empty) {
+      for (const d of routeSnap.docs) await d.ref.delete().catch(() => {});
+    }
+
+    // Organizations
+    const orgSnap = await db.collection('organizations').where('vendorId', '==', uid).get().catch(() => null);
+    if (orgSnap && !orgSnap.empty) {
+      for (const d of orgSnap.docs) await d.ref.delete().catch(() => {});
+    }
+
+    // Applications & Passes
+    const appSnap = await db.collection('applications').where('vendorId', '==', uid).get().catch(() => null);
+    if (appSnap && !appSnap.empty) {
+      for (const d of appSnap.docs) await d.ref.delete().catch(() => {});
+    }
+    const passSnap = await db.collection('passes').where('vendorId', '==', uid).get().catch(() => null);
+    if (passSnap && !passSnap.empty) {
+      for (const d of passSnap.docs) await d.ref.delete().catch(() => {});
+    }
+
+    // Boarding Records
+    const bSnap = await db.collection('boardingRecords').where('vendorId', '==', uid).get().catch(() => null);
+    if (bSnap && !bSnap.empty) {
+      for (const d of bSnap.docs) await d.ref.delete().catch(() => {});
+    }
+
+    // Notifications
+    const notifSnap = await db.collection('notifications').where('userId', '==', uid).get().catch(() => null);
+    if (notifSnap && !notifSnap.empty) {
+      for (const d of notifSnap.docs) await d.ref.delete().catch(() => {});
+    }
+
+    // Vendor doc in users collection
+    await db.collection('users').doc(uid).delete().catch(err => console.warn("Vendor user doc delete warning:", err));
+  } catch (dbErr) {
+    console.warn("Vendor Firestore cleanup warning:", dbErr);
+  }
+
+  // 2. Delete Firebase Authentication user
+  try {
+    await user.delete();
+  } catch (delErr) {
+    if (delErr.code === 'auth/requires-recent-login') {
+      throw new Error("AUTH_REQUIRES_RECENT_LOGIN");
+    }
+    throw delErr;
+  }
+
+  // 3. Terminate session and redirect to home
+  terminateUserSession();
+  document.documentElement.style.display = 'none';
+  window.location.replace(resolveAppPath('index.html'));
+  return true;
+}

@@ -199,10 +199,78 @@
               </div>
             </div>
 
+            <!-- Danger Zone: Delete Account -->
+            <div class="card" style="margin-top: 1.25rem; border-color: rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.03);">
+              <div class="card-header" style="border-bottom: 1px solid rgba(239, 68, 68, 0.2); padding-bottom: 0.75rem; margin-bottom: 0.85rem;">
+                <h3 class="card-title" style="color: #ef4444; font-size: 0.95rem;">
+                  <i class="fas fa-exclamation-triangle"></i> Danger Zone
+                </h3>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 1rem;">
+                Permanently delete your vendor business account, fleet buses, routes, conductors, active passes, and all database records.
+              </p>
+              <button type="button" class="btn btn-outline-danger btn-block" onclick="openDeleteVendorModal()" style="border-color: #ef4444; color: #ef4444; font-weight: 600; width: 100%;">
+                <i class="fas fa-trash-alt"></i> Delete Vendor Account
+              </button>
+            </div>
+
           </div>
         </div>
 
       </main>
+    </div>
+  </div>
+
+  <!-- Delete Vendor Account Modal -->
+  <div class="modal-backdrop" id="delete-vendor-modal">
+    <div class="modal-dialog modal-md">
+      <div class="modal-header" style="border-bottom: 1px solid rgba(239, 68, 68, 0.25);">
+        <h3 class="modal-title" style="color: #ef4444;">
+          <i class="fas fa-exclamation-triangle"></i> Permanently Delete Vendor Account
+        </h3>
+        <button class="modal-close-btn" onclick="closeModal('delete-vendor-modal')">&times;</button>
+      </div>
+      <form id="delete-vendor-form">
+        <div class="modal-body">
+          <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-sm); padding: 0.9rem; margin-bottom: 1.25rem;">
+            <p style="margin: 0; font-size: 0.88rem; color: #b91c1c; font-weight: 600;">
+              Warning: This is an irreversible action!
+            </p>
+            <p style="margin: 0.4rem 0 0; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.45;">
+              Deleting your account will permanently wipe:
+            </p>
+            <ul style="margin: 0.35rem 0 0 1.2rem; font-size: 0.82rem; color: var(--text-secondary); padding: 0;">
+              <li>Your vendor business profile &amp; database document</li>
+              <li>All registered conductors, fleet buses, routes, and live locations</li>
+              <li>All pass applications, approved passes, and boarding records</li>
+              <li>Your Firebase Authentication credentials</li>
+            </ul>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="del-vendor-password">
+              Confirm Your Current Password <span class="required">*</span>
+            </label>
+            <input type="password" id="del-vendor-password" class="form-control" placeholder="Enter your current password" required autocomplete="current-password">
+            <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">
+              Required by Firebase to authorize permanent account deletion.
+            </span>
+          </div>
+
+          <div class="form-group" style="margin-top: 1rem;">
+            <label class="form-label" for="del-vendor-confirm">
+              Type <strong style="color: #ef4444;">DELETE</strong> to confirm:
+            </label>
+            <input type="text" id="del-vendor-confirm" class="form-control" placeholder="DELETE" required autocomplete="off">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('delete-vendor-modal')">Cancel</button>
+          <button type="submit" id="confirm-del-vendor-btn" class="btn btn-danger" style="background: #ef4444; border-color: #ef4444;">
+            <i class="fas fa-trash-alt"></i> Permanently Delete My Account
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -285,6 +353,35 @@
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-save"></i> Save Profile Changes';
+      }
+    });
+
+    function openDeleteVendorModal() {
+      document.getElementById('del-vendor-password').value = '';
+      document.getElementById('del-vendor-confirm').value = '';
+      openModal('delete-vendor-modal');
+    }
+
+    document.getElementById('delete-vendor-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const confirmText = document.getElementById('del-vendor-confirm').value.trim();
+      if (confirmText !== 'DELETE') {
+        showToast("Please type DELETE to confirm account deletion.", "warning");
+        return;
+      }
+
+      const password = document.getElementById('del-vendor-password').value;
+      const btn = document.getElementById('confirm-del-vendor-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Deleting Account...';
+
+      try {
+        await deleteCurrentVendorAccount(password);
+      } catch (err) {
+        console.error("Account delete error:", err);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-trash-alt"></i> Permanently Delete My Account';
+        showToast(err.message || "Failed to delete account.", "danger");
       }
     });
   </script>

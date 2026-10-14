@@ -767,14 +767,16 @@
     }
 
     function deleteConductor(id, conductorId) {
+      const c = conductorsList.find(x => x.id === id);
       confirmAction(
         "Delete Conductor",
-        `Are you sure you want to delete conductor "${conductorId}"? They will no longer be able to log in to conduct duty.`,
+        `Are you sure you want to permanently delete conductor "${conductorId}"? All their duty records, login access, and database entries will be completely removed.`,
         async () => {
           try {
-            await db.collection('conductors').doc(id).delete();
-            showToast("Conductor deleted.", "success");
+            await deleteConductorAccount(id, conductorId, c ? c.uid : null, c ? c.dutyPassword : null);
+            showToast("Conductor deleted from database and system.", "success");
           } catch (e) {
+            console.error("Delete conductor error:", e);
             showToast("Error deleting conductor: " + e.message, "danger");
           }
         },
