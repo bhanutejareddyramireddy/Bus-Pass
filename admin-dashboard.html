@@ -13,7 +13,7 @@
 <body class="admin-body">
 
   <div class="admin-layout">
-    <!-- Sidebar Container -->
+    <!-- Sidebar Container (Auto-injected by admin-common.js) -->
     <div id="admin-sidebar-container"></div>
 
     <div class="admin-main-wrap">
@@ -24,6 +24,7 @@
             <i class="fas fa-bars"></i>
           </button>
           <div class="admin-breadcrumb">
+            <i class="fas fa-shield-alt text-primary" style="font-size: 0.95rem;"></i>
             <span>BusPass HQ</span>
             <i class="fas fa-chevron-right admin-breadcrumb-sep"></i>
             <span class="admin-breadcrumb-current">Platform Overview</span>
@@ -31,13 +32,24 @@
         </div>
 
         <div class="admin-topbar-right">
-          <div style="font-size: 0.8rem; color: var(--admin-text-muted); display: flex; align-items: center; gap: 0.4rem;">
-            <i class="fas fa-circle" style="color: #10B981; font-size: 0.6rem;"></i>
-            <span>System Online</span>
-          </div>
-          <div style="height: 24px; width: 1px; background: var(--admin-border);"></div>
-          <div style="font-size: 0.82rem; font-weight: 600; color: var(--admin-text-main);" id="admin-topbar-email">
-            admin@buspass.local
+          <button class="admin-topbar-quick-search" onclick="openAdminQuickNav()" title="Quick Navigation (Ctrl + K)">
+            <i class="fas fa-search"></i>
+            <span>Quick jump...</span>
+            <span class="admin-kbd">Ctrl K</span>
+          </button>
+          
+          <a href="admin-applications.html" class="admin-topbar-pill" id="topbar-pending-link" title="Pending Applications" style="text-decoration: none;">
+            <i class="fas fa-bell text-warning"></i>
+            <span>Pending</span>
+            <span class="admin-badge admin-badge-warning" id="topbar-pending-dot" style="display:none; padding: 0.1rem 0.45rem; font-size: 0.68rem;">0</span>
+          </a>
+
+          <div id="admin-topbar-email">
+            <!-- Injected by updateAdminLayout with Profile Menu & Status Beacon -->
+            <div class="admin-topbar-pill">
+              <span class="admin-topbar-status-dot"></span>
+              <span>admin@buspass.local</span>
+            </div>
           </div>
         </div>
       </header>
@@ -48,31 +60,39 @@
         <!-- Page Header -->
         <div class="admin-page-header">
           <div class="admin-page-title-wrap">
-            <h1><i class="fas fa-shield-alt text-primary" style="font-size: 1.4rem;"></i> Executive Platform Dashboard</h1>
-            <p>Real-time platform-wide operations, active fleets, commuters, and financial volume.</p>
+            <h1>
+              <i class="fas fa-shield-alt text-primary" style="font-size: 1.4rem;"></i> Executive Platform Dashboard
+            </h1>
+            <p>Real-time platform-wide operations, active transit fleets, campus commuters, and operator volume.</p>
           </div>
           <div class="admin-header-actions">
-            <button class="admin-btn admin-btn-secondary" onclick="loadDashboardMetrics()">
+            <button class="admin-btn admin-btn-secondary" onclick="loadDashboardMetrics()" title="Reload Firestore live metrics">
               <i class="fas fa-sync-alt" id="refresh-icon"></i> Refresh Data
             </button>
+            <a href="admin-live-fleet.html" class="admin-btn admin-btn-secondary" title="View live GPS map">
+              <i class="fas fa-satellite-dish" style="color: var(--admin-success);"></i> Live Fleet Radar
+            </a>
             <a href="admin-applications.html" class="admin-btn admin-btn-primary">
               <i class="fas fa-ticket-alt"></i> Review Applications
             </a>
           </div>
         </div>
 
-        <!-- 10 Primary KPI Cards Grid -->
-        <div class="admin-stats-grid" id="kpi-grid">
+        <!-- 10 Primary KPI Cards Grid (Balanced Symmetrical Layout) -->
+        <div class="admin-stats-grid admin-dashboard-kpis" id="kpi-grid">
+          
           <!-- 1. Total Vendors -->
           <div class="admin-stat-card">
             <div class="admin-stat-top">
               <span class="admin-stat-label">Total Vendors</span>
               <div class="admin-stat-icon primary"><i class="fas fa-building"></i></div>
             </div>
-            <div class="admin-stat-val" id="kpi-vendors"><span class="admin-skeleton" style="display:inline-block; width:50px; height:28px;"></span></div>
+            <div class="admin-stat-val" id="kpi-vendors">
+              <span class="admin-skeleton" style="display:inline-block; width:50px; height:28px;"></span>
+            </div>
             <div class="admin-stat-sub">
               <span class="admin-stat-badge up"><i class="fas fa-check"></i> Registered</span>
-              <span>Transport Agencies</span>
+              <span>Fleet Operators</span>
             </div>
           </div>
 
@@ -82,10 +102,12 @@
               <span class="admin-stat-label">Total Commuters</span>
               <div class="admin-stat-icon info"><i class="fas fa-user-graduate"></i></div>
             </div>
-            <div class="admin-stat-val" id="kpi-students"><span class="admin-skeleton" style="display:inline-block; width:50px; height:28px;"></span></div>
+            <div class="admin-stat-val" id="kpi-students">
+              <span class="admin-skeleton" style="display:inline-block; width:50px; height:28px;"></span>
+            </div>
             <div class="admin-stat-sub">
               <span class="admin-stat-badge up"><i class="fas fa-users"></i> Commuters</span>
-              <span>Across All Campuses</span>
+              <span>Across Campuses</span>
             </div>
           </div>
 
@@ -95,9 +117,12 @@
               <span class="admin-stat-label">Institutions</span>
               <div class="admin-stat-icon purple"><i class="fas fa-university"></i></div>
             </div>
-            <div class="admin-stat-val" id="kpi-orgs"><span class="admin-skeleton" style="display:inline-block; width:45px; height:28px;"></span></div>
+            <div class="admin-stat-val" id="kpi-orgs">
+              <span class="admin-skeleton" style="display:inline-block; width:45px; height:28px;"></span>
+            </div>
             <div class="admin-stat-sub">
-              <span>Partner Colleges &amp; Schools</span>
+              <span class="admin-stat-badge up"><i class="fas fa-graduation-cap"></i> Partners</span>
+              <span>Colleges &amp; Schools</span>
             </div>
           </div>
 
@@ -107,9 +132,12 @@
               <span class="admin-stat-label">Fleet Buses</span>
               <div class="admin-stat-icon warning"><i class="fas fa-bus"></i></div>
             </div>
-            <div class="admin-stat-val" id="kpi-buses"><span class="admin-skeleton" style="display:inline-block; width:45px; height:28px;"></span></div>
+            <div class="admin-stat-val" id="kpi-buses">
+              <span class="admin-skeleton" style="display:inline-block; width:45px; height:28px;"></span>
+            </div>
             <div class="admin-stat-sub">
-              <span>Registered Fleet Vehicles</span>
+              <span class="admin-stat-badge up"><i class="fas fa-route"></i> Registered</span>
+              <span>Transit Vehicles</span>
             </div>
           </div>
 
@@ -119,9 +147,12 @@
               <span class="admin-stat-label">Conductors</span>
               <div class="admin-stat-icon primary"><i class="fas fa-id-badge"></i></div>
             </div>
-            <div class="admin-stat-val" id="kpi-conductors"><span class="admin-skeleton" style="display:inline-block; width:45px; height:28px;"></span></div>
+            <div class="admin-stat-val" id="kpi-conductors">
+              <span class="admin-skeleton" style="display:inline-block; width:45px; height:28px;"></span>
+            </div>
             <div class="admin-stat-sub">
-              <span>Duty Staff Accounts</span>
+              <span class="admin-stat-badge up"><i class="fas fa-qrcode"></i> Duty Staff</span>
+              <span>Active Accounts</span>
             </div>
           </div>
 
@@ -131,9 +162,12 @@
               <span class="admin-stat-label">Applications</span>
               <div class="admin-stat-icon info"><i class="fas fa-file-signature"></i></div>
             </div>
-            <div class="admin-stat-val" id="kpi-apps"><span class="admin-skeleton" style="display:inline-block; width:50px; height:28px;"></span></div>
+            <div class="admin-stat-val" id="kpi-apps">
+              <span class="admin-skeleton" style="display:inline-block; width:50px; height:28px;"></span>
+            </div>
             <div class="admin-stat-sub">
-              <span>All Historical Submissions</span>
+              <span class="admin-stat-badge up"><i class="fas fa-history"></i> Submissions</span>
+              <span>All Historical</span>
             </div>
           </div>
 
@@ -143,10 +177,12 @@
               <span class="admin-stat-label">Active Passes</span>
               <div class="admin-stat-icon success"><i class="fas fa-ticket-alt"></i></div>
             </div>
-            <div class="admin-stat-val" id="kpi-passes" style="color: #10B981;"><span class="admin-skeleton" style="display:inline-block; width:50px; height:28px;"></span></div>
+            <div class="admin-stat-val" id="kpi-passes" style="color: #16A34A;">
+              <span class="admin-skeleton" style="display:inline-block; width:50px; height:28px;"></span>
+            </div>
             <div class="admin-stat-sub">
               <span class="admin-stat-badge up"><i class="fas fa-qrcode"></i> Valid QR</span>
-              <span>Currently Active</span>
+              <span>Active Commuters</span>
             </div>
           </div>
 
@@ -156,9 +192,12 @@
               <span class="admin-stat-label">Pending Review</span>
               <div class="admin-stat-icon danger"><i class="fas fa-clock"></i></div>
             </div>
-            <div class="admin-stat-val" id="kpi-pending" style="color: #EF4444;"><span class="admin-skeleton" style="display:inline-block; width:40px; height:28px;"></span></div>
+            <div class="admin-stat-val" id="kpi-pending" style="color: #DC2626;">
+              <span class="admin-skeleton" style="display:inline-block; width:40px; height:28px;"></span>
+            </div>
             <div class="admin-stat-sub">
-              <span class="admin-stat-badge warn">Awaiting Verification</span>
+              <span class="admin-stat-badge warn"><i class="fas fa-hourglass-half"></i> Action Needed</span>
+              <span>Awaiting Review</span>
             </div>
           </div>
 
@@ -168,7 +207,9 @@
               <span class="admin-stat-label">Verified Revenue</span>
               <div class="admin-stat-icon success"><i class="fas fa-rupee-sign"></i></div>
             </div>
-            <div class="admin-stat-val" id="kpi-revenue" style="font-size: 1.55rem;"><span class="admin-skeleton" style="display:inline-block; width:80px; height:28px;"></span></div>
+            <div class="admin-stat-val" id="kpi-revenue" style="font-size: 1.55rem;">
+              <span class="admin-skeleton" style="display:inline-block; width:80px; height:28px;"></span>
+            </div>
             <div class="admin-stat-sub">
               <span class="admin-stat-badge up"><i class="fas fa-check-double"></i> Verified</span>
               <span>Operator Collections</span>
@@ -181,25 +222,35 @@
               <span class="admin-stat-label">Live Active Buses</span>
               <div class="admin-stat-icon success"><i class="fas fa-broadcast-tower"></i></div>
             </div>
-            <div class="admin-stat-val" id="kpi-live-buses" style="color: #10B981;"><span class="admin-skeleton" style="display:inline-block; width:40px; height:28px;"></span></div>
+            <div class="admin-stat-val" id="kpi-live-buses" style="color: #16A34A;">
+              <span class="admin-skeleton" style="display:inline-block; width:40px; height:28px;"></span>
+            </div>
             <div class="admin-stat-sub">
               <span class="admin-stat-badge up"><i class="fas fa-satellite-dish"></i> GPS Active</span>
-              <a href="admin-live-fleet.html" style="color:var(--admin-primary); text-decoration:none; margin-left:auto; font-weight:600;">View Map &rarr;</a>
+              <a href="admin-live-fleet.html" style="color:var(--admin-primary); text-decoration:none; margin-left:auto; font-weight:600; font-size:0.75rem;">Radar &rarr;</a>
             </div>
           </div>
+
         </div>
 
         <!-- Charts Row -->
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+        <div class="admin-grid-2-1" style="margin-bottom: 2rem;">
+          
           <!-- Registration Trends -->
           <div class="admin-card">
             <div class="admin-card-header">
               <div>
-                <h3 class="admin-card-title"><i class="fas fa-chart-area text-primary"></i> Registration &amp; Growth Trends</h3>
-                <div class="admin-card-desc">Monthly commuter and vendor platform additions</div>
+                <h3 class="admin-card-title">
+                  <i class="fas fa-chart-area text-primary"></i> Registration &amp; Growth Trends
+                </h3>
+                <div class="admin-card-desc">Monthly commuter students and transport vendor platform onboarding</div>
+              </div>
+              <div style="font-size: 0.78rem; color: var(--admin-text-muted); font-weight: 600;">
+                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#4F46E5; margin-right:4px;"></span>Students
+                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#06B6D4; margin:0 4px 0 10px;"></span>Vendors
               </div>
             </div>
-            <div style="height: 280px; position: relative;">
+            <div style="height: 300px; position: relative;">
               <canvas id="growthChart"></canvas>
             </div>
           </div>
@@ -208,24 +259,64 @@
           <div class="admin-card">
             <div class="admin-card-header">
               <div>
-                <h3 class="admin-card-title"><i class="fas fa-chart-pie text-primary"></i> Application Status</h3>
-                <div class="admin-card-desc">Approval &amp; verification breakdown</div>
+                <h3 class="admin-card-title">
+                  <i class="fas fa-chart-pie text-primary"></i> Application Status
+                </h3>
+                <div class="admin-card-desc">Approval &amp; verification distribution</div>
+              </div>
+              <span class="admin-badge admin-badge-info" id="chart-total-apps-badge">0 Total</span>
+            </div>
+            <div style="height: 240px; position: relative; display: flex; align-items: center; justify-content: center;">
+              <canvas id="statusChart"></canvas>
+            </div>
+            <div style="display:flex; justify-content:space-around; padding-top:1rem; border-top:1px solid var(--admin-border-subtle); font-size:0.8rem; text-align:center;">
+              <div>
+                <div style="font-weight:700; color:#16A34A;" id="stat-approved-count">0</div>
+                <div style="color:var(--admin-text-muted); font-size:0.72rem;">Approved</div>
+              </div>
+              <div>
+                <div style="font-weight:700; color:#F59E0B;" id="stat-pending-count">0</div>
+                <div style="color:var(--admin-text-muted); font-size:0.72rem;">Pending</div>
+              </div>
+              <div>
+                <div style="font-weight:700; color:#DC2626;" id="stat-rejected-count">0</div>
+                <div style="color:var(--admin-text-muted); font-size:0.72rem;">Rejected</div>
               </div>
             </div>
-            <div style="height: 280px; position: relative; display: flex; align-items: center; justify-content: center;">
-              <canvas id="statusChart"></canvas>
+          </div>
+
+        </div>
+
+        <!-- Quick Platform Actions Banner -->
+        <div class="admin-card" style="margin-bottom: 2rem; background: linear-gradient(135deg, #EEF2FF 0%, #FFFFFF 100%); border-color: #C7D2FE;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--admin-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                <i class="fas fa-compass"></i>
+              </div>
+              <div>
+                <div style="font-weight: 800; font-size: 1.05rem; color: var(--admin-text-main);">Super Admin Operations Control</div>
+                <div style="font-size: 0.82rem; color: var(--admin-text-muted);">Quickly jump to core management modules or perform authorized audit workflows.</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
+              <a href="admin-vendors.html" class="admin-btn admin-btn-sm admin-btn-secondary"><i class="fas fa-building"></i> Manage Vendors</a>
+              <a href="admin-students.html" class="admin-btn admin-btn-sm admin-btn-secondary"><i class="fas fa-user-graduate"></i> Commuters</a>
+              <a href="admin-finance.html" class="admin-btn admin-btn-sm admin-btn-secondary"><i class="fas fa-wallet"></i> Payments</a>
+              <a href="admin-settings.html" class="admin-btn admin-btn-sm admin-btn-secondary"><i class="fas fa-sliders-h"></i> Platform Settings</a>
             </div>
           </div>
         </div>
 
         <!-- Recent Vendors & Activity Split -->
-        <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.5rem;">
-          <!-- Recent Vendors -->
+        <div class="admin-grid-14-10">
+          
+          <!-- Recent Vendors Table -->
           <div class="admin-card">
             <div class="admin-card-header">
               <div>
                 <h3 class="admin-card-title"><i class="fas fa-building text-primary"></i> Recently Registered Vendors</h3>
-                <div class="admin-card-desc">Latest transport fleet operators joining the platform</div>
+                <div class="admin-card-desc">Latest commercial transport fleet operators joining the platform</div>
               </div>
               <a href="admin-vendors.html" class="admin-btn admin-btn-sm admin-btn-secondary">View All &rarr;</a>
             </div>
@@ -241,7 +332,7 @@
                   </tr>
                 </thead>
                 <tbody id="recent-vendors-tbody">
-                  <tr><td colspan="5" style="text-align:center; padding:2rem;"><span class="spinner spinner-sm"></span> Loading vendors...</td></tr>
+                  <tr><td colspan="5" style="text-align:center; padding:2rem;"><span class="spinner spinner-sm"></span> Loading vendors directory...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -251,18 +342,42 @@
           <div class="admin-card">
             <div class="admin-card-header">
               <div>
-                <h3 class="admin-card-title"><i class="fas fa-shield-alt text-primary"></i> Audit Trail &amp; Events</h3>
-                <div class="admin-card-desc">Security events and administrative actions</div>
+                <h3 class="admin-card-title"><i class="fas fa-shield-alt text-primary"></i> Security Events &amp; Audit Trail</h3>
+                <div class="admin-card-desc">Recent administrative executions and authentication events</div>
               </div>
               <a href="admin-audit-logs.html" class="admin-btn admin-btn-sm admin-btn-secondary">All Logs &rarr;</a>
             </div>
             <div id="recent-logs-list" style="display:flex; flex-direction:column; gap:0.75rem;">
-              <div style="text-align:center; padding:2rem;"><span class="spinner spinner-sm"></span> Loading audit logs...</div>
+              <div style="text-align:center; padding:2rem;"><span class="spinner spinner-sm"></span> Loading audit events...</div>
             </div>
           </div>
+
         </div>
 
       </main>
+    </div>
+  </div>
+
+  <!-- Quick Jump Modal -->
+  <div class="admin-modal-backdrop" id="quick-jump-modal">
+    <div class="admin-modal-dialog modal-sm" style="max-width: 500px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title"><i class="fas fa-compass text-primary"></i> Quick Navigation</h3>
+        <button class="admin-modal-close" onclick="closeModal('quick-jump-modal')" title="Close">&times;</button>
+      </div>
+      <div class="admin-modal-body" style="padding: 1.25rem;">
+        <div class="admin-table-search" style="margin-bottom: 1rem; width: 100%;">
+          <i class="fas fa-search"></i>
+          <input type="text" id="quick-jump-input" placeholder="Jump to page (e.g. vendors, finance, settings)..." oninput="filterQuickJump(this.value)">
+        </div>
+        <div id="quick-jump-links" style="display: flex; flex-direction: column; gap: 0.35rem; max-height: 320px; overflow-y: auto;">
+          <!-- Dynamically populated from ADMIN_PAGES -->
+        </div>
+      </div>
+      <div class="admin-modal-footer" style="justify-content: space-between; font-size: 0.78rem; color: var(--admin-text-muted);">
+        <span>Press <kbd class="admin-kbd">ESC</kbd> to exit</span>
+        <span>BusPass Admin Console</span>
+      </div>
     </div>
   </div>
 
@@ -354,7 +469,7 @@
           }
         });
 
-        // Live Buses count
+        // Live Buses count (status === 'ON_DUTY')
         let liveBuses = 0;
         liveSnap.forEach(d => {
           const data = d.data();
@@ -407,14 +522,25 @@
       const top5 = vendors.slice(0, 5);
       tbody.innerHTML = top5.map(v => {
         const isSusp = v.status === 'Suspended';
+        const vendorName = escapeHtml(v.name || 'Vendor');
+        const bizName = escapeHtml(v.businessName || 'Transport Agency');
+        const initials = vendorName.slice(0, 2).toUpperCase() || 'VA';
+
         return `
           <tr>
             <td>
-              <strong style="color:var(--admin-text-main);">${v.name || 'Vendor'}</strong>
-              <div style="font-size:0.75rem; color:var(--admin-text-muted);">${v.email || '-'}</div>
+              <div style="display:flex; align-items:center; gap:0.65rem;">
+                <div style="width:32px; height:32px; border-radius:50%; background:var(--admin-primary-subtle); color:var(--admin-primary); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.75rem; flex-shrink:0;">
+                  ${initials}
+                </div>
+                <div>
+                  <strong style="color:var(--admin-text-main);">${vendorName}</strong>
+                  <div style="font-size:0.75rem; color:var(--admin-text-muted);">${escapeHtml(v.email || '-')}</div>
+                </div>
+              </div>
             </td>
-            <td><strong>${v.businessName || 'Transport Agency'}</strong></td>
-            <td><code>${v.phone || '-'}</code></td>
+            <td><strong>${bizName}</strong></td>
+            <td><code>${escapeHtml(v.phone || '-')}</code></td>
             <td>${formatDate(v.createdAt)}</td>
             <td>
               <span class="admin-badge ${isSusp ? 'admin-badge-danger' : 'admin-badge-success'}">
@@ -437,15 +563,15 @@
         const l = d.data();
         let icon = 'fa-info-circle text-info';
         if (l.action?.includes('SUSPEND') || l.action?.includes('DELETE')) icon = 'fa-exclamation-triangle text-danger';
-        else if (l.action?.includes('REACTIVATE') || l.action?.includes('PASS_SET')) icon = 'fa-check-circle text-success';
+        else if (l.action?.includes('REACTIVATE') || l.action?.includes('PASS_SET') || l.action?.includes('LOGIN')) icon = 'fa-check-circle text-success';
 
         return `
-          <div style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.6rem 0.75rem; background:var(--admin-bg); border-radius:8px; border:1px solid var(--admin-border-subtle); font-size:0.82rem;">
+          <div style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.65rem 0.85rem; background:var(--admin-bg); border-radius:8px; border:1px solid var(--admin-border-subtle); font-size:0.82rem;">
             <i class="fas ${icon}" style="margin-top:3px; font-size:0.95rem;"></i>
             <div style="flex:1; min-width:0;">
-              <div style="font-weight:700; color:var(--admin-text-main);">${l.action || 'SECURITY_EVENT'}</div>
-              <div style="color:var(--admin-text-muted); font-size:0.76rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                ${l.targetName ? `Target: <strong>${l.targetName}</strong> - ` : ''}${l.reason || 'Executed'}
+              <div style="font-weight:700; color:var(--admin-text-main); font-size:0.83rem;">${escapeHtml(l.action || 'SECURITY_EVENT')}</div>
+              <div style="color:var(--admin-text-muted); font-size:0.76rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:1px;">
+                ${l.targetName ? `Target: <strong>${escapeHtml(l.targetName)}</strong> &bull; ` : ''}${escapeHtml(l.reason || 'Executed')}
               </div>
             </div>
             <div style="font-size:0.72rem; color:var(--admin-text-subtle); white-space:nowrap;">
@@ -475,8 +601,18 @@
         }
       });
 
-      const growthCtx = document.getElementById('growthChart').getContext('2d');
+      const growthCanvas = document.getElementById('growthChart');
+      const growthCtx = growthCanvas.getContext('2d');
       if (growthChartInstance) growthChartInstance.destroy();
+
+      // Gradients
+      const studentGrad = growthCtx.createLinearGradient(0, 0, 0, 280);
+      studentGrad.addColorStop(0, 'rgba(79, 70, 229, 0.22)');
+      studentGrad.addColorStop(1, 'rgba(79, 70, 229, 0.01)');
+
+      const vendorGrad = growthCtx.createLinearGradient(0, 0, 0, 280);
+      vendorGrad.addColorStop(0, 'rgba(6, 182, 212, 0.20)');
+      vendorGrad.addColorStop(1, 'rgba(6, 182, 212, 0.01)');
 
       growthChartInstance = new Chart(growthCtx, {
         type: 'line',
@@ -487,19 +623,23 @@
               label: 'Students',
               data: studentGrowth,
               borderColor: '#4F46E5',
-              backgroundColor: 'rgba(79, 70, 229, 0.1)',
+              backgroundColor: studentGrad,
               fill: true,
-              tension: 0.35,
-              borderWidth: 2.5
+              tension: 0.36,
+              borderWidth: 2.5,
+              pointBackgroundColor: '#4F46E5',
+              pointHoverRadius: 6
             },
             {
               label: 'Vendors',
               data: vendorGrowth,
               borderColor: '#06B6D4',
-              backgroundColor: 'rgba(6, 182, 212, 0.08)',
+              backgroundColor: vendorGrad,
               fill: true,
-              tension: 0.35,
-              borderWidth: 2.5
+              tension: 0.36,
+              borderWidth: 2.5,
+              pointBackgroundColor: '#06B6D4',
+              pointHoverRadius: 6
             }
           ]
         },
@@ -507,11 +647,27 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'top' }
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: '#0B132B',
+              padding: 10,
+              cornerRadius: 8,
+              titleFont: { family: "'Inter', sans-serif", size: 12, weight: '700' },
+              bodyFont: { family: "'Inter', sans-serif", size: 12 }
+            }
           },
           scales: {
-            y: { beginAtZero: true, grid: { color: '#F1F5F9' } },
-            x: { grid: { display: false } }
+            y: {
+              beginAtZero: true,
+              grid: { color: '#F3F4F6' },
+              ticks: { color: '#6B7280', font: { family: "'Inter', sans-serif", size: 11 } }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#6B7280', font: { family: "'Inter', sans-serif", size: 11 } }
+            }
           }
         }
       });
@@ -525,6 +681,17 @@
         else if (s === 'Rejected') rejected++;
       });
 
+      const totalApps = approved + pending + rejected;
+      const totalBadge = document.getElementById('chart-total-apps-badge');
+      if (totalBadge) totalBadge.textContent = `${totalApps} Submissions`;
+
+      const appEl = document.getElementById('stat-approved-count');
+      const pendEl = document.getElementById('stat-pending-count');
+      const rejEl = document.getElementById('stat-rejected-count');
+      if (appEl) appEl.textContent = approved;
+      if (pendEl) pendEl.textContent = pending;
+      if (rejEl) rejEl.textContent = rejected;
+
       const statusCtx = document.getElementById('statusChart').getContext('2d');
       if (statusChartInstance) statusChartInstance.destroy();
 
@@ -534,21 +701,82 @@
           labels: ['Approved', 'Pending', 'Rejected'],
           datasets: [{
             data: [approved, pending, rejected],
-            backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
-            borderWidth: 2,
-            borderColor: '#FFFFFF'
+            backgroundColor: ['#16A34A', '#F59E0B', '#DC2626'],
+            borderWidth: 3,
+            borderColor: '#FFFFFF',
+            hoverOffset: 4
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'bottom' }
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0B132B',
+              padding: 10,
+              cornerRadius: 8,
+              callbacks: {
+                label: function(context) {
+                  const val = context.raw || 0;
+                  const pct = totalApps > 0 ? Math.round((val / totalApps) * 100) : 0;
+                  return ` ${context.label}: ${val} (${pct}%)`;
+                }
+              }
+            }
           },
-          cutout: '68%'
+          cutout: '72%'
         }
       });
     }
+
+    // Quick Navigation Modal Logic
+    function openAdminQuickNav() {
+      populateQuickNav(ADMIN_PAGES);
+      openModal('quick-jump-modal');
+      setTimeout(() => {
+        const input = document.getElementById('quick-jump-input');
+        if (input) {
+          input.value = '';
+          input.focus();
+        }
+      }, 100);
+    }
+
+    function populateQuickNav(pages) {
+      const list = document.getElementById('quick-jump-links');
+      if (!list) return;
+
+      list.innerHTML = pages.map(p => `
+        <a href="${p.url}" class="admin-dropdown-item" style="border-radius: 8px; padding: 0.65rem 0.85rem; border: 1px solid var(--admin-border-subtle);">
+          <i class="fas ${p.icon}" style="width: 20px; color: var(--admin-primary);"></i>
+          <span style="font-weight: 600; color: var(--admin-text-main);">${p.title}</span>
+          <span style="margin-left: auto; font-size: 0.72rem; color: var(--admin-text-muted); background: var(--admin-bg); padding: 0.15rem 0.5rem; border-radius: 4px;">${p.category}</span>
+        </a>
+      `).join('');
+    }
+
+    function filterQuickJump(query) {
+      const q = (query || '').toLowerCase().trim();
+      if (!q) {
+        populateQuickNav(ADMIN_PAGES);
+        return;
+      }
+      const filtered = ADMIN_PAGES.filter(p => 
+        p.title.toLowerCase().includes(q) || 
+        p.category.toLowerCase().includes(q) ||
+        p.key.toLowerCase().includes(q)
+      );
+      populateQuickNav(filtered);
+    }
+
+    // Keyboard shortcut for Quick Jump: Ctrl+K / Cmd+K
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        openAdminQuickNav();
+      }
+    });
   </script>
 </body>
 </html>

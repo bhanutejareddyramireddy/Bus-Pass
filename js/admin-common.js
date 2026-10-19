@@ -4,18 +4,18 @@
  */
 
 const ADMIN_PAGES = [
-  { key: 'dashboard', title: 'Platform Overview', icon: 'fa-chart-pie', url: 'admin-dashboard.html', category: 'Analytics' },
-  { key: 'vendors', title: 'Vendors Directory', icon: 'fa-building', url: 'admin-vendors.html', category: 'Management' },
-  { key: 'students', title: 'Students Directory', icon: 'fa-user-graduate', url: 'admin-students.html', category: 'Management' },
-  { key: 'organizations', title: 'Partner Institutions', icon: 'fa-university', url: 'admin-organizations.html', category: 'Fleet & Transit' },
-  { key: 'fleet-routes', title: 'Fleet & Routes', icon: 'fa-route', url: 'admin-fleet-routes.html', category: 'Fleet & Transit' },
-  { key: 'conductors', title: 'Conductors Directory', icon: 'fa-id-badge', url: 'admin-conductors.html', category: 'Fleet & Transit' },
-  { key: 'applications', title: 'Applications & Passes', icon: 'fa-ticket-alt', url: 'admin-applications.html', category: 'Operations' },
-  { key: 'finance', title: 'Payments & Revenue', icon: 'fa-wallet', url: 'admin-finance.html', category: 'Operations' },
-  { key: 'live-fleet', title: 'Live Fleet GPS', icon: 'fa-map-marked-alt', url: 'admin-live-fleet.html', category: 'Operations' },
-  { key: 'analytics', title: 'Analytics & Trends', icon: 'fa-chart-line', url: 'admin-analytics.html', category: 'Insights' },
-  { key: 'audit-logs', title: 'Activity Logs & Audit', icon: 'fa-shield-alt', url: 'admin-audit-logs.html', category: 'Security' },
-  { key: 'support', title: 'Support & Broadcast', icon: 'fa-bullhorn', url: 'admin-support.html', category: 'System' },
+  { key: 'dashboard', title: 'Overview', icon: 'fa-chart-pie', url: 'admin-dashboard.html', category: 'Core' },
+  { key: 'vendors', title: 'Vendors', icon: 'fa-building', url: 'admin-vendors.html', category: 'Management' },
+  { key: 'students', title: 'Students', icon: 'fa-user-graduate', url: 'admin-students.html', category: 'Management' },
+  { key: 'organizations', title: 'Organizations', icon: 'fa-university', url: 'admin-organizations.html', category: 'Management' },
+  { key: 'fleet-routes', title: 'Fleet and Routes', icon: 'fa-route', url: 'admin-fleet-routes.html', category: 'Fleet & Transit' },
+  { key: 'conductors', title: 'Conductors', icon: 'fa-id-badge', url: 'admin-conductors.html', category: 'Fleet & Transit' },
+  { key: 'live-fleet', title: 'Live Fleet', icon: 'fa-map-marked-alt', url: 'admin-live-fleet.html', category: 'Fleet & Transit' },
+  { key: 'applications', title: 'Applications and Passes', icon: 'fa-ticket-alt', url: 'admin-applications.html', category: 'Operations' },
+  { key: 'finance', title: 'Payments', icon: 'fa-wallet', url: 'admin-finance.html', category: 'Operations' },
+  { key: 'analytics', title: 'Analytics and Trends', icon: 'fa-chart-line', url: 'admin-analytics.html', category: 'Intelligence' },
+  { key: 'audit-logs', title: 'Activity Logs', icon: 'fa-shield-alt', url: 'admin-audit-logs.html', category: 'Governance' },
+  { key: 'support', title: 'Support', icon: 'fa-headset', url: 'admin-support.html', category: 'System' },
   { key: 'settings', title: 'Platform Settings', icon: 'fa-sliders-h', url: 'admin-settings.html', category: 'System' }
 ];
 
@@ -28,6 +28,7 @@ let currentAdminDoc = null;
 function initAdminShell(activeKey) {
   renderAdminSidebar(activeKey);
   setupMobileDrawer();
+  setupAdminModalGlobalListeners();
 }
 
 /**
@@ -51,7 +52,7 @@ function renderAdminSidebar(activeKey) {
         <i class="fas ${page.icon}"></i>
         <span>${page.title}</span>
         ${page.key === 'applications' ? '<span class="admin-nav-badge" id="sidebar-pending-badge" style="display:none;">0</span>' : ''}
-        ${page.key === 'live-fleet' ? '<span class="admin-nav-badge" id="sidebar-live-badge" style="display:none; background:#10B981; color:#fff;">Live</span>' : ''}
+        ${page.key === 'live-fleet' ? '<span class="admin-nav-badge" id="sidebar-live-badge" style="display:none; background:#16A34A; color:#fff;">Live</span>' : ''}
       </a>
     `;
   });
@@ -65,7 +66,7 @@ function renderAdminSidebar(activeKey) {
           </div>
           <div>
             <div class="admin-brand-title">BusPass <span class="admin-brand-badge">HQ</span></div>
-            <div style="font-size: 0.7rem; color: #94A3B8; font-weight: 500;">Platform Administration</div>
+            <div style="font-size: 0.7rem; color: #94A3B8; font-weight: 500;">Super Admin Workspace</div>
           </div>
         </a>
       </div>
@@ -91,16 +92,34 @@ function renderAdminSidebar(activeKey) {
 }
 
 /**
- * Mobile drawer open/close listeners
+ * Mobile drawer open/close listeners with backdrop overlay
  */
 function setupMobileDrawer() {
+  let backdrop = document.getElementById('admin-sidebar-backdrop');
+  if (!backdrop) {
+    backdrop = document.createElement('div');
+    backdrop.id = 'admin-sidebar-backdrop';
+    backdrop.className = 'admin-sidebar-backdrop';
+    document.body.appendChild(backdrop);
+  }
+
   const toggleBtn = document.getElementById('admin-mobile-toggle');
   if (toggleBtn) {
-    toggleBtn.addEventListener('click', () => {
+    toggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
       const sb = document.getElementById('admin-sidebar');
-      if (sb) sb.classList.toggle('open');
+      if (sb) {
+        sb.classList.toggle('open');
+        backdrop.classList.toggle('active', sb.classList.contains('open'));
+      }
     });
   }
+
+  backdrop.addEventListener('click', () => {
+    const sb = document.getElementById('admin-sidebar');
+    if (sb) sb.classList.remove('open');
+    backdrop.classList.remove('active');
+  });
 
   // Close when clicking outside on mobile
   document.addEventListener('click', (e) => {
@@ -109,7 +128,32 @@ function setupMobileDrawer() {
     if (sb && sb.classList.contains('open')) {
       if (!sb.contains(e.target) && (!toggleBtn || !toggleBtn.contains(e.target))) {
         sb.classList.remove('open');
+        if (backdrop) backdrop.classList.remove('active');
       }
+    }
+  });
+}
+
+/**
+ * Global Admin Modal Event Listeners
+ * Handles backdrop clicks and Escape key to close modals
+ */
+function setupAdminModalGlobalListeners() {
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('admin-modal-backdrop') || e.target.classList.contains('admin-modal-overlay')) {
+      e.target.classList.remove('show');
+      e.target.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.admin-modal-backdrop.show, .admin-modal-overlay.show, .admin-modal-backdrop.active, .admin-modal-overlay.active').forEach(m => {
+        m.classList.remove('show');
+        m.classList.remove('active');
+      });
+      document.body.style.overflow = '';
     }
   });
 }
@@ -192,12 +236,68 @@ function updateAdminLayout(user, userData) {
   const topbarEmailEl = document.getElementById('admin-topbar-email');
 
   const displayName = userData.name || user.email.split('@')[0];
-  if (nameEl) nameEl.textContent = displayName;
-  if (topbarEmailEl) topbarEmailEl.textContent = user.email;
-
   const initials = displayName.split(' ').map(n => n.charAt(0)).join('').toUpperCase().slice(0, 2) || 'SA';
+
+  if (nameEl) nameEl.textContent = displayName;
   if (avatarEl) avatarEl.textContent = initials;
+
+  if (topbarEmailEl) {
+    topbarEmailEl.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div class="admin-topbar-beacon" title="Live connection active to Firebase Cloud Firestore">
+          <span class="admin-beacon-pulse"></span>
+          <span>System Online</span>
+        </div>
+        <div class="admin-topbar-profile-wrap">
+          <button class="admin-topbar-profile-btn" id="admin-profile-menu-btn" onclick="toggleAdminProfileMenu(event)" aria-expanded="false" title="Account Menu">
+            <div class="avatar-circle">${escapeHtml(initials)}</div>
+            <span style="font-weight: 600; font-size: 0.82rem; color: var(--admin-text-main);">${escapeHtml(displayName)}</span>
+            <i class="fas fa-chevron-down" style="font-size: 0.65rem; color: var(--admin-text-muted); margin-left: 2px;"></i>
+          </button>
+          <div class="admin-topbar-dropdown" id="admin-profile-dropdown">
+            <div class="admin-dropdown-header">
+              <div class="admin-dropdown-user">${escapeHtml(displayName)}</div>
+              <div class="admin-dropdown-email">${escapeHtml(user.email)}</div>
+              <span class="admin-dropdown-role">Super Administrator</span>
+            </div>
+            <a href="admin-dashboard.html" class="admin-dropdown-item">
+              <i class="fas fa-chart-pie" style="width: 16px;"></i> Overview
+            </a>
+            <a href="admin-settings.html" class="admin-dropdown-item">
+              <i class="fas fa-sliders-h" style="width: 16px;"></i> Platform Settings
+            </a>
+            <a href="admin-audit-logs.html" class="admin-dropdown-item">
+              <i class="fas fa-shield-alt" style="width: 16px;"></i> Activity Logs
+            </a>
+            <div style="height: 1px; background: var(--admin-border-subtle); margin: 0.35rem 0;"></div>
+            <button class="admin-dropdown-item danger" onclick="logoutSuperAdmin()">
+              <i class="fas fa-sign-out-alt" style="width: 16px;"></i> Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 }
+
+function toggleAdminProfileMenu(e) {
+  if (e) e.stopPropagation();
+  const dropdown = document.getElementById('admin-profile-dropdown');
+  if (dropdown) {
+    dropdown.classList.toggle('show');
+  }
+}
+
+// Global click to close profile dropdown
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('admin-profile-dropdown');
+  const btn = document.getElementById('admin-profile-menu-btn');
+  if (dropdown && dropdown.classList.contains('show')) {
+    if (!dropdown.contains(e.target) && (!btn || !btn.contains(e.target))) {
+      dropdown.classList.remove('show');
+    }
+  }
+});
 
 /**
  * Global Real-time badge for pending applications
