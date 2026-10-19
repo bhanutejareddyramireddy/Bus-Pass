@@ -112,6 +112,33 @@
     </div>
   </div>
 
+  <!-- Verification Email Sent Modal -->
+  <div class="modal-backdrop" id="verify-email-modal">
+    <div class="modal-dialog modal-sm" style="text-align: center; max-width: 460px;">
+      <div class="modal-body" style="padding: 2.25rem 2rem 2rem;">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: #EEF2FF; color: #4F46E5; display: inline-flex; align-items: center; justify-content: center; font-size: 1.75rem; margin-bottom: 1.25rem; box-shadow: 0 8px 24px rgba(79, 70, 229, 0.2);">
+          <i class="fas fa-envelope-open-text"></i>
+        </div>
+        <h3 style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 0.5rem;">Verify Your Email</h3>
+        <p style="font-size: 0.9rem; color: #64748B; line-height: 1.55; margin-bottom: 1.25rem;">
+          We have sent an activation link to <strong id="sent-user-email" style="color: #1E293B;"></strong>.
+        </p>
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 0.9rem 1rem; font-size: 0.82rem; color: #475569; text-align: left; margin-bottom: 1.5rem; line-height: 1.5;">
+          <i class="fas fa-info-circle" style="color: #4F46E5; margin-right: 6px;"></i>
+          Please check your inbox (and spam/junk folder) and click the link to activate your student account before logging in.
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <a href="login.html?verified=pending" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-weight: 700; text-align: center; text-decoration: none; border-radius: 10px;">
+            Go to Student Login
+          </a>
+          <button type="button" id="resend-modal-btn" class="btn btn-secondary" style="width: 100%; padding: 0.7rem; font-size: 0.85rem; border-radius: 10px;">
+            <i class="fas fa-redo"></i> Resend Activation Email
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Firebase Compat CDN Scripts -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -124,11 +151,12 @@
   <script>
     const form = document.getElementById('student-register-form');
     const btn = document.getElementById('register-btn');
+    let cachedPassword = '';
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('name').value;
-      const email = document.getElementById('email').value;
+      const email = document.getElementById('email').value.trim();
       const rawPhone = document.getElementById('phone').value;
       const cleanPhone = rawPhone.trim().replace(/[^0-9]/g, '');
       const password = document.getElementById('password').value;
@@ -149,17 +177,43 @@
       btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Creating account...';
 
       try {
+        cachedPassword = password;
         await registerStudent(name, email, password, cleanPhone);
-        showToast("Account created successfully! Welcome to BusPass.", "success");
-        setTimeout(() => {
-          window.location.replace('pages/student-dashboard.html');
-        }, 1000);
+        document.getElementById('sent-user-email').textContent = email;
+        openModal('verify-email-modal');
+        showToast("Verification email sent! Check your inbox.", "success", "Email Sent");
+        btn.innerHTML = '<i class="fas fa-check"></i> Verification Sent';
       } catch (error) {
         showToast(error.message, "danger", "Registration Failed");
         btn.disabled = false;
         btn.innerHTML = 'Create Student Account';
       }
     });
+
+    // Resend activation email from modal
+    const resendBtn = document.getElementById('resend-modal-btn');
+    if (resendBtn) {
+      resendBtn.addEventListener('click', async () => {
+        const email = document.getElementById('sent-user-email').textContent;
+        if (!email || !cachedPassword) {
+          showToast("Please return to login to resend verification.", "info");
+          return;
+        }
+        resendBtn.disabled = true;
+        resendBtn.innerHTML = '<span class="spinner spinner-sm"></span> Sending...';
+        try {
+          await resendVerificationEmail(email, cachedPassword);
+          showToast("Activation link sent! Please check your inbox.", "success");
+        } catch (err) {
+          showToast(err.message, "danger");
+        } finally {
+          setTimeout(() => {
+            resendBtn.disabled = false;
+            resendBtn.innerHTML = '<i class="fas fa-redo"></i> Resend Activation Email';
+          }, 4000);
+        }
+      });
+    }
   </script>
 </body>
 </html>

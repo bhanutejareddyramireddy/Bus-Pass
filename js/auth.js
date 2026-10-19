@@ -146,7 +146,8 @@ async function registerVendor(name, email, password, phone, businessName = '') {
     }
 
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-    const uid = userCredential.user.uid;
+    const user = userCredential.user;
+    const uid = user.uid;
 
     const vendorData = {
       uid: uid,
@@ -155,12 +156,28 @@ async function registerVendor(name, email, password, phone, businessName = '') {
       phone: cleanPhone,
       businessName: businessName.trim(),
       role: 'vendor',
+      emailVerified: false,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
     await db.collection('users').doc(uid).set(vendorData);
-    establishUserSession('vendor', uid);
-    return { user: userCredential.user, userData: vendorData };
+
+    // Send official verification email via Firebase Auth
+    try {
+      await user.sendEmailVerification();
+    } catch (verErr) {
+      console.warn("Failed to dispatch initial verification email:", verErr);
+    }
+
+    // Sign out immediately so unverified account cannot bypass authentication
+    await auth.signOut();
+    terminateUserSession();
+
+    return { 
+      user: user, 
+      userData: vendorData, 
+      emailVerificationSent: true 
+    };
   } catch (error) {
     console.error("Vendor registration error:", error);
     throw error;
@@ -174,7 +191,18 @@ async function loginVendor(email, password) {
     localStorage.removeItem('bp_logged_out');
 
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
-    const uid = userCredential.user.uid;
+    const user = userCredential.user;
+    const uid = user.uid;
+
+    // Strict Email Verification Check
+    if (!user.emailVerified) {
+      await auth.signOut();
+      terminateUserSession();
+      const verifyErr = new Error("Email verification required. Please click the activation link sent to " + email + ".");
+      verifyErr.code = 'auth/email-not-verified';
+      verifyErr.unverifiedEmail = email;
+      throw verifyErr;
+    }
 
     establishUserSession('vendor', uid);
 
@@ -202,7 +230,8 @@ async function registerStudent(name, email, password, phone) {
     }
 
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-    const uid = userCredential.user.uid;
+    const user = userCredential.user;
+    const uid = user.uid;
 
     const studentData = {
       uid: uid,
@@ -210,12 +239,28 @@ async function registerStudent(name, email, password, phone) {
       email: email.trim().toLowerCase(),
       phone: cleanPhone,
       role: 'student',
+      emailVerified: false,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
     await db.collection('users').doc(uid).set(studentData);
-    establishUserSession('student', uid);
-    return { user: userCredential.user, userData: studentData };
+
+    // Send official verification email via Firebase Auth
+    try {
+      await user.sendEmailVerification();
+    } catch (verErr) {
+      console.warn("Failed to dispatch initial verification email:", verErr);
+    }
+
+    // Sign out immediately so unverified account cannot bypass authentication
+    await auth.signOut();
+    terminateUserSession();
+
+    return { 
+      user: user, 
+      userData: studentData, 
+      emailVerificationSent: true 
+    };
   } catch (error) {
     console.error("Student registration error:", error);
     throw error;
@@ -229,7 +274,18 @@ async function loginStudent(email, password) {
     localStorage.removeItem('bp_logged_out');
 
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
-    const uid = userCredential.user.uid;
+    const user = userCredential.user;
+    const uid = user.uid;
+
+    // Strict Email Verification Check
+    if (!user.emailVerified) {
+      await auth.signOut();
+      terminateUserSession();
+      const verifyErr = new Error("Email verification required. Please click the activation link sent to " + email + ".");
+      verifyErr.code = 'auth/email-not-verified';
+      verifyErr.unverifiedEmail = email;
+      throw verifyErr;
+    }
 
     establishUserSession('student', uid);
 
@@ -245,6 +301,33 @@ async function loginStudent(email, password) {
   } catch (error) {
     console.error("Student login error:", error);
     throw error;
+  }
+}
+
+/**
+ * Resends verification email to an unverified user
+ */
+async function resendVerificationEmail(email, password) {
+  try {
+    const cred = await auth.signInWithEmailAndPassword(email, password);
+    if (cred.user.emailVerified) {
+      await auth.signOut();
+      terminateUserSession();
+      throw new Error("This email is already verified! You can log in directly.");
+    }
+    await cred.user.sendEmailVerification();
+    await auth.signOut();
+    terminateUserSession();
+    return true;
+  } catch (error) {
+    console.error("Resend verification error:", error);
+    let msg = error.message;
+    if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+      msg = "Incorrect password. Please enter your valid password to resend the verification email.";
+    } else if (error.code === 'auth/too-many-requests') {
+      msg = "Too many attempts. Please wait a moment before trying again.";
+    }
+    throw new Error(msg);
   }
 }
 
@@ -766,6 +849,17 @@ function requireAuth(expectedRole, onReady) {
         await auth.signOut();
         document.documentElement.style.display = 'none';
         redirectToLogin(expectedRole);
+        return;
+      }
+
+      // Check email verification for students and vendors
+      if ((userData.role === 'student' || userData.role === 'vendor') && !user.emailVerified) {
+        console.warn("Unverified email access attempted. Redirecting to login.");
+        terminateUserSession();
+        await auth.signOut();
+        document.documentElement.style.display = 'none';
+        const targetLogin = userData.role === 'vendor' ? 'vendor-login.html?unverified=true' : 'login.html?unverified=true';
+        window.location.replace(resolveAppPath(targetLogin));
         return;
       }
 

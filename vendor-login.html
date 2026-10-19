@@ -67,9 +67,22 @@
       </div>
 
       <form id="vendor-login-form" class="split-auth-form">
+        <!-- Unverified Email Alert Banner -->
+        <div id="unverified-alert" style="display: none; background: #FFFBEB; border: 1.5px solid #FCD34D; border-radius: 12px; padding: 1rem 1.15rem; margin-bottom: 1.25rem; font-size: 0.86rem; color: #92400E; line-height: 1.5;">
+          <div style="font-weight: 700; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 7px; color: #B45309;">
+            <i class="fas fa-exclamation-triangle" style="color: #F59E0B;"></i> Email Verification Required
+          </div>
+          <p id="unverified-alert-text" style="margin: 0 0 0.65rem 0; font-size: 0.84rem;">
+            Please click the activation link sent to your email to verify your vendor account.
+          </p>
+          <button type="button" id="resend-login-btn" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.45rem 0.9rem; border-radius: 8px; background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; font-weight: 600;">
+            <i class="fas fa-paper-plane"></i> Resend Verification Email
+          </button>
+        </div>
+
         <div class="form-group">
-          <label class="form-label" for="email">Vendor ID</label>
-          <input type="email" id="email" class="form-control" placeholder="Enter your vendor ID" required autocomplete="email">
+          <label class="form-label" for="email">Vendor Email / ID</label>
+          <input type="email" id="email" class="form-control" placeholder="Enter your registered vendor email" required autocomplete="email">
         </div>
 
         <div class="form-group">
@@ -145,6 +158,18 @@
     const toggleBtn = document.getElementById('toggle-password-btn');
     const toggleIcon = document.getElementById('toggle-password-icon');
 
+    // Notification banners check
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('verified') === 'pending') {
+        showToast("Registration successful! Check your email to activate your account.", "info", "Verify Email");
+      } else if (params.get('verified') === 'true') {
+        showToast("Email verified! You can now log in.", "success", "Account Active");
+      } else if (params.get('unverified') === 'true') {
+        showToast("Please verify your email address to access your dashboard.", "warning", "Verification Required");
+      }
+    });
+
     if (toggleBtn) {
       toggleBtn.addEventListener('click', () => {
         const isPass = passInput.type === 'password';
@@ -155,8 +180,10 @@
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = document.getElementById('email').value;
+      const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
+      const unverifiedBox = document.getElementById('unverified-alert');
+      if (unverifiedBox) unverifiedBox.style.display = 'none';
 
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Verifying...';
@@ -168,11 +195,46 @@
           window.location.replace('vendor-dashboard.html');
         }, 800);
       } catch (error) {
-        showToast(error.message, "danger", "Login Error");
+        if (error.code === 'auth/email-not-verified') {
+          if (unverifiedBox) {
+            unverifiedBox.style.display = 'block';
+            document.getElementById('unverified-alert-text').textContent = 
+              `An activation link was sent to ${email}. Please check your inbox (and spam folder) and verify your email before logging in.`;
+          }
+          showToast("Please verify your email before logging in.", "warning", "Email Not Verified");
+        } else {
+          showToast(error.message, "danger", "Login Error");
+        }
         btn.disabled = false;
         btn.innerHTML = 'Login';
       }
     });
+
+    // Resend verification email from login banner
+    const resendLoginBtn = document.getElementById('resend-login-btn');
+    if (resendLoginBtn) {
+      resendLoginBtn.addEventListener('click', async () => {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        if (!email || !password) {
+          showToast("Please enter your email and password above to resend activation link.", "warning");
+          return;
+        }
+        resendLoginBtn.disabled = true;
+        resendLoginBtn.innerHTML = '<span class="spinner spinner-sm"></span> Sending...';
+        try {
+          await resendVerificationEmail(email, password);
+          showToast("Activation link re-sent! Check your inbox.", "success", "Email Dispatched");
+        } catch (err) {
+          showToast(err.message, "danger");
+        } finally {
+          setTimeout(() => {
+            resendLoginBtn.disabled = false;
+            resendLoginBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Resend Verification Email';
+          }, 4000);
+        }
+      });
+    }
 
     // Forgot Password Handling
     const forgotLink = document.getElementById('vendor-forgot-link');
@@ -214,10 +276,11 @@
       });
     }
 
-    // Auto-redirect if already logged in as vendor (skip if logged out)
+    // Auto-redirect if already logged in as vendor (skip if unverified or logged out)
     auth.onAuthStateChanged(async (user) => {
       if (!user) return;
       if (typeof isSessionLoggedOut === 'function' && isSessionLoggedOut()) return;
+      if (!user.emailVerified) return;
       try {
         const userDoc = await db.collection('users').doc(user.uid).get();
         if (userDoc.exists && userDoc.data().role === 'vendor') {
