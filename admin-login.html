@@ -3,148 +3,609 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Super Admin Sign In | BusPass Platform HQ</title>
+  <title>Admin Access | BusPass Super Admin Portal</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/admin.css">
-</head>
-<body class="admin-body">
+  <style>
+    /* ========================================================
+       PRECISE REPLICA OF THE REQUESTED ADMIN ACCESS UI
+       ======================================================== */
+    body.admin-exact-login {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0B132B url('images/admin-login-bg.jpg') no-repeat center center;
+      background-size: cover;
+      position: relative;
+      overflow-x: hidden;
+      color: #FFFFFF;
+      box-sizing: border-box;
+    }
 
-  <div class="admin-auth-split-layout">
+    /* Cinematic Dark Overlay with Violet/Indigo Depth */
+    body.admin-exact-login::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        90deg,
+        rgba(10, 16, 38, 0.88) 0%,
+        rgba(15, 23, 42, 0.72) 42%,
+        rgba(15, 23, 42, 0.35) 65%,
+        rgba(10, 16, 38, 0.65) 100%
+      );
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .admin-exact-wrapper {
+      position: relative;
+      z-index: 2;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 3.5rem 5.5rem;
+      box-sizing: border-box;
+      gap: 3.5rem;
+      max-width: 1680px;
+      margin: 0 auto;
+    }
+
+    /* LEFT BRAND & PROMO PANEL */
+    .admin-exact-left {
+      flex: 1.25;
+      max-width: 620px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 600px;
+    }
+
+    .admin-brand-header {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.85rem;
+      text-decoration: none;
+      margin-bottom: 2.5rem;
+    }
+
+    .admin-brand-icon-sq {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      color: #FFFFFF;
+      box-shadow: 0 8px 20px -3px rgba(79, 70, 229, 0.5);
+    }
+
+    .admin-brand-logo-text {
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.02em;
+    }
+
+    .admin-hero-heading {
+      font-size: 2.85rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      color: #FFFFFF;
+      margin-bottom: 1.15rem;
+    }
+
+    .admin-hero-heading .purple-accent {
+      background: linear-gradient(135deg, #A855F7 0%, #C084FC 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .admin-hero-desc {
+      font-size: 1.05rem;
+      color: #E2E8F0;
+      line-height: 1.6;
+      margin-bottom: 2.5rem;
+      max-width: 520px;
+      font-weight: 400;
+      opacity: 0.95;
+    }
+
+    /* 3 FEATURE CARDS (GLASSMORPHIC) */
+    .admin-feature-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+      max-width: 460px;
+    }
+
+    .admin-feature-card {
+      display: flex;
+      align-items: center;
+      gap: 1.1rem;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      padding: 0.9rem 1.25rem;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .admin-feature-card:hover {
+      transform: translateX(4px);
+      border-color: rgba(168, 85, 247, 0.4);
+    }
+
+    .admin-feat-icon-sq {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      color: #FFFFFF;
+      flex-shrink: 0;
+    }
+    .admin-feat-icon-sq.blue { background: #3B82F6; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35); }
+    .admin-feat-icon-sq.teal { background: #06B6D4; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.35); }
+    .admin-feat-icon-sq.purple { background: #8B5CF6; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35); }
+
+    .admin-feat-title {
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 0.15rem;
+    }
+
+    .admin-feat-text {
+      font-size: 0.8rem;
+      color: #94A3B8;
+      line-height: 1.35;
+    }
+
+    .admin-bottom-tagline {
+      font-size: 0.82rem;
+      color: #CBD5E1;
+      line-height: 1.5;
+      font-weight: 500;
+      opacity: 0.85;
+    }
+
+    /* RIGHT SIDE — FLOATING WHITE AUTH CARD */
+    .admin-exact-right {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .admin-access-card {
+      width: 100%;
+      max-width: 440px;
+      background: #FFFFFF;
+      border-radius: 24px;
+      padding: 2.75rem 2.25rem 2.25rem;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 0, 0, 0.1);
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    .admin-card-top-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      background: #EEF2FF;
+      border: 1px solid #E0E7FF;
+      color: #4F46E5;
+      font-size: 1.45rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.15rem;
+    }
+
+    .admin-card-main-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #1E293B;
+      text-align: center;
+      margin-bottom: 0.35rem;
+      letter-spacing: -0.025em;
+    }
+
+    .admin-card-main-subtitle {
+      font-size: 0.88rem;
+      color: #64748B;
+      text-align: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .admin-card-accent-pill {
+      width: 44px;
+      height: 3px;
+      background: #4F46E5;
+      border-radius: 9999px;
+      margin: 0 auto 1.75rem;
+    }
+
+    /* Form Fields */
+    .admin-exact-field {
+      margin-bottom: 1.25rem;
+    }
+
+    .admin-exact-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.45rem;
+    }
+
+    .admin-exact-label {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: #1E293B;
+      display: block;
+    }
+
+    .admin-exact-forgot-link {
+      font-size: 0.8rem;
+      color: #4F46E5;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.15s;
+    }
+    .admin-exact-forgot-link:hover {
+      color: #3730A3;
+      text-decoration: underline;
+    }
+
+    .admin-exact-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .admin-exact-input-wrap i.prefix {
+      position: absolute;
+      left: 1rem;
+      color: #94A3B8;
+      font-size: 0.95rem;
+      pointer-events: none;
+      transition: color 0.2s;
+    }
+
+    .admin-exact-input {
+      width: 100%;
+      height: 46px;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      color: #1E293B;
+      font-size: 0.9rem;
+      font-family: inherit;
+      padding: 0.65rem 2.75rem 0.65rem 2.65rem;
+      outline: none;
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+    }
+
+    .admin-exact-input:focus {
+      background: #FFFFFF;
+      border-color: #4F46E5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+
+    .admin-exact-input-wrap:focus-within i.prefix {
+      color: #4F46E5;
+    }
+
+    .admin-exact-eye-btn {
+      position: absolute;
+      right: 0.85rem;
+      background: none;
+      border: none;
+      color: #94A3B8;
+      cursor: pointer;
+      font-size: 0.95rem;
+      padding: 0.35rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+    }
+    .admin-exact-eye-btn:hover {
+      color: #1E293B;
+    }
+
+    /* Submit Button */
+    .admin-exact-submit-btn {
+      width: 100%;
+      height: 48px;
+      background: linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #7C3AED 100%);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.98rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+      box-shadow: 0 8px 20px -4px rgba(79, 70, 229, 0.42);
+      font-family: inherit;
+      margin-top: 1.5rem;
+      box-sizing: border-box;
+    }
+
+    .admin-exact-submit-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #4338CA 0%, #4F46E5 50%, #6D28D9 100%);
+      box-shadow: 0 10px 24px -4px rgba(79, 70, 229, 0.55);
+      transform: translateY(-1px);
+    }
+
+    .admin-exact-submit-btn:disabled {
+      opacity: 0.75;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Divider */
+    .admin-exact-divider {
+      position: relative;
+      text-align: center;
+      margin: 1.5rem 0 1.25rem;
+    }
+    .admin-exact-divider::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: #E2E8F0;
+    }
+    .admin-exact-divider span {
+      position: relative;
+      background: #FFFFFF;
+      padding: 0 0.85rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #94A3B8;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* Restricted Access Note Card */
+    .admin-exact-note-card {
+      background: #F1F5FD;
+      border: 1px solid #E0E7FF;
+      border-radius: 14px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.85rem;
+    }
+
+    .admin-note-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #EEF2FF;
+      color: #4F46E5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .admin-note-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #1E293B;
+      margin-bottom: 0.15rem;
+    }
+
+    .admin-note-text {
+      font-size: 0.75rem;
+      color: #64748B;
+      line-height: 1.4;
+    }
+
+    /* Alert Banner */
+    .admin-auth-alert {
+      padding: 0.75rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      margin-bottom: 1.25rem;
+      display: none;
+      align-items: flex-start;
+      gap: 0.6rem;
+      line-height: 1.4;
+    }
+    .admin-auth-alert.danger {
+      display: flex;
+      background: #FEF2F2;
+      border: 1px solid #FCA5A5;
+      color: #DC2626;
+    }
+
+    /* Footer links */
+    .admin-sub-links {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 1.25rem;
+      padding-top: 1rem;
+      border-top: 1px solid #F1F5F9;
+      font-size: 0.78rem;
+    }
+    .admin-sub-links a {
+      color: #64748B;
+      text-decoration: none;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .admin-sub-links a:hover {
+      color: #4F46E5;
+      text-decoration: underline;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+      .admin-exact-wrapper {
+        padding: 3rem 3rem;
+        gap: 2.5rem;
+      }
+      .admin-hero-heading {
+        font-size: 2.35rem;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .admin-exact-wrapper {
+        flex-direction: column;
+        padding: 2.5rem 1.75rem;
+        gap: 3rem;
+      }
+      .admin-exact-left {
+        max-width: 100%;
+        min-height: auto;
+      }
+      .admin-exact-right {
+        justify-content: center;
+        width: 100%;
+      }
+      .admin-feature-cards {
+        max-width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .admin-exact-wrapper {
+        padding: 2rem 1.25rem;
+      }
+      .admin-access-card {
+        padding: 2rem 1.5rem 1.75rem;
+      }
+      .admin-hero-heading {
+        font-size: 1.95rem;
+      }
+    }
+  </style>
+</head>
+<body class="admin-exact-login">
+
+  <div class="admin-exact-wrapper">
     
-    <!-- LEFT PANEL: Enterprise Branding & Platform Highlights -->
-    <div class="admin-auth-brand-panel">
-      
-      <div class="admin-auth-brand-header">
-        <a href="index.html" class="admin-auth-brand-mark" title="Return to Public Portal">
-          <div class="admin-auth-brand-icon">
+    <!-- LEFT PANEL: Hero Branding, Headline, and 3 Feature Cards -->
+    <div class="admin-exact-left">
+      <div>
+        <a href="index.html" class="admin-brand-header" title="BusPass Home">
+          <div class="admin-brand-icon-sq">
             <i class="fas fa-bus-alt"></i>
           </div>
-          <div>
-            <div class="admin-auth-brand-text">BusPass <span>HQ</span></div>
-            <div style="font-size: 0.72rem; color: #94A3B8; font-weight: 500;">Executive Administration Portal</div>
-          </div>
+          <span class="admin-brand-logo-text">BusPass</span>
         </a>
-      </div>
 
-      <div class="admin-auth-brand-content">
-        <div class="admin-auth-badge-tag">
-          <i class="fas fa-shield-alt"></i> Restricted Executive Workspace
-        </div>
-        <h1 class="admin-auth-brand-title">BusPass Admin Portal</h1>
-        <p class="admin-auth-brand-desc">
-          Manage your transport platform from one secure workspace. Oversee transit fleets, partner institutions, student commuter passes, and operator financial transactions in real time.
+        <h1 class="admin-hero-heading">
+          Complete<br>
+          Transport Management<br>
+          at <span class="purple-accent">Your Fingertips</span>
+        </h1>
+
+        <p class="admin-hero-desc">
+          A unified platform to manage vendors, students, buses, passes and real-time transport operations.
         </p>
 
-        <div class="admin-auth-feature-list">
-          <div class="admin-auth-feature-item">
-            <div class="admin-auth-feature-icon">
-              <i class="fas fa-tachometer-alt"></i>
+        <div class="admin-feature-cards">
+          <!-- Card 1 -->
+          <div class="admin-feature-card">
+            <div class="admin-feat-icon-sq blue">
+              <i class="fas fa-chart-bar"></i>
             </div>
             <div>
-              <div class="admin-auth-feature-title">Platform-Wide Monitoring</div>
-              <div class="admin-auth-feature-text">Real-time telematics, active fleet GPS telemetry, conductor duty rosters, and platform health.</div>
+              <div class="admin-feat-title">Monitor Everything</div>
+              <div class="admin-feat-text">Get real-time insights across the platform.</div>
             </div>
           </div>
 
-          <div class="admin-auth-feature-item">
-            <div class="admin-auth-feature-icon">
-              <i class="fas fa-users-cog"></i>
+          <!-- Card 2 -->
+          <div class="admin-feature-card">
+            <div class="admin-feat-icon-sq teal">
+              <i class="fas fa-users"></i>
             </div>
             <div>
-              <div class="admin-auth-feature-title">Vendor and Student Management</div>
-              <div class="admin-auth-feature-text">Centralized oversight of commercial fleet agencies, campus colleges, and passenger digital passes.</div>
+              <div class="admin-feat-title">Manage Users</div>
+              <div class="admin-feat-text">Vendors, students, conductors and more.</div>
             </div>
           </div>
 
-          <div class="admin-auth-feature-item">
-            <div class="admin-auth-feature-icon">
-              <i class="fas fa-chart-line"></i>
+          <!-- Card 3 -->
+          <div class="admin-feature-card">
+            <div class="admin-feat-icon-sq purple">
+              <i class="fas fa-map-marker-alt"></i>
             </div>
             <div>
-              <div class="admin-auth-feature-title">Analytics and Transport Insights</div>
-              <div class="admin-auth-feature-text">Comprehensive revenue reconciliation, pass validation breakdown, and route demand metrics.</div>
+              <div class="admin-feat-title">Better Transport Operations</div>
+              <div class="admin-feat-text">Secure, efficient and transparent.</div>
             </div>
           </div>
         </div>
-
-        <!-- Subtle Abstract Transport Vector Graphic -->
-        <div class="admin-auth-graphic-box">
-          <svg viewBox="0 0 460 90" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto; display: block;">
-            <!-- Grid Lines -->
-            <line x1="0" y1="45" x2="460" y2="45" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4 4" />
-            <line x1="115" y1="0" x2="115" y2="90" stroke="rgba(255,255,255,0.04)" />
-            <line x1="230" y1="0" x2="230" y2="90" stroke="rgba(255,255,255,0.04)" />
-            <line x1="345" y1="0" x2="345" y2="90" stroke="rgba(255,255,255,0.04)" />
-            
-            <!-- Transit Route Curves -->
-            <path d="M 20 65 Q 115 15, 230 45 T 440 25" stroke="url(#routeGrad)" stroke-width="3" fill="none" stroke-linecap="round" />
-            <path d="M 20 65 Q 115 15, 230 45 T 440 25" stroke="#818CF8" stroke-width="1" stroke-dasharray="6 6" fill="none" opacity="0.8" />
-            
-            <!-- Route Waypoint Nodes -->
-            <circle cx="20" cy="65" r="5" fill="#4F46E5" stroke="#FFFFFF" stroke-width="2" />
-            <circle cx="115" cy="35" r="4" fill="#06B6D4" stroke="#FFFFFF" stroke-width="1.5" />
-            <circle cx="230" cy="45" r="6" fill="#10B981" stroke="#FFFFFF" stroke-width="2" />
-            <circle cx="345" cy="35" r="4" fill="#8B5CF6" stroke="#FFFFFF" stroke-width="1.5" />
-            <circle cx="440" cy="25" r="5" fill="#F59E0B" stroke="#FFFFFF" stroke-width="2" />
-            
-            <!-- Radar Beacon Rings -->
-            <circle cx="230" cy="45" r="14" stroke="#10B981" stroke-width="1" opacity="0.4" stroke-dasharray="2 2" />
-            
-            <!-- Labels -->
-            <text x="24" y="80" fill="#94A3B8" font-size="9" font-family="monospace">CAMPUS DEPOT</text>
-            <text x="210" y="70" fill="#10B981" font-size="9" font-family="monospace" font-weight="700">HQ TRANSIT HUB</text>
-            <text x="390" y="42" fill="#94A3B8" font-size="9" font-family="monospace">METRO TERMINAL</text>
-
-            <defs>
-              <linearGradient id="routeGrad" x1="20" y1="65" x2="440" y2="25" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#4F46E5" />
-                <stop offset="0.5" stop-color="#06B6D4" />
-                <stop offset="1" stop-color="#10B981" />
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-
       </div>
 
-      <div class="admin-auth-brand-footer">
-        <div>
-          <i class="fas fa-lock" style="color: #10B981; margin-right: 4px;"></i> 256-Bit TLS &bull; Multi-Tenant Isolated
-        </div>
-        <div>BusPass Platform HQ &copy; 2026</div>
+      <div class="admin-bottom-tagline">
+        Empowering Smarter<br>
+        Mobility for a Better Tomorrow
       </div>
-
     </div>
 
-    <!-- RIGHT PANEL: Centered Enterprise Login Card -->
-    <div class="admin-auth-form-panel">
-      <div class="admin-auth-card">
+    <!-- RIGHT PANEL: Floating White Admin Access Card -->
+    <div class="admin-exact-right">
+      <div class="admin-access-card">
         
-        <div class="admin-auth-card-header">
-          <div class="admin-auth-security-badge">
-            <i class="fas fa-user-shield"></i> Authorized administrators only
-          </div>
-          <h2 class="admin-auth-card-title">Welcome Back, Admin</h2>
-          <p class="admin-auth-card-subtitle">Sign in to manage your BusPass platform.</p>
+        <!-- Header Shield Icon -->
+        <div class="admin-card-top-icon">
+          <i class="fas fa-shield-alt"></i>
         </div>
 
-        <!-- Inline Feedback / Alert Banner -->
+        <h2 class="admin-card-main-title">Admin Access</h2>
+        <p class="admin-card-main-subtitle">Sign in to your administrator account</p>
+        <div class="admin-card-accent-pill"></div>
+
+        <!-- Alert Banner -->
         <div id="admin-auth-alert" class="admin-auth-alert" role="alert">
           <i class="fas fa-exclamation-circle" style="margin-top: 2px;"></i>
           <span id="admin-auth-alert-text"></span>
         </div>
 
         <form id="admin-login-form">
-          <div class="admin-auth-field">
-            <label class="admin-auth-label" for="admin-email">Administrator Email</label>
-            <div class="admin-auth-input-wrap">
-              <i class="fas fa-envelope prefix-icon"></i>
+          
+          <!-- Email Field -->
+          <div class="admin-exact-field">
+            <label class="admin-exact-label" for="admin-email">Email Address</label>
+            <div class="admin-exact-input-wrap">
+              <i class="fas fa-envelope prefix"></i>
               <input 
                 type="email" 
                 id="admin-email" 
-                class="admin-auth-input" 
-                placeholder="admin@buspass.local" 
+                class="admin-exact-input" 
+                placeholder="superadmin@buspass.local" 
                 required 
                 autocomplete="email" 
                 autofocus
@@ -152,24 +613,25 @@
             </div>
           </div>
 
-          <div class="admin-auth-field">
-            <div class="admin-auth-label">
-              <span>Security Password</span>
-              <a href="#" onclick="openForgotPassModal(event)" style="font-size: 0.78rem; color: var(--admin-primary); text-decoration: none; font-weight: 600;">Forgot password?</a>
+          <!-- Password Field -->
+          <div class="admin-exact-field">
+            <div class="admin-exact-label-row">
+              <label class="admin-exact-label" for="admin-password">Password</label>
+              <a href="#" class="admin-exact-forgot-link" onclick="openForgotPassModal(event)">Forgot password?</a>
             </div>
-            <div class="admin-auth-input-wrap">
-              <i class="fas fa-key prefix-icon"></i>
+            <div class="admin-exact-input-wrap">
+              <i class="fas fa-lock prefix"></i>
               <input 
                 type="password" 
                 id="admin-password" 
-                class="admin-auth-input" 
+                class="admin-exact-input" 
                 placeholder="••••••••••••" 
                 required 
                 autocomplete="current-password"
               >
               <button 
                 type="button" 
-                class="admin-auth-pass-toggle" 
+                class="admin-exact-eye-btn" 
                 onclick="togglePassVisibility('admin-password', this)" 
                 title="Show or hide password"
               >
@@ -178,31 +640,37 @@
             </div>
           </div>
 
-          <div class="admin-auth-row-remember">
-            <label class="admin-auth-checkbox-label">
-              <input type="checkbox" id="admin-remember-me" class="admin-auth-checkbox">
-              <span>Remember administrator email</span>
-            </label>
-            <span style="font-size: 0.75rem; color: var(--admin-text-subtle);">
-              <i class="fas fa-shield-alt" style="color: #10B981;"></i> Secured
-            </span>
-          </div>
+          <!-- NOTE: "Keep me signed in" option removed per user instruction -->
 
-          <button type="submit" id="admin-submit-btn" class="admin-auth-submit-btn">
-            <i class="fas fa-sign-in-alt"></i> Sign In to Admin Portal
+          <!-- Submit Button -->
+          <button type="submit" id="admin-submit-btn" class="admin-exact-submit-btn">
+            <i class="fas fa-sign-in-alt"></i> Sign In
           </button>
 
-          <div class="admin-auth-notice">
-            <i class="fas fa-terminal text-primary" style="font-size: 1.1rem; flex-shrink: 0;"></i>
+          <!-- OR Divider -->
+          <div class="admin-exact-divider">
+            <span>OR</span>
+          </div>
+
+          <!-- Restricted Access Note Box -->
+          <div class="admin-exact-note-card">
+            <div class="admin-note-icon">
+              <i class="fas fa-shield-alt"></i>
+            </div>
             <div>
-              First-time setup? <a href="#" onclick="openBootstrapModal(event)" style="color: var(--admin-primary); font-weight: 600;">View Super Admin Bootstrap Guide</a>
+              <div class="admin-note-title">Restricted Access</div>
+              <div class="admin-note-text">
+                This is a secure administrator portal. Only authorized personnel can access.
+              </div>
             </div>
           </div>
 
-          <div class="admin-auth-footer-links">
+          <div class="admin-sub-links">
             <a href="index.html"><i class="fas fa-arrow-left"></i> Public Portal</a>
+            <a href="#" onclick="openBootstrapModal(event)"><i class="fas fa-terminal"></i> Setup Guide</a>
             <a href="vendor-login.html"><i class="fas fa-user-tie"></i> Vendor Login</a>
           </div>
+
         </form>
 
       </div>
@@ -224,7 +692,7 @@
           </p>
           <div class="admin-form-group">
             <label class="admin-form-label" for="reset-email">Admin Email <span class="required">*</span></label>
-            <input type="email" id="reset-email" class="admin-form-control" placeholder="admin@buspass.local" required autocomplete="email">
+            <input type="email" id="reset-email" class="admin-form-control" placeholder="superadmin@buspass.local" required autocomplete="email">
           </div>
         </div>
         <div class="admin-modal-footer">
@@ -246,7 +714,7 @@
       </div>
       <div class="admin-modal-body" style="font-size: 0.88rem; color: var(--admin-text-main); line-height: 1.6;">
         <p style="margin-bottom: 0.85rem;">
-          For maximum enterprise security, Super Administrator accounts are initialized via an authorized one-time CLI bootstrap command on your hosting server or local console.
+          For maximum enterprise security, Super Administrator accounts are initialized via an authorized one-time CLI bootstrap command on your console.
         </p>
 
         <div style="background: #0B132B; color: #E2E8F0; padding: 1rem 1.25rem; border-radius: 8px; font-family: var(--admin-font-mono); font-size: 0.82rem; margin-bottom: 1.25rem; border: 1px solid #1E293B;">
@@ -316,16 +784,8 @@
       alertBox.style.display = 'flex';
     }
 
-    // Auto-check query params and remembered email on load
+    // Auto-check query params on load
     window.addEventListener('DOMContentLoaded', () => {
-      // Remembered email
-      const savedEmail = localStorage.getItem('bp_remember_admin_email');
-      const rememberCheckbox = document.getElementById('admin-remember-me');
-      if (savedEmail) {
-        document.getElementById('admin-email').value = savedEmail;
-        if (rememberCheckbox) rememberCheckbox.checked = true;
-      }
-
       const params = new URLSearchParams(window.location.search);
       if (params.get('error') === 'unauthorized') {
         setAuthAlert("Your session is unauthorized or has expired. Please authenticate as Super Admin.", "danger");
@@ -342,14 +802,7 @@
 
       const email = document.getElementById('admin-email').value.trim();
       const password = document.getElementById('admin-password').value;
-      const rememberCheckbox = document.getElementById('admin-remember-me');
       const btn = document.getElementById('admin-submit-btn');
-
-      if (rememberCheckbox && rememberCheckbox.checked) {
-        localStorage.setItem('bp_remember_admin_email', email);
-      } else {
-        localStorage.removeItem('bp_remember_admin_email');
-      }
 
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Authenticating...';
@@ -371,7 +824,7 @@
         setAuthAlert(err.message, "danger");
         showToast(err.message, "danger", "Authentication Failed");
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In to Admin Portal';
+        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
       }
     });
 
