@@ -56,7 +56,10 @@ function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) {
     modal.classList.remove('show', 'active');
-    document.body.style.overflow = '';
+    const remainingOpen = document.querySelectorAll('.modal-backdrop.show, .modal-backdrop.active, .admin-modal-backdrop.show, .admin-modal-backdrop.active');
+    if (remainingOpen.length === 0) {
+      document.body.style.overflow = '';
+    }
   }
 }
 
@@ -64,7 +67,10 @@ function closeModal(modalId) {
 document.addEventListener('click', (e) => {
   if (e.target.classList.contains('modal-backdrop') || e.target.classList.contains('admin-modal-backdrop')) {
     e.target.classList.remove('show', 'active');
-    document.body.style.overflow = '';
+    const remainingOpen = document.querySelectorAll('.modal-backdrop.show, .modal-backdrop.active, .admin-modal-backdrop.show, .admin-modal-backdrop.active');
+    if (remainingOpen.length === 0) {
+      document.body.style.overflow = '';
+    }
   }
 });
 

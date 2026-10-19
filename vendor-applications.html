@@ -311,6 +311,39 @@
     </div>
   </div>
 
+  <!-- Full-Screen Payment Proof Lightbox Modal -->
+  <div class="modal-backdrop" id="image-lightbox-modal" style="z-index: 99999; background: rgba(10, 15, 30, 0.92); backdrop-filter: blur(8px);">
+    <div style="position: relative; max-width: 92vw; max-height: 94vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+      <!-- Top Bar -->
+      <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1rem; color: #FFFFFF; margin-bottom: 0.6rem; background: rgba(255,255,255,0.06); border-radius: 10px; border: 1px solid rgba(255,255,255,0.12);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <i class="fas fa-receipt" style="color: #818CF8; font-size: 1.15rem;"></i>
+          <span id="lightbox-title" style="font-weight: 700; font-size: 0.95rem; color: #F8FAFC;">Payment Proof Screenshot</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <button type="button" class="btn btn-secondary" onclick="downloadLightboxImage()" style="font-size: 0.82rem; padding: 0.4rem 0.9rem; border-radius: 8px; background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25); display: inline-flex; align-items: center; gap: 6px;">
+            <i class="fas fa-download"></i> Download
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="openImageInNewTab()" style="font-size: 0.82rem; padding: 0.4rem 0.9rem; border-radius: 8px; background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25); display: inline-flex; align-items: center; gap: 6px;">
+            <i class="fas fa-external-link-alt"></i> New Tab
+          </button>
+          <button type="button" onclick="closeModal('image-lightbox-modal')" style="background: rgba(255,255,255,0.2); border: none; color: #fff; width: 34px; height: 34px; border-radius: 50%; font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.85)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'" title="Close Lightbox">
+            &times;
+          </button>
+        </div>
+      </div>
+      <!-- Image Display Area -->
+      <div style="max-width: 90vw; max-height: 82vh; overflow: auto; display: flex; align-items: center; justify-content: center; background: #020617; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); padding: 0.75rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+        <img id="lightbox-img" src="" alt="Full Payment Proof" style="max-height: 78vh; max-width: 86vw; object-fit: contain; border-radius: 6px; cursor: zoom-in; transition: transform 0.2s;" onclick="toggleLightboxZoom(this)">
+      </div>
+      <div style="font-size: 0.78rem; color: #94A3B8; margin-top: 0.5rem; display: flex; align-items: center; gap: 8px;">
+        <span><i class="fas fa-search-plus"></i> Click image to toggle zoom</span>
+        <span>&bull;</span>
+        <span>Press ESC to close</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Firebase Compat CDN Scripts -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -556,9 +589,14 @@
       const proofUrl = selectedApp.paymentProofUrl || selectedApp.paymentScreenshotUrl;
       if (proofUrl) {
         proofBox.innerHTML = `
-          <a href="${proofUrl}" target="_blank" title="Click to view full image">
-            <img src="${proofUrl}" alt="Proof" style="max-height: 180px; width: 100%; object-fit: contain;">
-          </a>
+          <div style="position: relative; width: 100%; min-height: 180px; display: flex; align-items: center; justify-content: center; background: #0F172A; border-radius: var(--radius-sm); overflow: hidden; cursor: pointer;" 
+               onclick="viewFullScreenshot(selectedApp.paymentProofUrl || selectedApp.paymentScreenshotUrl, selectedApp.studentName)" 
+               title="Click to view full image in high resolution">
+            <img src="${proofUrl}" alt="Proof" style="max-height: 180px; width: 100%; object-fit: contain; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(15, 23, 42, 0.85); color: #FFFFFF; padding: 4px 10px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); pointer-events: none; border: 1px solid rgba(255,255,255,0.15);">
+              <i class="fas fa-search-plus" style="color: var(--primary);"></i> Click to Enlarge Full View
+            </div>
+          </div>
         `;
       } else {
         proofBox.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">No payment screenshot uploaded</span>`;
@@ -790,6 +828,78 @@
         "Reject Application",
         true
       );
+    }
+
+    // Lightbox & Proof Viewer Controller
+    window._currentProofData = null;
+    window._currentProofStudentName = '';
+
+    function viewFullScreenshot(url, studentName) {
+      if (!url) return;
+      window._currentProofData = url;
+      window._currentProofStudentName = studentName || 'Student';
+      const img = document.getElementById('lightbox-img');
+      const title = document.getElementById('lightbox-title');
+      if (img) {
+        img.src = url;
+        img.style.maxHeight = '78vh';
+        img.style.maxWidth = '86vw';
+        img.style.cursor = 'zoom-in';
+      }
+      if (title) {
+        title.textContent = `Payment Proof - ${studentName || 'Student'}`;
+      }
+      openModal('image-lightbox-modal');
+    }
+
+    function toggleLightboxZoom(imgEl) {
+      if (imgEl.style.maxHeight === 'none') {
+        imgEl.style.maxHeight = '78vh';
+        imgEl.style.maxWidth = '86vw';
+        imgEl.style.cursor = 'zoom-in';
+      } else {
+        imgEl.style.maxHeight = 'none';
+        imgEl.style.maxWidth = 'none';
+        imgEl.style.cursor = 'zoom-out';
+      }
+    }
+
+    function downloadLightboxImage() {
+      const src = window._currentProofData;
+      if (!src) return;
+      const link = document.createElement('a');
+      link.href = src;
+      const safeName = (window._currentProofStudentName || 'payment_proof').replace(/[^a-zA-Z0-9]/g, '_');
+      link.download = `payment-proof-${safeName}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function openImageInNewTab() {
+      const src = window._currentProofData;
+      if (!src) return;
+      if (src.startsWith('data:')) {
+        try {
+          const byteString = atob(src.split(',')[1]);
+          const mimeString = src.split(',')[0].split(':')[1].split(';')[0];
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+          }
+          const blob = new Blob([ab], { type: mimeString });
+          const blobUrl = URL.createObjectURL(blob);
+          window.open(blobUrl, '_blank');
+        } catch (e) {
+          const win = window.open();
+          if (win) {
+            win.document.write(`<title>Payment Proof - ${window._currentProofStudentName || 'Screenshot'}</title><body style="margin:0; background:#0B132B; display:flex; align-items:center; justify-content:center; min-height:100vh;"><img src="${src}" style="max-width:100%; max-height:100vh; object-fit:contain;"></body>`);
+          }
+        }
+      } else {
+        window.open(src, '_blank');
+      }
     }
   </script>
 </body>

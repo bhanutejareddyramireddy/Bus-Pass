@@ -217,6 +217,39 @@
     </div>
   </div>
 
+  <!-- Full-Screen Payment Proof Lightbox Modal -->
+  <div class="admin-modal-overlay" id="admin-image-lightbox-modal" style="z-index: 99999; background: rgba(10, 15, 30, 0.92); backdrop-filter: blur(8px);">
+    <div style="position: relative; max-width: 92vw; max-height: 94vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+      <!-- Top Bar -->
+      <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1rem; color: #FFFFFF; margin-bottom: 0.6rem; background: rgba(255,255,255,0.06); border-radius: 10px; border: 1px solid rgba(255,255,255,0.12);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <i class="fas fa-receipt" style="color: #818CF8; font-size: 1.15rem;"></i>
+          <span id="admin-lightbox-title" style="font-weight: 700; font-size: 0.95rem; color: #F8FAFC;">Payment Proof Screenshot</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <button type="button" class="admin-btn admin-btn-sm admin-btn-secondary" onclick="downloadAdminLightboxImage()" style="color: #fff; border: 1px solid rgba(255,255,255,0.25); display: inline-flex; align-items: center; gap: 6px;">
+            <i class="fas fa-download"></i> Download
+          </button>
+          <button type="button" class="admin-btn admin-btn-sm admin-btn-secondary" onclick="openAdminImageInNewTab()" style="color: #fff; border: 1px solid rgba(255,255,255,0.25); display: inline-flex; align-items: center; gap: 6px;">
+            <i class="fas fa-external-link-alt"></i> New Tab
+          </button>
+          <button type="button" onclick="closeModal('admin-image-lightbox-modal')" style="background: rgba(255,255,255,0.2); border: none; color: #fff; width: 34px; height: 34px; border-radius: 50%; font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.85)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'" title="Close Lightbox">
+            &times;
+          </button>
+        </div>
+      </div>
+      <!-- Image Display Area -->
+      <div style="max-width: 90vw; max-height: 82vh; overflow: auto; display: flex; align-items: center; justify-content: center; background: #020617; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); padding: 0.75rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+        <img id="admin-lightbox-img" src="" alt="Full Payment Proof" style="max-height: 78vh; max-width: 86vw; object-fit: contain; border-radius: 6px; cursor: zoom-in; transition: transform 0.2s;" onclick="toggleAdminLightboxZoom(this)">
+      </div>
+      <div style="font-size: 0.78rem; color: #94A3B8; margin-top: 0.5rem; display: flex; align-items: center; gap: 8px;">
+        <span><i class="fas fa-search-plus"></i> Click image to toggle zoom</span>
+        <span>&bull;</span>
+        <span>Press ESC to close</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Firebase Compat CDN Scripts -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -601,10 +634,13 @@
           </div>
           ${a.paymentProofUrl ? `
             <div style="text-align: center; margin-top: 0.75rem;">
-              <a href="${a.paymentProofUrl}" target="_blank">
-                <img src="${a.paymentProofUrl}" alt="Proof of Payment" style="max-height: 250px; max-width: 100%; border-radius: 8px; border: 1px solid var(--admin-border); object-fit: contain;">
-              </a>
-              <div style="font-size: 0.75rem; color: var(--admin-text-muted); margin-top: 4px;">Click image to inspect full size</div>
+              <div style="position: relative; display: inline-block; cursor: pointer; border-radius: 8px; overflow: hidden; background: #0B132B;" onclick="viewAdminScreenshot('${a.paymentProofUrl}', '${escapeHtml(sName)}')">
+                <img src="${a.paymentProofUrl}" alt="Proof of Payment" style="max-height: 250px; max-width: 100%; border-radius: 8px; border: 1px solid var(--admin-border); object-fit: contain; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(15,23,42,0.85); color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; display: flex; align-items: center; gap: 4px; pointer-events: none;">
+                  <i class="fas fa-search-plus" style="color: var(--admin-primary);"></i> Enlarge
+                </div>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--admin-text-muted); margin-top: 4px;">Click image to open high-resolution full screen</div>
             </div>
           ` : '<p style="color: var(--admin-text-muted); font-size: 0.85rem;">No payment receipt screenshot was attached to this application.</p>'}
         </div>
@@ -719,6 +755,78 @@
         },
         true // dangerous action
       );
+    }
+
+    // Admin Lightbox Controller
+    window._adminProofData = null;
+    window._adminProofStudentName = '';
+
+    function viewAdminScreenshot(url, studentName) {
+      if (!url) return;
+      window._adminProofData = url;
+      window._adminProofStudentName = studentName || 'Student';
+      const img = document.getElementById('admin-lightbox-img');
+      const title = document.getElementById('admin-lightbox-title');
+      if (img) {
+        img.src = url;
+        img.style.maxHeight = '78vh';
+        img.style.maxWidth = '86vw';
+        img.style.cursor = 'zoom-in';
+      }
+      if (title) {
+        title.textContent = `Payment Proof - ${studentName || 'Student'}`;
+      }
+      openModal('admin-image-lightbox-modal');
+    }
+
+    function toggleAdminLightboxZoom(imgEl) {
+      if (imgEl.style.maxHeight === 'none') {
+        imgEl.style.maxHeight = '78vh';
+        imgEl.style.maxWidth = '86vw';
+        imgEl.style.cursor = 'zoom-in';
+      } else {
+        imgEl.style.maxHeight = 'none';
+        imgEl.style.maxWidth = 'none';
+        imgEl.style.cursor = 'zoom-out';
+      }
+    }
+
+    function downloadAdminLightboxImage() {
+      const src = window._adminProofData;
+      if (!src) return;
+      const link = document.createElement('a');
+      link.href = src;
+      const safeName = (window._adminProofStudentName || 'payment_proof').replace(/[^a-zA-Z0-9]/g, '_');
+      link.download = `payment-proof-${safeName}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function openAdminImageInNewTab() {
+      const src = window._adminProofData;
+      if (!src) return;
+      if (src.startsWith('data:')) {
+        try {
+          const byteString = atob(src.split(',')[1]);
+          const mimeString = src.split(',')[0].split(':')[1].split(';')[0];
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+          }
+          const blob = new Blob([ab], { type: mimeString });
+          const blobUrl = URL.createObjectURL(blob);
+          window.open(blobUrl, '_blank');
+        } catch (e) {
+          const win = window.open();
+          if (win) {
+            win.document.write(`<title>Payment Proof - ${window._adminProofStudentName || 'Screenshot'}</title><body style="margin:0; background:#0B132B; display:flex; align-items:center; justify-content:center; min-height:100vh;"><img src="${src}" style="max-width:100%; max-height:100vh; object-fit:contain;"></body>`);
+          }
+        }
+      } else {
+        window.open(src, '_blank');
+      }
     }
   </script>
 </body>
