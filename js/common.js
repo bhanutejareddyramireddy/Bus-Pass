@@ -47,7 +47,7 @@ function showToast(message, type = 'info', title = null, duration = 4000) {
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) {
-    modal.classList.add('show');
+    modal.classList.add('show', 'active');
     document.body.style.overflow = 'hidden';
   }
 }
@@ -55,15 +55,15 @@ function openModal(modalId) {
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) {
-    modal.classList.remove('show');
+    modal.classList.remove('show', 'active');
     document.body.style.overflow = '';
   }
 }
 
 // Global modal backdrop close listener
 document.addEventListener('click', (e) => {
-  if (e.target.classList.contains('modal-backdrop')) {
-    e.target.classList.remove('show');
+  if (e.target.classList.contains('modal-backdrop') || e.target.classList.contains('admin-modal-backdrop')) {
+    e.target.classList.remove('show', 'active');
     document.body.style.overflow = '';
   }
 });

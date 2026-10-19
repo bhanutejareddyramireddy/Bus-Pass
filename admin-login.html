@@ -9,17 +9,18 @@
   <link rel="stylesheet" href="css/admin.css">
   <style>
     /* ========================================================
-       PRECISE REPLICA OF THE REQUESTED ADMIN ACCESS UI
+       FIXED NON-SCROLLABLE ADMIN ACCESS UI
        ======================================================== */
-    body.admin-exact-login {
+    html, body.admin-exact-login {
       margin: 0;
       padding: 0;
-      min-height: 100vh;
+      height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
       font-family: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       background: #0B132B url('images/admin-login-bg.jpg') no-repeat center center;
       background-size: cover;
       position: relative;
-      overflow-x: hidden;
       color: #FFFFFF;
       box-sizing: border-box;
     }
@@ -43,62 +44,63 @@
     .admin-exact-wrapper {
       position: relative;
       z-index: 2;
-      min-height: 100vh;
+      height: 100vh;
+      max-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 3.5rem 5.5rem;
+      padding: 2rem 4.5rem;
       box-sizing: border-box;
-      gap: 3.5rem;
-      max-width: 1680px;
+      gap: 3rem;
+      max-width: 1580px;
       margin: 0 auto;
     }
 
     /* LEFT BRAND & PROMO PANEL */
     .admin-exact-left {
       flex: 1.25;
-      max-width: 620px;
+      max-width: 580px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      min-height: 600px;
+      justify-content: center;
+      gap: 1.25rem;
     }
 
     .admin-brand-header {
       display: inline-flex;
       align-items: center;
-      gap: 0.85rem;
+      gap: 0.75rem;
       text-decoration: none;
-      margin-bottom: 2.5rem;
+      margin-bottom: 0.25rem;
     }
 
     .admin-brand-icon-sq {
-      width: 44px;
-      height: 44px;
+      width: 40px;
+      height: 40px;
       background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
-      border-radius: 12px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.35rem;
+      font-size: 1.25rem;
       color: #FFFFFF;
-      box-shadow: 0 8px 20px -3px rgba(79, 70, 229, 0.5);
+      box-shadow: 0 6px 16px -2px rgba(79, 70, 229, 0.5);
     }
 
     .admin-brand-logo-text {
-      font-size: 1.7rem;
+      font-size: 1.55rem;
       font-weight: 800;
       color: #FFFFFF;
       letter-spacing: -0.02em;
     }
 
     .admin-hero-heading {
-      font-size: 2.85rem;
+      font-size: 2.45rem;
       font-weight: 800;
       line-height: 1.15;
       letter-spacing: -0.03em;
       color: #FFFFFF;
-      margin-bottom: 1.15rem;
+      margin: 0;
     }
 
     .admin-hero-heading .purple-accent {
@@ -108,11 +110,11 @@
     }
 
     .admin-hero-desc {
-      font-size: 1.05rem;
+      font-size: 0.95rem;
       color: #E2E8F0;
-      line-height: 1.6;
-      margin-bottom: 2.5rem;
-      max-width: 520px;
+      line-height: 1.55;
+      margin: 0;
+      max-width: 500px;
       font-weight: 400;
       opacity: 0.95;
     }
@@ -121,21 +123,21 @@
     .admin-feature-cards {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
-      margin-bottom: 2.5rem;
-      max-width: 460px;
+      gap: 0.75rem;
+      max-width: 440px;
+      margin: 0;
     }
 
     .admin-feature-card {
       display: flex;
       align-items: center;
-      gap: 1.1rem;
+      gap: 0.95rem;
       background: rgba(15, 23, 42, 0.65);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 14px;
-      padding: 0.9rem 1.25rem;
+      border-radius: 12px;
+      padding: 0.75rem 1.1rem;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
       transition: transform 0.2s ease, border-color 0.2s ease;
     }
@@ -145,13 +147,13 @@
     }
 
     .admin-feat-icon-sq {
-      width: 42px;
-      height: 42px;
-      border-radius: 10px;
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.1rem;
+      font-size: 1rem;
       color: #FFFFFF;
       flex-shrink: 0;
     }
@@ -160,24 +162,25 @@
     .admin-feat-icon-sq.purple { background: #8B5CF6; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35); }
 
     .admin-feat-title {
-      font-size: 0.96rem;
+      font-size: 0.92rem;
       font-weight: 700;
       color: #FFFFFF;
-      margin-bottom: 0.15rem;
+      margin-bottom: 0.1rem;
     }
 
     .admin-feat-text {
-      font-size: 0.8rem;
+      font-size: 0.76rem;
       color: #94A3B8;
       line-height: 1.35;
     }
 
     .admin-bottom-tagline {
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       color: #CBD5E1;
-      line-height: 1.5;
+      line-height: 1.45;
       font-weight: 500;
       opacity: 0.85;
+      margin-top: 0.25rem;
     }
 
     /* RIGHT SIDE — FLOATING WHITE AUTH CARD */
@@ -190,74 +193,74 @@
 
     .admin-access-card {
       width: 100%;
-      max-width: 440px;
+      max-width: 420px;
       background: #FFFFFF;
-      border-radius: 24px;
-      padding: 2.75rem 2.25rem 2.25rem;
+      border-radius: 22px;
+      padding: 2.25rem 2rem 1.85rem;
       box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 0, 0, 0.1);
       box-sizing: border-box;
       position: relative;
     }
 
     .admin-card-top-icon {
-      width: 54px;
-      height: 54px;
-      border-radius: 14px;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
       background: #EEF2FF;
       border: 1px solid #E0E7FF;
       color: #4F46E5;
-      font-size: 1.45rem;
+      font-size: 1.35rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 1.15rem;
+      margin: 0 auto 0.85rem;
     }
 
     .admin-card-main-title {
-      font-size: 1.75rem;
+      font-size: 1.6rem;
       font-weight: 800;
       color: #1E293B;
       text-align: center;
-      margin-bottom: 0.35rem;
+      margin-bottom: 0.25rem;
       letter-spacing: -0.025em;
     }
 
     .admin-card-main-subtitle {
-      font-size: 0.88rem;
+      font-size: 0.84rem;
       color: #64748B;
       text-align: center;
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.65rem;
     }
 
     .admin-card-accent-pill {
-      width: 44px;
+      width: 40px;
       height: 3px;
       background: #4F46E5;
       border-radius: 9999px;
-      margin: 0 auto 1.75rem;
+      margin: 0 auto 1.35rem;
     }
 
     /* Form Fields */
     .admin-exact-field {
-      margin-bottom: 1.25rem;
+      margin-bottom: 1.15rem;
     }
 
     .admin-exact-label-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 0.45rem;
+      margin-bottom: 0.4rem;
     }
 
     .admin-exact-label {
-      font-size: 0.84rem;
+      font-size: 0.82rem;
       font-weight: 700;
       color: #1E293B;
       display: block;
     }
 
     .admin-exact-forgot-link {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: #4F46E5;
       text-decoration: none;
       font-weight: 600;
@@ -278,21 +281,21 @@
       position: absolute;
       left: 1rem;
       color: #94A3B8;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       pointer-events: none;
       transition: color 0.2s;
     }
 
     .admin-exact-input {
       width: 100%;
-      height: 46px;
+      height: 44px;
       background: #F8FAFC;
       border: 1px solid #E2E8F0;
       border-radius: 10px;
       color: #1E293B;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       font-family: inherit;
-      padding: 0.65rem 2.75rem 0.65rem 2.65rem;
+      padding: 0.65rem 2.65rem 0.65rem 2.65rem;
       outline: none;
       transition: all 0.2s ease;
       box-sizing: border-box;
@@ -329,28 +332,28 @@
     /* Submit Button */
     .admin-exact-submit-btn {
       width: 100%;
-      height: 48px;
+      height: 46px;
       background: linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #7C3AED 100%);
       color: #FFFFFF;
       border: none;
       border-radius: 12px;
-      font-size: 0.98rem;
+      font-size: 0.95rem;
       font-weight: 700;
       cursor: pointer;
       transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.65rem;
-      box-shadow: 0 8px 20px -4px rgba(79, 70, 229, 0.42);
+      gap: 0.6rem;
+      box-shadow: 0 8px 18px -4px rgba(79, 70, 229, 0.4);
       font-family: inherit;
-      margin-top: 1.5rem;
+      margin-top: 1.25rem;
       box-sizing: border-box;
     }
 
     .admin-exact-submit-btn:hover:not(:disabled) {
       background: linear-gradient(135deg, #4338CA 0%, #4F46E5 50%, #6D28D9 100%);
-      box-shadow: 0 10px 24px -4px rgba(79, 70, 229, 0.55);
+      box-shadow: 0 10px 22px -4px rgba(79, 70, 229, 0.5);
       transform: translateY(-1px);
     }
 
@@ -364,7 +367,7 @@
     .admin-exact-divider {
       position: relative;
       text-align: center;
-      margin: 1.5rem 0 1.25rem;
+      margin: 1.25rem 0 1rem;
     }
     .admin-exact-divider::before {
       content: '';
@@ -379,7 +382,7 @@
       position: relative;
       background: #FFFFFF;
       padding: 0 0.85rem;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 700;
       color: #94A3B8;
       text-transform: uppercase;
@@ -390,49 +393,49 @@
     .admin-exact-note-card {
       background: #F1F5FD;
       border: 1px solid #E0E7FF;
-      border-radius: 14px;
-      padding: 0.85rem 1rem;
+      border-radius: 12px;
+      padding: 0.75rem 0.95rem;
       display: flex;
       align-items: flex-start;
-      gap: 0.85rem;
+      gap: 0.75rem;
     }
 
     .admin-note-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
       background: #EEF2FF;
       color: #4F46E5;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.95rem;
+      font-size: 0.88rem;
       flex-shrink: 0;
       margin-top: 2px;
     }
 
     .admin-note-title {
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 700;
       color: #1E293B;
-      margin-bottom: 0.15rem;
+      margin-bottom: 0.1rem;
     }
 
     .admin-note-text {
-      font-size: 0.75rem;
+      font-size: 0.74rem;
       color: #64748B;
-      line-height: 1.4;
+      line-height: 1.35;
     }
 
     /* Alert Banner */
     .admin-auth-alert {
-      padding: 0.75rem 0.9rem;
+      padding: 0.7rem 0.85rem;
       border-radius: 8px;
-      font-size: 0.82rem;
-      margin-bottom: 1.25rem;
+      font-size: 0.8rem;
+      margin-bottom: 1rem;
       display: none;
       align-items: flex-start;
-      gap: 0.6rem;
+      gap: 0.55rem;
       line-height: 1.4;
     }
     .admin-auth-alert.danger {
@@ -447,10 +450,10 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-top: 1.25rem;
-      padding-top: 1rem;
+      margin-top: 1.1rem;
+      padding-top: 0.9rem;
       border-top: 1px solid #F1F5F9;
-      font-size: 0.78rem;
+      font-size: 0.76rem;
     }
     .admin-sub-links a {
       color: #64748B;
@@ -466,26 +469,24 @@
       text-decoration: underline;
     }
 
-    /* Responsive adjustments */
-    @media (max-width: 1200px) {
-      .admin-exact-wrapper {
-        padding: 3rem 3rem;
-        gap: 2.5rem;
+    /* Responsive adjustments for smaller screens or mobile */
+    @media (max-width: 1024px), (max-height: 680px) {
+      html, body.admin-exact-login {
+        height: auto;
+        min-height: 100vh;
+        max-height: none;
+        overflow-y: auto;
       }
-      .admin-hero-heading {
-        font-size: 2.35rem;
-      }
-    }
-
-    @media (max-width: 1024px) {
       .admin-exact-wrapper {
+        height: auto;
+        min-height: 100vh;
+        max-height: none;
         flex-direction: column;
         padding: 2.5rem 1.75rem;
-        gap: 3rem;
+        gap: 2.5rem;
       }
       .admin-exact-left {
         max-width: 100%;
-        min-height: auto;
       }
       .admin-exact-right {
         justify-content: center;
@@ -498,10 +499,10 @@
 
     @media (max-width: 480px) {
       .admin-exact-wrapper {
-        padding: 2rem 1.25rem;
+        padding: 1.75rem 1rem;
       }
       .admin-access-card {
-        padding: 2rem 1.5rem 1.75rem;
+        padding: 1.75rem 1.25rem 1.5rem;
       }
       .admin-hero-heading {
         font-size: 1.95rem;
@@ -667,7 +668,6 @@
 
           <div class="admin-sub-links">
             <a href="index.html"><i class="fas fa-arrow-left"></i> Public Portal</a>
-            <a href="#" onclick="openBootstrapModal(event)"><i class="fas fa-terminal"></i> Setup Guide</a>
             <a href="vendor-login.html"><i class="fas fa-user-tie"></i> Vendor Login</a>
           </div>
 
@@ -688,7 +688,7 @@
       <form id="forgot-pass-form">
         <div class="admin-modal-body">
           <p style="font-size: 0.86rem; color: var(--admin-text-muted); margin-bottom: 1.25rem; line-height: 1.5;">
-            Enter your registered Super Administrator email. A secure password recovery link will be dispatched via Firebase Authentication.
+            Enter your registered Super Administrator email. Only authorized Super Admin accounts will receive a recovery link.
           </p>
           <div class="admin-form-group">
             <label class="admin-form-label" for="reset-email">Admin Email <span class="required">*</span></label>
@@ -702,38 +702,6 @@
           </button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- Bootstrap Setup Guide Modal -->
-  <div class="admin-modal-backdrop" id="bootstrap-modal">
-    <div class="admin-modal-dialog">
-      <div class="admin-modal-header">
-        <h3 class="admin-modal-title"><i class="fas fa-terminal text-primary"></i> Super Admin Setup Guide</h3>
-        <button class="admin-modal-close" onclick="closeModal('bootstrap-modal')" title="Close">&times;</button>
-      </div>
-      <div class="admin-modal-body" style="font-size: 0.88rem; color: var(--admin-text-main); line-height: 1.6;">
-        <p style="margin-bottom: 0.85rem;">
-          For maximum enterprise security, Super Administrator accounts are initialized via an authorized one-time CLI bootstrap command on your console.
-        </p>
-
-        <div style="background: #0B132B; color: #E2E8F0; padding: 1rem 1.25rem; border-radius: 8px; font-family: var(--admin-font-mono); font-size: 0.82rem; margin-bottom: 1.25rem; border: 1px solid #1E293B;">
-          <span style="color: #64748B;"># Run in your project directory:</span><br>
-          <strong style="color: #818CF8;">node scripts/bootstrap-superadmin.js</strong><br><br>
-          <span style="color: #64748B;"># Or specify a custom administrator email:</span><br>
-          <strong style="color: #818CF8;">node scripts/bootstrap-superadmin.js owner@yourdomain.com</strong>
-        </div>
-
-        <ol style="padding-left: 1.25rem; color: var(--admin-text-muted); margin-bottom: 1rem;">
-          <li style="margin-bottom: 0.35rem;">The bootstrap tool generates a <strong>cryptographically secure one-time password</strong>.</li>
-          <li style="margin-bottom: 0.35rem;">It provisions your Firebase Auth record and registers role as <code>superadmin</code>.</li>
-          <li style="margin-bottom: 0.35rem;">Upon your first login, the system mandates that you set your permanent personal password.</li>
-          <li>No administrator passwords are ever stored in source code or Firestore documents.</li>
-        </ol>
-      </div>
-      <div class="admin-modal-footer">
-        <button type="button" class="admin-btn admin-btn-primary" onclick="closeModal('bootstrap-modal')">Understood</button>
-      </div>
     </div>
   </div>
 
@@ -764,11 +732,6 @@
       e.preventDefault();
       document.getElementById('reset-email').value = document.getElementById('admin-email').value;
       openModal('forgot-modal');
-    }
-
-    function openBootstrapModal(e) {
-      e.preventDefault();
-      openModal('bootstrap-modal');
     }
 
     function setAuthAlert(message, type = 'danger') {
@@ -811,7 +774,6 @@
         const result = await loginSuperAdmin(email, password);
 
         if (result.mustChangePassword) {
-          // Mandatory password reset on first login
           promptFirstTimePasswordChange();
         } else {
           showToast("Super Admin verified! Redirecting to HQ Dashboard...", "success");
@@ -833,11 +795,11 @@
       const email = document.getElementById('reset-email').value.trim();
       const btn = document.getElementById('reset-btn');
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Sending...';
+      btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Verifying...';
 
       try {
         await sendAdminPasswordReset(email);
-        showToast("Password reset link sent to your email.", "success");
+        showToast("Administrator password reset link dispatched to your email.", "success");
         closeModal('forgot-modal');
       } catch (err) {
         showToast(err.message, "danger");

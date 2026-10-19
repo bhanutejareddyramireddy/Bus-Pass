@@ -83,7 +83,7 @@
         </div>
 
         <div class="split-form-row">
-          <a href="#" onclick="showToast('Please contact master administration to reset vendor credentials.', 'info'); return false;" class="split-forgot-link">Forgot Password?</a>
+          <a href="#" id="vendor-forgot-link" class="split-forgot-link">Forgot Password?</a>
         </div>
 
         <button type="submit" id="login-btn" class="split-btn-primary">
@@ -99,6 +99,33 @@
         <a href="login.html"><i class="fas fa-graduation-cap"></i> Student Login</a>
         <a href="conductor-login.html"><i class="fas fa-id-badge"></i> Conductor Login</a>
       </div>
+    </div>
+  </div>
+
+  <!-- Vendor Forgot Password Modal -->
+  <div class="modal-backdrop" id="vendor-forgot-modal">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fas fa-key" style="color: var(--primary);"></i> Reset Vendor Password</h3>
+        <button type="button" class="modal-close-btn" onclick="closeModal('vendor-forgot-modal')">&times;</button>
+      </div>
+      <form id="vendor-forgot-form">
+        <div class="modal-body" style="padding: 1.25rem 1.5rem;">
+          <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.5;">
+            Enter your registered Vendor email. A secure password reset link will only be sent if this email belongs to a verified Vendor account.
+          </p>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="vendor-reset-email">Vendor Email <span style="color: var(--danger);">*</span></label>
+            <input type="email" id="vendor-reset-email" class="form-control" placeholder="vendor@example.com" required autocomplete="email">
+          </div>
+        </div>
+        <div class="modal-footer" style="padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border-color); background: var(--bg-surface);">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('vendor-forgot-modal')">Cancel</button>
+          <button type="submit" id="vendor-reset-btn" class="btn btn-primary">
+            <i class="fas fa-paper-plane"></i> Send Reset Link
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -146,6 +173,46 @@
         btn.innerHTML = 'Login';
       }
     });
+
+    // Forgot Password Handling
+    const forgotLink = document.getElementById('vendor-forgot-link');
+    const forgotForm = document.getElementById('vendor-forgot-form');
+    const forgotBtn = document.getElementById('vendor-reset-btn');
+    const resetEmailInput = document.getElementById('vendor-reset-email');
+
+    if (forgotLink) {
+      forgotLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        const currentEmail = document.getElementById('email').value.trim();
+        if (currentEmail) resetEmailInput.value = currentEmail;
+        openModal('vendor-forgot-modal');
+        setTimeout(() => resetEmailInput.focus(), 150);
+      });
+    }
+
+    if (forgotForm) {
+      forgotForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = resetEmailInput.value.trim();
+        if (!email) return;
+
+        forgotBtn.disabled = true;
+        const originalHtml = forgotBtn.innerHTML;
+        forgotBtn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Sending...';
+
+        try {
+          await sendVendorPasswordReset(email);
+          showToast("Password reset link sent! Check your inbox.", "success", "Email Dispatched");
+          closeModal('vendor-forgot-modal');
+          forgotForm.reset();
+        } catch (err) {
+          showToast(err.message, "danger", "Reset Failed");
+        } finally {
+          forgotBtn.disabled = false;
+          forgotBtn.innerHTML = originalHtml;
+        }
+      });
+    }
 
     // Auto-redirect if already logged in as vendor (skip if logged out)
     auth.onAuthStateChanged(async (user) => {

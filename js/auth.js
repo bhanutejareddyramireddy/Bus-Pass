@@ -248,6 +248,94 @@ async function loginStudent(email, password) {
   }
 }
 
+/**
+ * Vendor Password Reset
+ * Strictly verifies account possesses role 'vendor' in Firestore before dispatching reset email
+ */
+async function sendVendorPasswordReset(email) {
+  try {
+    const rawEmail = (email || '').trim();
+    const cleanEmail = rawEmail.toLowerCase();
+    if (!cleanEmail) throw new Error("Please enter your registered vendor email address.");
+
+    let snap = await db.collection('users').where('email', '==', cleanEmail).limit(1).get();
+    if (snap.empty && rawEmail !== cleanEmail) {
+      snap = await db.collection('users').where('email', '==', rawEmail).limit(1).get();
+    }
+
+    if (snap.empty) {
+      throw new Error("No vendor account found with this email address.");
+    }
+
+    const userData = snap.docs[0].data();
+    if (userData.role !== 'vendor') {
+      throw new Error("Access Denied: This email does not belong to a Vendor account.");
+    }
+
+    if (userData.status === 'Suspended') {
+      throw new Error("This vendor account has been suspended. Please contact master administration.");
+    }
+
+    await auth.sendPasswordResetEmail(cleanEmail);
+    return true;
+  } catch (error) {
+    console.error("Vendor password reset error:", error);
+    let msg = error.message;
+    if (error.code === 'auth/user-not-found') {
+      msg = "No vendor account found with this email address in authentication.";
+    } else if (error.code === 'auth/invalid-email') {
+      msg = "Please enter a valid email address.";
+    } else if (error.code === 'auth/too-many-requests') {
+      msg = "Too many reset attempts. Please wait a moment and try again.";
+    }
+    throw new Error(msg);
+  }
+}
+
+/**
+ * Student Password Reset
+ * Strictly verifies account possesses role 'student' in Firestore before dispatching reset email
+ */
+async function sendStudentPasswordReset(email) {
+  try {
+    const rawEmail = (email || '').trim();
+    const cleanEmail = rawEmail.toLowerCase();
+    if (!cleanEmail) throw new Error("Please enter your registered student email address.");
+
+    let snap = await db.collection('users').where('email', '==', cleanEmail).limit(1).get();
+    if (snap.empty && rawEmail !== cleanEmail) {
+      snap = await db.collection('users').where('email', '==', rawEmail).limit(1).get();
+    }
+
+    if (snap.empty) {
+      throw new Error("No student account found with this email address.");
+    }
+
+    const userData = snap.docs[0].data();
+    if (userData.role !== 'student') {
+      throw new Error("Access Denied: This email does not belong to a Student account.");
+    }
+
+    if (userData.status === 'Suspended') {
+      throw new Error("This student account has been suspended. Please contact campus administration.");
+    }
+
+    await auth.sendPasswordResetEmail(cleanEmail);
+    return true;
+  } catch (error) {
+    console.error("Student password reset error:", error);
+    let msg = error.message;
+    if (error.code === 'auth/user-not-found') {
+      msg = "No student account found with this email address in authentication.";
+    } else if (error.code === 'auth/invalid-email') {
+      msg = "Please enter a valid email address.";
+    } else if (error.code === 'auth/too-many-requests') {
+      msg = "Too many reset attempts. Please wait a moment and try again.";
+    }
+    throw new Error(msg);
+  }
+}
+
 // Conductor Login using Conductor ID & Password (No email typed)
 async function loginConductor(conductorId, password) {
   try {

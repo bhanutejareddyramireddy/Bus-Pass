@@ -105,18 +105,43 @@ async function loginSuperAdmin(email, password) {
 
 /**
  * Super Admin Password Reset
+ * Strictly verifies account possesses role 'superadmin' in Firestore before dispatching reset email
  */
 async function sendAdminPasswordReset(email) {
   try {
-    const cleanEmail = (email || '').trim().toLowerCase();
+    const rawEmail = (email || '').trim();
+    const cleanEmail = rawEmail.toLowerCase();
     if (!cleanEmail) throw new Error("Please enter your registered administrator email.");
+
+    // Verify account exists in Firestore and has role 'superadmin'
+    let snap = await db.collection('users').where('email', '==', cleanEmail).limit(1).get();
+    if (snap.empty && rawEmail !== cleanEmail) {
+      snap = await db.collection('users').where('email', '==', rawEmail).limit(1).get();
+    }
+    if (snap.empty) {
+      throw new Error("No administrator account found with this email address.");
+    }
+
+    const userData = snap.docs[0].data();
+    if (userData.role !== 'superadmin') {
+      throw new Error("Access Denied: This email does not belong to a Super Administrator account.");
+    }
+
+    if (userData.status === 'Suspended') {
+      throw new Error("This administrator account has been suspended. Contact infrastructure support.");
+    }
+
     await auth.sendPasswordResetEmail(cleanEmail);
     return true;
   } catch (error) {
     console.error("Admin password reset error:", error);
     let msg = error.message;
     if (error.code === 'auth/user-not-found') {
-      msg = "No administrator account found with this email.";
+      msg = "No administrator account found with this email address in authentication.";
+    } else if (error.code === 'auth/invalid-email') {
+      msg = "Please enter a valid email address.";
+    } else if (error.code === 'auth/too-many-requests') {
+      msg = "Too many reset attempts. Please wait a moment and try again.";
     }
     throw new Error(msg);
   }
