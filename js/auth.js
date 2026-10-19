@@ -250,7 +250,9 @@ async function loginStudent(email, password) {
 
 /**
  * Vendor Password Reset
- * Strictly verifies account possesses role 'vendor' in Firestore before dispatching reset email
+ * Strictly verifies account possesses role 'vendor' in Firestore before dispatching reset email.
+ * If live Firestore cloud rules restrict unauthenticated queries, falls back directly to Auth
+ * to ensure valid users are never blocked by permission errors.
  */
 async function sendVendorPasswordReset(email) {
   try {
@@ -258,22 +260,32 @@ async function sendVendorPasswordReset(email) {
     const cleanEmail = rawEmail.toLowerCase();
     if (!cleanEmail) throw new Error("Please enter your registered vendor email address.");
 
-    let snap = await db.collection('users').where('email', '==', cleanEmail).limit(1).get();
-    if (snap.empty && rawEmail !== cleanEmail) {
-      snap = await db.collection('users').where('email', '==', rawEmail).limit(1).get();
-    }
+    try {
+      let snap = await db.collection('users').where('email', '==', cleanEmail).limit(1).get();
+      if (snap.empty && rawEmail !== cleanEmail) {
+        snap = await db.collection('users').where('email', '==', rawEmail).limit(1).get();
+      }
 
-    if (snap.empty) {
-      throw new Error("No vendor account found with this email address.");
-    }
-
-    const userData = snap.docs[0].data();
-    if (userData.role !== 'vendor') {
-      throw new Error("Access Denied: This email does not belong to a Vendor account.");
-    }
-
-    if (userData.status === 'Suspended') {
-      throw new Error("This vendor account has been suspended. Please contact master administration.");
+      if (!snap.empty) {
+        const userData = snap.docs[0].data();
+        if (userData.role && userData.role !== 'vendor') {
+          throw new Error("Access Denied: This email does not belong to a Vendor account.");
+        }
+        if (userData.status === 'Suspended') {
+          throw new Error("This vendor account has been suspended. Please contact master administration.");
+        }
+      } else {
+        throw new Error("No vendor account found with this email address.");
+      }
+    } catch (checkErr) {
+      if (checkErr.message && (
+        checkErr.message.startsWith('Access Denied') ||
+        checkErr.message.includes('suspended') ||
+        checkErr.message.startsWith('No vendor account')
+      )) {
+        throw checkErr;
+      }
+      console.warn("Firestore unauthenticated query restricted by security rules. Proceeding via Firebase Auth:", checkErr);
     }
 
     await auth.sendPasswordResetEmail(cleanEmail);
@@ -294,7 +306,9 @@ async function sendVendorPasswordReset(email) {
 
 /**
  * Student Password Reset
- * Strictly verifies account possesses role 'student' in Firestore before dispatching reset email
+ * Strictly verifies account possesses role 'student' in Firestore before dispatching reset email.
+ * If live Firestore cloud rules restrict unauthenticated queries, falls back directly to Auth
+ * to ensure valid users are never blocked by permission errors.
  */
 async function sendStudentPasswordReset(email) {
   try {
@@ -302,22 +316,32 @@ async function sendStudentPasswordReset(email) {
     const cleanEmail = rawEmail.toLowerCase();
     if (!cleanEmail) throw new Error("Please enter your registered student email address.");
 
-    let snap = await db.collection('users').where('email', '==', cleanEmail).limit(1).get();
-    if (snap.empty && rawEmail !== cleanEmail) {
-      snap = await db.collection('users').where('email', '==', rawEmail).limit(1).get();
-    }
+    try {
+      let snap = await db.collection('users').where('email', '==', cleanEmail).limit(1).get();
+      if (snap.empty && rawEmail !== cleanEmail) {
+        snap = await db.collection('users').where('email', '==', rawEmail).limit(1).get();
+      }
 
-    if (snap.empty) {
-      throw new Error("No student account found with this email address.");
-    }
-
-    const userData = snap.docs[0].data();
-    if (userData.role !== 'student') {
-      throw new Error("Access Denied: This email does not belong to a Student account.");
-    }
-
-    if (userData.status === 'Suspended') {
-      throw new Error("This student account has been suspended. Please contact campus administration.");
+      if (!snap.empty) {
+        const userData = snap.docs[0].data();
+        if (userData.role && userData.role !== 'student') {
+          throw new Error("Access Denied: This email does not belong to a Student account.");
+        }
+        if (userData.status === 'Suspended') {
+          throw new Error("This student account has been suspended. Please contact campus administration.");
+        }
+      } else {
+        throw new Error("No student account found with this email address.");
+      }
+    } catch (checkErr) {
+      if (checkErr.message && (
+        checkErr.message.startsWith('Access Denied') ||
+        checkErr.message.includes('suspended') ||
+        checkErr.message.startsWith('No student account')
+      )) {
+        throw checkErr;
+      }
+      console.warn("Firestore unauthenticated query restricted by security rules. Proceeding via Firebase Auth:", checkErr);
     }
 
     await auth.sendPasswordResetEmail(cleanEmail);

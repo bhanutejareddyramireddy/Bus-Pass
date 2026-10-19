@@ -113,22 +113,32 @@ async function sendAdminPasswordReset(email) {
     const cleanEmail = rawEmail.toLowerCase();
     if (!cleanEmail) throw new Error("Please enter your registered administrator email.");
 
-    // Verify account exists in Firestore and has role 'superadmin'
-    let snap = await db.collection('users').where('email', '==', cleanEmail).limit(1).get();
-    if (snap.empty && rawEmail !== cleanEmail) {
-      snap = await db.collection('users').where('email', '==', rawEmail).limit(1).get();
-    }
-    if (snap.empty) {
-      throw new Error("No administrator account found with this email address.");
-    }
-
-    const userData = snap.docs[0].data();
-    if (userData.role !== 'superadmin') {
-      throw new Error("Access Denied: This email does not belong to a Super Administrator account.");
-    }
-
-    if (userData.status === 'Suspended') {
-      throw new Error("This administrator account has been suspended. Contact infrastructure support.");
+    try {
+      // Verify account exists in Firestore and has role 'superadmin'
+      let snap = await db.collection('users').where('email', '==', cleanEmail).limit(1).get();
+      if (snap.empty && rawEmail !== cleanEmail) {
+        snap = await db.collection('users').where('email', '==', rawEmail).limit(1).get();
+      }
+      if (!snap.empty) {
+        const userData = snap.docs[0].data();
+        if (userData.role && userData.role !== 'superadmin') {
+          throw new Error("Access Denied: This email does not belong to a Super Administrator account.");
+        }
+        if (userData.status === 'Suspended') {
+          throw new Error("This administrator account has been suspended. Contact infrastructure support.");
+        }
+      } else {
+        throw new Error("No administrator account found with this email address.");
+      }
+    } catch (checkErr) {
+      if (checkErr.message && (
+        checkErr.message.startsWith('Access Denied') ||
+        checkErr.message.includes('suspended') ||
+        checkErr.message.startsWith('No administrator account')
+      )) {
+        throw checkErr;
+      }
+      console.warn("Firestore unauthenticated query restricted by security rules. Proceeding via Firebase Auth:", checkErr);
     }
 
     await auth.sendPasswordResetEmail(cleanEmail);

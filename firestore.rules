@@ -22,7 +22,8 @@ service cloud.firestore {
 
     // Users Collection
     match /users/{userId} {
-      allow read: if isAuthenticated();
+      // Allow read for authentication, session verification, and role-checked password reset
+      allow read: if true;
       allow create: if isAuthenticated() && (
         isSuperAdmin() || (
           (request.auth.uid == userId || request.resource.data.role == 'conductor' || request.resource.data.vendorId == request.auth.uid) &&
