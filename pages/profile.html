@@ -117,7 +117,7 @@
                 <label class="form-label" for="std-name">Full Name <span class="required">*</span></label>
                 <div class="input-icon-group">
                   <i class="fas fa-user input-icon"></i>
-                  <input type="text" id="std-name" class="form-control" required placeholder="Enter your full legal name">
+                  <input type="text" id="std-name" class="form-control" required placeholder="Enter your full legal name" pattern="[a-zA-Z\s]+" title="Full name must contain only letters and spaces (no numbers or special characters)" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')">
                 </div>
               </div>
 
@@ -305,8 +305,17 @@
 
     document.getElementById('student-profile-form').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const rawName = document.getElementById('std-name').value;
+      const cleanName = rawName.trim();
       const rawPhone = document.getElementById('std-phone').value;
       const cleanPhone = rawPhone.trim().replace(/[^0-9]/g, '');
+
+      if (!cleanName || !/^[A-Za-z\s]+$/.test(cleanName)) {
+        showToast("Full Name must contain only letters and spaces (no numbers or special characters).", "warning");
+        document.getElementById('std-name').focus();
+        return;
+      }
+
       if (cleanPhone.length !== 10) {
         showToast("Mobile number must be exactly 10 digits.", "warning");
         document.getElementById('std-phone').focus();
@@ -318,7 +327,7 @@
       btn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Saving...';
 
       const updated = {
-        name: document.getElementById('std-name').value.trim(),
+        name: cleanName,
         phone: cleanPhone,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };

@@ -42,12 +42,18 @@
             <h1><i class="fas fa-route text-primary"></i> Transit Routes & Fleet Vehicles</h1>
             <p>Platform-wide monitoring of designated transit corridors, stop fare stages, and registered buses.</p>
           </div>
-          <div class="admin-header-actions">
+          <div class="admin-header-actions" style="display: flex; gap: 0.5rem; align-items: center;">
+            <button class="admin-btn admin-btn-danger" id="purge-orphans-fleet-btn" style="display: none;" onclick="purgeOrphanedFleet()">
+              <i class="fas fa-broom"></i> Purge Orphaned Routes &amp; Buses
+            </button>
             <button class="admin-btn admin-btn-secondary" onclick="loadFleetRoutesData()">
               <i class="fas fa-sync-alt" id="refresh-icon"></i> Refresh
             </button>
           </div>
         </div>
+
+        <!-- Orphaned Routes & Fleet Alert Banner -->
+        <div id="orphaned-routes-banner-wrap"></div>
 
         <!-- Mini Stats Grid -->
         <div class="admin-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.5rem;">
@@ -185,7 +191,10 @@
       <div class="admin-modal-body" id="route-inspect-body">
         <!-- Injected -->
       </div>
-      <div class="admin-modal-footer">
+      <div class="admin-modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" id="modal-delete-route-btn" class="admin-btn admin-btn-danger">
+          <i class="fas fa-trash-alt"></i> Delete Route
+        </button>
         <button type="button" class="admin-btn admin-btn-secondary" onclick="closeModal('route-inspect-modal')">Close</button>
       </div>
     </div>
@@ -201,7 +210,10 @@
       <div class="admin-modal-body" id="bus-inspect-body">
         <!-- Injected -->
       </div>
-      <div class="admin-modal-footer">
+      <div class="admin-modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" id="modal-delete-bus-btn" class="admin-btn admin-btn-danger">
+          <i class="fas fa-trash-alt"></i> Delete Bus
+        </button>
         <button type="button" class="admin-btn admin-btn-secondary" onclick="closeModal('bus-inspect-modal')">Close</button>
       </div>
     </div>
@@ -257,7 +269,6 @@
           vendorsMap[v.id] = v;
           vendorOptions += `<option value="${v.id}">${escapeHtml(name)}</option>`;
         });
-        vendorSelect.innerHTML = vendorOptions;
 
         conductorsMap = {};
         condsSnap.forEach(doc => {
@@ -285,6 +296,42 @@
           allRoutes.push(r);
           totalStops += (r.stops || []).length;
         });
+
+        // Detect orphaned routes and fleet
+        const orphanedRoutes = allRoutes.filter(r => !r.vendorId || !vendorsMap[r.vendorId]);
+        const orphanedBuses = allBuses.filter(b => !b.vendorId || !vendorsMap[b.vendorId]);
+        const totalFleetOrphans = orphanedRoutes.length + orphanedBuses.length;
+
+        if (totalFleetOrphans > 0) {
+          vendorOptions += `<option value="orphaned" style="color: #DC2626; font-weight: bold;">⚠️ Orphaned (${orphanedRoutes.length} routes, ${orphanedBuses.length} buses)</option>`;
+        }
+        vendorSelect.innerHTML = vendorOptions;
+
+        // Display banner and purge button if orphans exist
+        const bannerWrap = document.getElementById('orphaned-routes-banner-wrap');
+        const purgeBtn = document.getElementById('purge-orphans-fleet-btn');
+        if (totalFleetOrphans > 0) {
+          if (bannerWrap) {
+            bannerWrap.innerHTML = `
+              <div class="admin-alert" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; background: #FEF2F2; border: 1px solid #F87171; border-radius: 8px; padding: 1rem 1.25rem; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; color: #991B1B;">
+                  <i class="fas fa-exclamation-triangle" style="font-size: 1.35rem;"></i>
+                  <div>
+                    <div style="font-weight: 700; font-size: 0.95rem;">Orphaned Transit Fleet Detected (${orphanedRoutes.length} Routes, ${orphanedBuses.length} Buses)</div>
+                    <div style="font-size: 0.82rem; color: #7F1D1D;">These corridors and fleet vehicles were created by vendor accounts that have been deleted from the database.</div>
+                  </div>
+                </div>
+                <button class="admin-btn admin-btn-danger" onclick="purgeOrphanedFleet()" style="white-space: nowrap;">
+                  <i class="fas fa-broom"></i> Purge All Orphaned Routes &amp; Buses
+                </button>
+              </div>
+            `;
+          }
+          if (purgeBtn) purgeBtn.style.display = 'inline-flex';
+        } else {
+          if (bannerWrap) bannerWrap.innerHTML = '';
+          if (purgeBtn) purgeBtn.style.display = 'none';
+        }
 
         document.getElementById('mini-total-routes').textContent = allRoutes.length;
         document.getElementById('mini-total-buses').textContent = allBuses.length;
@@ -322,7 +369,11 @@
 
       if (currentView === 'routes') {
         filteredRoutes = allRoutes.filter(r => {
-          if (vendorFilter !== 'all' && r.vendorId !== vendorFilter) return false;
+          if (vendorFilter === 'orphaned') {
+            if (r.vendorId && vendorsMap[r.vendorId]) return false;
+          } else if (vendorFilter !== 'all' && r.vendorId !== vendorFilter) {
+            return false;
+          }
           if (query) {
             const name = (r.name || r.routeName || '').toLowerCase();
             const src = (r.source || r.startPoint || '').toLowerCase();
@@ -340,7 +391,11 @@
         renderRoutesTable();
       } else {
         filteredBuses = allBuses.filter(b => {
-          if (vendorFilter !== 'all' && b.vendorId !== vendorFilter) return false;
+          if (vendorFilter === 'orphaned') {
+            if (b.vendorId && vendorsMap[b.vendorId]) return false;
+          } else if (vendorFilter !== 'all' && b.vendorId !== vendorFilter) {
+            return false;
+          }
           if (query) {
             const plate = (b.busNumber || b.plateNumber || b.registrationNo || '').toLowerCase();
             const model = (b.model || b.type || '').toLowerCase();
@@ -387,13 +442,14 @@
       const paginated = paginateTable(filteredRoutes, routesCurrentPage, PAGE_SIZE);
 
       tbody.innerHTML = paginated.items.map(r => {
+        const isOrphaned = !r.vendorId || !vendorsMap[r.vendorId];
         const v = vendorsMap[r.vendorId];
-        const vName = v ? (v.businessName || v.name || v.email) : 'Unassigned';
+        const vName = v ? (v.businessName || v.name || v.email) : 'Deleted Vendor';
         const stopsCount = (r.stops || []).length;
         const assignedBuses = (busesByRoute[r.id] || busesByRoute[r.name] || []);
 
         return `
-          <tr>
+          <tr style="${isOrphaned ? 'background: #FFFBFB;' : ''}">
             <td>
               <div style="font-weight: 600; color: var(--admin-text-main); font-size: 0.95rem;">
                 ${escapeHtml(r.name || r.routeName || 'Unnamed Route')}
@@ -412,6 +468,13 @@
             </td>
             <td>
               <div style="font-weight: 500;"><i class="fas fa-building" style="font-size: 0.75rem; color: var(--admin-primary); margin-right: 4px;"></i> ${escapeHtml(vName)}</div>
+              ${isOrphaned ? `
+                <div style="margin-top: 3px;">
+                  <span class="admin-badge admin-badge-danger" style="font-size: 0.7rem; padding: 2px 6px;">
+                    <i class="fas fa-exclamation-triangle"></i> Deleted Vendor (Orphaned)
+                  </span>
+                </div>
+              ` : ''}
             </td>
             <td>
               <span class="admin-badge admin-badge-info">
@@ -428,9 +491,14 @@
               </span>
             </td>
             <td style="text-align: right;">
-              <button class="admin-btn admin-btn-sm admin-btn-secondary" onclick="inspectRoute('${r.id}')">
-                <i class="fas fa-eye"></i> Details
-              </button>
+              <div style="display: flex; gap: 0.35rem; justify-content: flex-end;">
+                <button class="admin-btn admin-btn-sm admin-btn-secondary" onclick="inspectRoute('${r.id}')" title="Route Details">
+                  <i class="fas fa-eye"></i> Details
+                </button>
+                <button class="admin-btn admin-btn-sm admin-btn-danger" onclick="promptDeleteRoute('${r.id}', '${escapeHtml(r.name || r.routeName || 'Route')}')" title="Permanently Delete Route">
+                  <i class="fas fa-trash-alt"></i> Delete
+                </button>
+              </div>
             </td>
           </tr>
         `;
@@ -465,13 +533,14 @@
       const paginated = paginateTable(filteredBuses, busesCurrentPage, PAGE_SIZE);
 
       tbody.innerHTML = paginated.items.map(b => {
+        const isOrphaned = !b.vendorId || !vendorsMap[b.vendorId];
         const v = vendorsMap[b.vendorId];
-        const vName = v ? (v.businessName || v.name || v.email) : 'Unassigned';
+        const vName = v ? (v.businessName || v.name || v.email) : 'Deleted Vendor';
         const cond = conductorsMap[b.conductorId] || conductorsMap[b.assignedConductor];
         const condName = cond ? (cond.name || cond.email) : 'Unassigned';
 
         return `
-          <tr>
+          <tr style="${isOrphaned ? 'background: #FFFBFB;' : ''}">
             <td>
               <div style="font-weight: 700; color: var(--admin-text-main); font-family: monospace; font-size: 0.95rem;">
                 ${escapeHtml(b.busNumber || b.plateNumber || b.registrationNo || 'UNREGISTERED')}
@@ -482,6 +551,13 @@
             </td>
             <td>
               <div style="font-weight: 500;"><i class="fas fa-building" style="font-size: 0.75rem; color: var(--admin-primary); margin-right: 4px;"></i> ${escapeHtml(vName)}</div>
+              ${isOrphaned ? `
+                <div style="margin-top: 3px;">
+                  <span class="admin-badge admin-badge-danger" style="font-size: 0.7rem; padding: 2px 6px;">
+                    <i class="fas fa-exclamation-triangle"></i> Deleted Vendor (Orphaned)
+                  </span>
+                </div>
+              ` : ''}
             </td>
             <td>
               <div style="font-weight: 500;">
@@ -506,9 +582,14 @@
               </span>
             </td>
             <td style="text-align: right;">
-              <button class="admin-btn admin-btn-sm admin-btn-secondary" onclick="inspectBus('${b.id}')">
-                <i class="fas fa-eye"></i> Details
-              </button>
+              <div style="display: flex; gap: 0.35rem; justify-content: flex-end;">
+                <button class="admin-btn admin-btn-sm admin-btn-secondary" onclick="inspectBus('${b.id}')" title="Bus Details">
+                  <i class="fas fa-eye"></i> Details
+                </button>
+                <button class="admin-btn admin-btn-sm admin-btn-danger" onclick="promptDeleteBus('${b.id}', '${escapeHtml(b.busNumber || 'Bus')}')" title="Permanently Delete Bus">
+                  <i class="fas fa-trash-alt"></i> Delete
+                </button>
+              </div>
             </td>
           </tr>
         `;
@@ -524,8 +605,9 @@
       const r = allRoutes.find(x => x.id === routeId);
       if (!r) return;
 
+      const isOrphaned = !r.vendorId || !vendorsMap[r.vendorId];
       const v = vendorsMap[r.vendorId];
-      const vName = v ? (v.businessName || v.name || v.email) : 'Unassigned';
+      const vName = v ? (v.businessName || v.name || v.email) : 'Deleted Vendor (Orphaned)';
       const assignedBuses = (busesByRoute[r.id] || busesByRoute[r.name] || []);
       const stops = r.stops || [];
 
@@ -540,6 +622,7 @@
             <div style="font-size: 0.85rem; color: var(--admin-text-muted);">
               Route ID: <code>${r.id}</code> &bull; Vendor: ${escapeHtml(vName)}
             </div>
+            ${isOrphaned ? '<div style="margin-top: 4px;"><span class="admin-badge admin-badge-danger"><i class="fas fa-exclamation-triangle"></i> Vendor Account Deleted</span></div>' : ''}
           </div>
         </div>
 
@@ -606,6 +689,15 @@
         `}
       `;
 
+      // Wire up modal delete button
+      const delBtn = document.getElementById('modal-delete-route-btn');
+      if (delBtn) {
+        delBtn.onclick = () => {
+          closeModal('route-inspect-modal');
+          promptDeleteRoute(r.id, r.name || r.routeName || 'Route');
+        };
+      }
+
       openModal('route-inspect-modal');
     }
 
@@ -613,8 +705,9 @@
       const b = allBuses.find(x => x.id === busId);
       if (!b) return;
 
+      const isOrphaned = !b.vendorId || !vendorsMap[b.vendorId];
       const v = vendorsMap[b.vendorId];
-      const vName = v ? (v.businessName || v.name || v.email) : 'Unassigned';
+      const vName = v ? (v.businessName || v.name || v.email) : 'Deleted Vendor (Orphaned)';
       const cond = conductorsMap[b.conductorId] || conductorsMap[b.assignedConductor];
       const condName = cond ? (cond.name || cond.email) : 'Unassigned';
 
@@ -629,6 +722,7 @@
             <div style="font-size: 0.85rem; color: var(--admin-text-muted);">
               ID: <code>${b.id}</code> &bull; Vendor: ${escapeHtml(vName)}
             </div>
+            ${isOrphaned ? '<div style="margin-top: 4px;"><span class="admin-badge admin-badge-danger"><i class="fas fa-exclamation-triangle"></i> Vendor Account Deleted</span></div>' : ''}
           </div>
         </div>
 
@@ -652,7 +746,106 @@
         </div>
       `;
 
+      // Wire up modal delete button
+      const delBtn = document.getElementById('modal-delete-bus-btn');
+      if (delBtn) {
+        delBtn.onclick = () => {
+          closeModal('bus-inspect-modal');
+          promptDeleteBus(b.id, b.busNumber || 'Bus');
+        };
+      }
+
       openModal('bus-inspect-modal');
+    }
+
+    // Permanently Delete Transit Route
+    function promptDeleteRoute(routeId, routeName) {
+      const cleanName = routeName || 'Selected Transit Route';
+      adminConfirmModal(
+        'Delete Transit Route',
+        `Are you sure you want to permanently delete route "<strong>${escapeHtml(cleanName)}</strong>"?<br><br>
+        <div style="background:#FEF2F2; border:1px solid #FCA5A5; border-radius:6px; padding:0.75rem; color:#991B1B; font-size:0.85rem; line-height:1.4;">
+          <strong><i class="fas fa-exclamation-triangle"></i> ROUTE DELETION:</strong><br>
+          This will permanently remove this corridor from the database. Any buses assigned to this route will be automatically unassigned.
+        </div>`,
+        'Delete Route',
+        async (reason) => {
+          try {
+            await cascadeDeleteRouteData(routeId);
+            await logAdminAction(
+              'ROUTE_DELETED',
+              'route',
+              routeId,
+              cleanName,
+              {},
+              reason || 'Transit route deleted by Super Admin'
+            );
+            showToast(`Route "${cleanName}" successfully deleted.`, "success");
+            loadFleetRoutesData();
+          } catch (err) {
+            console.error("Delete route error:", err);
+            throw new Error("Failed to delete route: " + err.message);
+          }
+        },
+        true
+      );
+    }
+
+    // Permanently Delete Bus
+    function promptDeleteBus(busId, busNumber) {
+      const cleanNum = busNumber || 'Selected Bus';
+      adminConfirmModal(
+        'Delete Fleet Bus',
+        `Are you sure you want to permanently delete bus "<strong>${escapeHtml(cleanNum)}</strong>"?<br><br>
+        <div style="background:#FEF2F2; border:1px solid #FCA5A5; border-radius:6px; padding:0.75rem; color:#991B1B; font-size:0.85rem; line-height:1.4;">
+          <strong><i class="fas fa-exclamation-triangle"></i> BUS DELETION:</strong><br>
+          This will permanently delete this vehicle and clear any live GPS tracking records. Conductors assigned to this bus will be unassigned.
+        </div>`,
+        'Delete Bus',
+        async (reason) => {
+          try {
+            await cascadeDeleteBusData(busId);
+            await logAdminAction(
+              'BUS_DELETED',
+              'bus',
+              busId,
+              cleanNum,
+              {},
+              reason || 'Fleet vehicle deleted by Super Admin'
+            );
+            showToast(`Bus "${cleanNum}" successfully deleted.`, "success");
+            loadFleetRoutesData();
+          } catch (err) {
+            console.error("Delete bus error:", err);
+            throw new Error("Failed to delete bus: " + err.message);
+          }
+        },
+        true
+      );
+    }
+
+    // Purge All Orphaned Routes & Buses
+    function purgeOrphanedFleet() {
+      adminConfirmModal(
+        'Purge All Orphaned Routes & Buses',
+        `Are you sure you want to permanently purge all routes and buses whose vendor account has been deleted?<br><br>
+        <div style="background:#FFFBEB; border:1px solid #FCD34D; border-radius:6px; padding:0.75rem; color:#92400E; font-size:0.85rem; line-height:1.4;">
+          <strong><i class="fas fa-broom"></i> COMPLETE ORPHAN PURGE:</strong><br>
+          This will scan all collections and permanently purge any corridors, buses, and staff that belong to deleted vendor accounts.
+        </div>`,
+        'Purge All Orphaned Records',
+        async () => {
+          try {
+            const result = await purgeAllOrphanedTransitData();
+            showToast(`Successfully purged ${result.purgedRoutes} orphaned routes and ${result.purgedBuses} buses!`, "success");
+            loadFleetRoutesData();
+          } catch (err) {
+            console.error("Purge error:", err);
+            throw new Error("Failed to purge orphaned records: " + err.message);
+          }
+        },
+        true
+      );
     }
   </script>
 </body>

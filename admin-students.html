@@ -155,6 +155,7 @@
       <div class="admin-modal-footer">
         <button type="button" class="admin-btn admin-btn-secondary" onclick="closeModal('student-inspect-modal')">Close</button>
         <button type="button" id="s-toggle-status-btn" class="admin-btn"></button>
+        <button type="button" id="s-delete-student-btn" class="admin-btn admin-btn-danger"><i class="fas fa-trash-alt"></i> Delete Commuter</button>
       </div>
     </div>
   </div>
@@ -384,6 +385,11 @@
                   title="${isSusp ? 'Reactivate Account' : 'Suspend Account'}">
                   <i class="fas ${isSusp ? 'fa-user-check' : 'fa-user-slash'}"></i>
                 </button>
+                <button class="admin-btn admin-btn-sm admin-btn-danger" 
+                  onclick="promptDeleteStudent('${s.id}', '${escapeHtml(s.name || s.fullName || 'Student')}')"
+                  title="Permanently Delete Commuter and Records">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
               </div>
             </td>
           </tr>
@@ -533,7 +539,58 @@
         };
       }
 
+      const delBtn = document.getElementById('s-delete-student-btn');
+      if (delBtn) {
+        delBtn.onclick = () => {
+          closeModal('student-inspect-modal');
+          promptDeleteStudent(student.id, student.name || student.fullName || 'Student');
+        };
+      }
+
       openModal('student-inspect-modal');
+    }
+
+    function promptDeleteStudent(studentId, studentName) {
+      const cleanName = studentName || 'Selected Commuter';
+      const message = `Are you sure you want to permanently delete commuter "<strong>${escapeHtml(cleanName)}</strong>"?<br><br>
+        <div style="background:#FEF2F2; border:1px solid #FCA5A5; border-radius:6px; padding:0.75rem; color:#991B1B; font-size:0.85rem; line-height:1.5;">
+          <strong><i class="fas fa-exclamation-triangle"></i> CASCADE PURGE WARNING:</strong><br>
+          This will permanently delete the commuter profile and <strong>ALL associated records</strong>:
+          <ul style="margin:0.4rem 0 0 1.2rem; padding:0;">
+            <li>All issued digital bus passes</li>
+            <li>All past and pending pass applications</li>
+            <li>All personal commuter notifications</li>
+            <li>Commuter login credentials &amp; profile doc</li>
+          </ul>
+          This action <strong>CANNOT</strong> be undone.
+        </div>`;
+
+      adminConfirmModal(
+        'Permanently Delete Commuter',
+        message,
+        'Permanently Delete Commuter',
+        async (reason) => {
+          try {
+            const stats = await cascadeDeleteStudentData(studentId);
+
+            await logAdminAction(
+              'STUDENT_DELETED',
+              'student',
+              studentId,
+              cleanName,
+              stats,
+              reason || 'Commuter account permanently deleted with cascade purge by Super Admin'
+            );
+
+            showToast(`Commuter "${cleanName}" and all associated records permanently deleted.`, "success");
+            loadStudentsData();
+          } catch (e) {
+            console.error("Delete student error:", e);
+            throw new Error("Failed to delete commuter: " + e.message);
+          }
+        },
+        true
+      );
     }
 
     function promptToggleStudentStatus(studentId, studentName, currentStatus) {

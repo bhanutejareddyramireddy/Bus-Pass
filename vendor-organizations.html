@@ -498,12 +498,46 @@
     function deleteOrganization(id, name) {
       confirmAction(
         "Delete Organization",
-        `Are you sure you want to permanently delete "${name}"? All associated routes and buses will be affected.`,
+        `Are you sure you want to permanently delete "${name}"? All associated transit routes under this college will also be deleted, and buses will be unassigned.`,
         async () => {
           try {
+            // 1. Delete all routes under this organization
+            const routeSnap = await db.collection('routes')
+              .where('organizationId', '==', id)
+              .where('vendorId', '==', currentVendorId)
+              .get()
+              .catch(() => null);
+
+            if (routeSnap && !routeSnap.empty) {
+              for (const rDoc of routeSnap.docs) {
+                await rDoc.ref.delete().catch(() => {});
+              }
+            }
+
+            // 2. Unassign any buses under this organization
+            const busSnap = await db.collection('buses')
+              .where('organizationId', '==', id)
+              .where('vendorId', '==', currentVendorId)
+              .get()
+              .catch(() => null);
+
+            if (busSnap && !busSnap.empty) {
+              for (const bDoc of busSnap.docs) {
+                await bDoc.ref.update({
+                  organizationId: '',
+                  organizationName: 'Unassigned',
+                  routeId: '',
+                  routeName: 'Unassigned',
+                  status: 'Inactive'
+                }).catch(() => {});
+              }
+            }
+
+            // 3. Delete the organization doc
             await db.collection('organizations').doc(id).delete();
-            showToast("Organization deleted successfully.", "success");
+            showToast(`Organization "${name}" and its routes successfully deleted.`, "success");
           } catch (e) {
+            console.error("Delete org error:", e);
             showToast("Error deleting organization: " + e.message, "danger");
           }
         },

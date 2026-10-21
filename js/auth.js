@@ -140,6 +140,11 @@ window.addEventListener('storage', function (e) {
 // Vendor Registration
 async function registerVendor(name, email, password, phone, businessName = '') {
   try {
+    const cleanName = (name || '').trim();
+    if (!cleanName || !/^[A-Za-z\s]+$/.test(cleanName)) {
+      throw new Error("Operator name must contain only letters and spaces (no numbers or special characters).");
+    }
+
     const cleanPhone = (phone || '').toString().trim().replace(/[^0-9]/g, '');
     if (cleanPhone.length !== 10) {
       throw new Error("Mobile number must be exactly 10 digits.");
@@ -151,7 +156,7 @@ async function registerVendor(name, email, password, phone, businessName = '') {
 
     const vendorData = {
       uid: uid,
-      name: name.trim(),
+      name: cleanName,
       email: email.trim().toLowerCase(),
       phone: cleanPhone,
       businessName: businessName.trim(),
@@ -224,6 +229,11 @@ async function loginVendor(email, password) {
 // Student Registration
 async function registerStudent(name, email, password, phone) {
   try {
+    const cleanName = (name || '').trim();
+    if (!cleanName || !/^[A-Za-z\s]+$/.test(cleanName)) {
+      throw new Error("Student name must contain only letters and spaces (no numbers or special characters).");
+    }
+
     const cleanPhone = (phone || '').toString().trim().replace(/[^0-9]/g, '');
     if (cleanPhone.length !== 10) {
       throw new Error("Mobile number must be exactly 10 digits.");
@@ -235,7 +245,7 @@ async function registerStudent(name, email, password, phone) {
 
     const studentData = {
       uid: uid,
-      name: name.trim(),
+      name: cleanName,
       email: email.trim().toLowerCase(),
       phone: cleanPhone,
       role: 'student',
@@ -1050,35 +1060,83 @@ async function deleteCurrentVendorAccount(password = null) {
 
   // 1. Delete all associated vendor Firestore records
   try {
-    // Conductors
-    const condSnap = await db.collection('conductors').where('vendorId', '==', uid).get().catch(() => null);
-    if (condSnap && !condSnap.empty) {
-      for (const d of condSnap.docs) {
-        const cData = d.data();
-        if (cData.uid) {
-          await db.collection('users').doc(cData.uid).delete().catch(() => {});
-        }
-        await d.ref.delete().catch(() => {});
-      }
+    // Collect all organizations owned by this vendor
+    const orgSnap = await db.collection('organizations').where('vendorId', '==', uid).get().catch(() => null);
+    const orgIds = [];
+    if (orgSnap && !orgSnap.empty) {
+      orgSnap.docs.forEach(d => orgIds.push(d.id));
     }
 
-    // Buses & Live Locations
-    const busSnap = await db.collection('buses').where('vendorId', '==', uid).get().catch(() => null);
-    if (busSnap && !busSnap.empty) {
-      for (const d of busSnap.docs) {
-        await db.collection('liveBusLocations').doc(d.id).delete().catch(() => {});
-        await d.ref.delete().catch(() => {});
-      }
-    }
-
-    // Routes
+    // Collect and delete routes (by vendorId AND by organizationId)
+    const routeDocMap = new Map();
     const routeSnap = await db.collection('routes').where('vendorId', '==', uid).get().catch(() => null);
     if (routeSnap && !routeSnap.empty) {
-      for (const d of routeSnap.docs) await d.ref.delete().catch(() => {});
+      routeSnap.docs.forEach(d => routeDocMap.set(d.id, d));
+    }
+    for (const orgId of orgIds) {
+      const rByOrg = await db.collection('routes').where('organizationId', '==', orgId).get().catch(() => null);
+      if (rByOrg && !rByOrg.empty) {
+        rByOrg.docs.forEach(d => routeDocMap.set(d.id, d));
+      }
+    }
+    const routeIds = Array.from(routeDocMap.keys());
+
+    // Collect and delete buses (by vendorId, organizationId, routeId)
+    const busDocMap = new Map();
+    const busSnap = await db.collection('buses').where('vendorId', '==', uid).get().catch(() => null);
+    if (busSnap && !busSnap.empty) {
+      busSnap.docs.forEach(d => busDocMap.set(d.id, d));
+    }
+    for (const orgId of orgIds) {
+      const bByOrg = await db.collection('buses').where('organizationId', '==', orgId).get().catch(() => null);
+      if (bByOrg && !bByOrg.empty) {
+        bByOrg.docs.forEach(d => busDocMap.set(d.id, d));
+      }
+    }
+    for (const rId of routeIds) {
+      const bByRoute = await db.collection('buses').where('routeId', '==', rId).get().catch(() => null);
+      if (bByRoute && !bByRoute.empty) {
+        bByRoute.docs.forEach(d => busDocMap.set(d.id, d));
+      }
     }
 
-    // Organizations
-    const orgSnap = await db.collection('organizations').where('vendorId', '==', uid).get().catch(() => null);
+    // Delete Live Locations
+    for (const busId of busDocMap.keys()) {
+      await db.collection('liveBusLocations').doc(busId).delete().catch(() => {});
+    }
+
+    // Conductors
+    const condDocMap = new Map();
+    const condSnap = await db.collection('conductors').where('vendorId', '==', uid).get().catch(() => null);
+    if (condSnap && !condSnap.empty) {
+      condSnap.docs.forEach(d => condDocMap.set(d.id, d));
+    }
+    for (const orgId of orgIds) {
+      const cByOrg = await db.collection('conductors').where('organizationId', '==', orgId).get().catch(() => null);
+      if (cByOrg && !cByOrg.empty) {
+        cByOrg.docs.forEach(d => condDocMap.set(d.id, d));
+      }
+    }
+
+    for (const cDoc of condDocMap.values()) {
+      const cData = cDoc.data();
+      if (cData.uid) {
+        await db.collection('users').doc(cData.uid).delete().catch(() => {});
+      }
+      await cDoc.ref.delete().catch(() => {});
+    }
+
+    // Delete Buses
+    for (const bDoc of busDocMap.values()) {
+      await bDoc.ref.delete().catch(() => {});
+    }
+
+    // Delete Routes
+    for (const rDoc of routeDocMap.values()) {
+      await rDoc.ref.delete().catch(() => {});
+    }
+
+    // Delete Organizations
     if (orgSnap && !orgSnap.empty) {
       for (const d of orgSnap.docs) await d.ref.delete().catch(() => {});
     }

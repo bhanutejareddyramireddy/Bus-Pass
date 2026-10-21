@@ -42,7 +42,10 @@
             <h1><i class="fas fa-building text-primary"></i> Transport Vendors Directory</h1>
             <p>Manage, inspect, and monitor all commercial and institutional fleet operator accounts.</p>
           </div>
-          <div class="admin-header-actions">
+          <div class="admin-header-actions" style="display: flex; gap: 0.5rem; align-items: center;">
+            <button class="admin-btn admin-btn-danger" id="purge-orphans-btn" style="display: none;" onclick="triggerPurgeOrphans()">
+              <i class="fas fa-broom"></i> Clean Up Orphaned Data (<span id="orphan-count-badge">0</span>)
+            </button>
             <button class="admin-btn admin-btn-secondary" onclick="loadVendorsData()">
               <i class="fas fa-sync-alt" id="refresh-icon"></i> Refresh List
             </button>
@@ -200,12 +203,16 @@
           </div>
         </div>
 
-      </div>
-      <div class="admin-modal-footer">
-        <button type="button" class="admin-btn admin-btn-secondary" onclick="closeModal('vendor-inspect-modal')">Close</button>
-        <button type="button" id="v-toggle-status-btn" class="admin-btn">
-          <!-- Toggle Action -->
+      <div class="admin-modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" id="v-delete-btn" class="admin-btn admin-btn-danger" style="background: #DC2626;">
+          <i class="fas fa-trash-alt"></i> Delete Operator (Cascade)
         </button>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" class="admin-btn admin-btn-secondary" onclick="closeModal('vendor-inspect-modal')">Close</button>
+          <button type="button" id="v-toggle-status-btn" class="admin-btn">
+            <!-- Toggle Action -->
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -308,6 +315,21 @@
         document.getElementById('mini-active-vendors').textContent = activeCount;
         document.getElementById('mini-suspended-vendors').textContent = suspendedCount;
         document.getElementById('mini-total-buses').textContent = busesSnap.size;
+
+        // Check for orphaned transit records
+        try {
+          const orphanScan = await scanForOrphanedTransitData();
+          const purgeBtn = document.getElementById('purge-orphans-btn');
+          const badge = document.getElementById('orphan-count-badge');
+          if (orphanScan.totalOrphans > 0 && purgeBtn && badge) {
+            badge.textContent = `${orphanScan.orphanedOrgs.length} colleges, ${orphanScan.orphanedRoutes.length} routes`;
+            purgeBtn.style.display = 'inline-flex';
+          } else if (purgeBtn) {
+            purgeBtn.style.display = 'none';
+          }
+        } catch (e) {
+          console.warn("Orphan scan notice:", e);
+        }
 
         handleFilterChange();
 
@@ -423,6 +445,9 @@
                 <button class="admin-btn-icon ${isSusp ? '' : 'danger'}" title="${isSusp ? 'Reactivate Vendor' : 'Suspend Vendor'}" onclick="promptToggleVendorStatus('${v.id}', '${v.businessName || v.name}', '${v.status}')">
                   <i class="fas ${isSusp ? 'fa-check text-success' : 'fa-ban text-danger'}"></i>
                 </button>
+                <button class="admin-btn-icon danger" title="Permanently Delete Vendor & All Associated Fleet/Colleges/Routes" onclick="promptDeleteVendor('${v.id}', '${escapeHtml(v.businessName || v.name || 'Vendor')}')">
+                  <i class="fas fa-trash-alt text-danger"></i>
+                </button>
               </div>
             </td>
           </tr>
@@ -481,6 +506,15 @@
         `).join('');
       }
 
+      // Delete action in modal
+      const delBtn = document.getElementById('v-delete-btn');
+      if (delBtn) {
+        delBtn.onclick = () => {
+          closeModal('vendor-inspect-modal');
+          promptDeleteVendor(v.id, v.businessName || v.name);
+        };
+      }
+
       // Action button in footer
       const toggleBtn = document.getElementById('v-toggle-status-btn');
       if (isSusp) {
@@ -500,6 +534,75 @@
       }
 
       openModal('vendor-inspect-modal');
+    }
+
+    // Permanently Delete Vendor Account with Cascade Purge
+    function promptDeleteVendor(vendorId, vendorName) {
+      const cleanName = vendorName || 'Selected Vendor';
+      const message = `Are you sure you want to permanently delete vendor "<strong>${escapeHtml(cleanName)}</strong>"?<br><br>
+        <div style="background:#FEF2F2; border:1px solid #FCA5A5; border-radius:6px; padding:0.75rem; color:#991B1B; font-size:0.85rem; line-height:1.5;">
+          <strong><i class="fas fa-exclamation-triangle"></i> CASCADE PURGE WARNING:</strong><br>
+          This will permanently delete the vendor account and <strong>ALL associated records</strong> in Firestore:
+          <ul style="margin:0.4rem 0 0 1.2rem; padding:0;">
+            <li>All affiliated partner institutions (colleges/schools)</li>
+            <li>All transit routes &amp; boarding station fare structures</li>
+            <li>All fleet buses &amp; real-time GPS tracking records</li>
+            <li>All duty conductor staff &amp; conductor login accounts</li>
+            <li>All student bus pass applications &amp; issued digital passes</li>
+          </ul>
+          This action <strong>CANNOT</strong> be undone.
+        </div>`;
+
+      adminConfirmModal(
+        'Permanently Delete Vendor & Fleet',
+        message,
+        'Permanently Delete Vendor',
+        async (reason) => {
+          try {
+            const stats = await cascadeDeleteVendorData(vendorId);
+
+            await logAdminAction(
+              'VENDOR_DELETED',
+              'vendor',
+              vendorId,
+              cleanName,
+              stats,
+              reason || 'Vendor account permanently deleted with full cascade purge by Super Admin'
+            );
+
+            showToast(`Vendor and all operational records (${stats.organizations} colleges, ${stats.routes} routes, ${stats.buses} buses) permanently deleted.`, "success");
+            loadVendorsData();
+          } catch (e) {
+            console.error("Delete vendor error:", e);
+            throw new Error("Failed to delete vendor: " + e.message);
+          }
+        },
+        true
+      );
+    }
+
+    // Trigger Cleanup of Any Orphaned Transit Records
+    function triggerPurgeOrphans() {
+      adminConfirmModal(
+        'Clean Up Orphaned Transit Records',
+        `Are you sure you want to scan and purge all colleges, routes, buses, and staff that belong to deleted vendor accounts?<br><br>
+        <div style="background:#FFFBEB; border:1px solid #FCD34D; border-radius:6px; padding:0.75rem; color:#92400E; font-size:0.85rem; line-height:1.4;">
+          <strong><i class="fas fa-broom"></i> ORPHAN PURGE:</strong><br>
+          This will scan all Firestore collections and permanently delete any records whose vendor account no longer exists in the system.
+        </div>`,
+        'Purge All Orphaned Records',
+        async () => {
+          try {
+            const result = await purgeAllOrphanedTransitData();
+            showToast(`Purged ${result.purgedOrgs} orphaned colleges, ${result.purgedRoutes} routes, and ${result.purgedBuses} buses!`, "success");
+            loadVendorsData();
+          } catch (err) {
+            console.error("Purge error:", err);
+            throw new Error("Failed to purge orphaned records: " + err.message);
+          }
+        },
+        true
+      );
     }
 
     // Suspend / Reactivate Action with Confirmation & Audit Log

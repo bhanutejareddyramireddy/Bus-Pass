@@ -345,7 +345,23 @@
         });
     }
 
+    let activeVendorIdsCache = null;
+
     async function loadOrganizations() {
+      // Pre-fetch active vendors so we NEVER display colleges or routes from deleted or suspended vendors!
+      try {
+        const vSnap = await db.collection('users').where('role', '==', 'vendor').get();
+        activeVendorIdsCache = new Set();
+        vSnap.forEach(d => {
+          const vData = d.data();
+          if (vData.status !== 'Suspended') {
+            activeVendorIdsCache.add(d.id);
+          }
+        });
+      } catch (err) {
+        console.warn("Could not pre-verify active vendors:", err);
+      }
+
       const snap = await db.collection('organizations').where('status', '==', 'Active').get();
       const orgSelect = document.getElementById('app-org');
       orgSelect.innerHTML = '<option value="">Select your institution...</option>';
@@ -353,9 +369,17 @@
 
       snap.forEach(doc => {
         const d = { id: doc.id, ...doc.data() };
+        // Exclude colleges belonging to deleted or suspended vendors
+        if (activeVendorIdsCache && (!d.vendorId || !activeVendorIdsCache.has(d.vendorId))) {
+          return;
+        }
         organizationsList.push(d);
         orgSelect.innerHTML += `<option value="${d.id}">${d.name} (${d.location || 'Local'})</option>`;
       });
+
+      if (organizationsList.length === 0) {
+        orgSelect.innerHTML = '<option value="">No active transit partner institutions available</option>';
+      }
     }
 
     async function onOrgSelected() {
@@ -366,6 +390,9 @@
 
       if (!orgId) return;
 
+      const targetOrg = organizationsList.find(o => o.id === orgId);
+      const targetVendorId = targetOrg ? targetOrg.vendorId : null;
+
       const snap = await db.collection('routes')
         .where('organizationId', '==', orgId)
         .where('status', '==', 'Active')
@@ -374,9 +401,20 @@
       routesCache = [];
       snap.forEach(doc => {
         const r = { id: doc.id, ...doc.data() };
+        // Ensure route belongs to an active vendor and matches the org's vendor
+        if (activeVendorIdsCache && r.vendorId && !activeVendorIdsCache.has(r.vendorId)) {
+          return;
+        }
+        if (targetVendorId && r.vendorId && r.vendorId !== targetVendorId) {
+          return;
+        }
         routesCache.push(r);
         routeSelect.innerHTML += `<option value="${r.id}">${r.routeName}</option>`;
       });
+
+      if (routesCache.length === 0) {
+        routeSelect.innerHTML = '<option value="">No active transit routes configured for this institution</option>';
+      }
 
       routeSelect.disabled = false;
     }

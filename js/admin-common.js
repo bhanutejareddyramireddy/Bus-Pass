@@ -648,3 +648,370 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+/**
+ * ============================================================================
+ * CASCADE DELETION & ORPHAN INTEGRITY UTILITIES
+ * ============================================================================
+ */
+
+/**
+ * Permanently cascade-deletes a Vendor account and ALL of their associated operational data:
+ * - Organizations created by vendor
+ * - Routes created by vendor or assigned to vendor's organizations
+ * - Buses created by vendor or assigned to vendor's organizations/routes
+ * - Live bus locations for those buses
+ * - Conductors created by vendor AND their conductor login accounts in users collection
+ * - Applications associated with vendor
+ * - Passes associated with vendor
+ * - Boarding records associated with vendor
+ * - Notifications directed to vendor
+ * - Vendor record in users collection
+ */
+async function cascadeDeleteVendorData(vendorId) {
+  if (!vendorId) throw new Error("Vendor ID is required for cascade deletion.");
+
+  const stats = {
+    organizations: 0,
+    routes: 0,
+    buses: 0,
+    conductors: 0,
+    conductorUsers: 0,
+    applications: 0,
+    passes: 0,
+    boardingRecords: 0,
+    notifications: 0
+  };
+
+  // 1. Gather all organizations owned by this vendor
+  const orgSnap = await db.collection('organizations').where('vendorId', '==', vendorId).get().catch(() => ({ docs: [] }));
+  const orgIds = new Set(orgSnap.docs.map(d => d.id));
+
+  // 2. Gather all routes owned by this vendor or pointing to their organizations
+  const routeDocMap = new Map();
+  const routeByVendorSnap = await db.collection('routes').where('vendorId', '==', vendorId).get().catch(() => ({ docs: [] }));
+  routeByVendorSnap.docs.forEach(d => routeDocMap.set(d.id, d));
+
+  if (orgIds.size > 0) {
+    for (const orgId of orgIds) {
+      const routeByOrgSnap = await db.collection('routes').where('organizationId', '==', orgId).get().catch(() => ({ docs: [] }));
+      routeByOrgSnap.docs.forEach(d => routeDocMap.set(d.id, d));
+    }
+  }
+  const routeIds = new Set(routeDocMap.keys());
+
+  // 3. Gather all buses owned by this vendor, or pointing to their orgs/routes
+  const busDocMap = new Map();
+  const busByVendorSnap = await db.collection('buses').where('vendorId', '==', vendorId).get().catch(() => ({ docs: [] }));
+  busByVendorSnap.docs.forEach(d => busDocMap.set(d.id, d));
+
+  if (orgIds.size > 0) {
+    for (const orgId of orgIds) {
+      const busByOrgSnap = await db.collection('buses').where('organizationId', '==', orgId).get().catch(() => ({ docs: [] }));
+      busByOrgSnap.docs.forEach(d => busDocMap.set(d.id, d));
+    }
+  }
+
+  if (routeIds.size > 0) {
+    for (const routeId of routeIds) {
+      const busByRouteSnap = await db.collection('buses').where('routeId', '==', routeId).get().catch(() => ({ docs: [] }));
+      busByRouteSnap.docs.forEach(d => busDocMap.set(d.id, d));
+    }
+  }
+  const busIds = new Set(busDocMap.keys());
+
+  // 4. Delete Live Bus Locations for all found buses
+  for (const busId of busIds) {
+    await db.collection('liveBusLocations').doc(busId).delete().catch(() => {});
+  }
+
+  // 5. Gather and delete Conductors and their user auth accounts
+  const condDocMap = new Map();
+  const condByVendorSnap = await db.collection('conductors').where('vendorId', '==', vendorId).get().catch(() => ({ docs: [] }));
+  condByVendorSnap.docs.forEach(d => condDocMap.set(d.id, d));
+
+  if (orgIds.size > 0) {
+    for (const orgId of orgIds) {
+      const condByOrgSnap = await db.collection('conductors').where('organizationId', '==', orgId).get().catch(() => ({ docs: [] }));
+      condByOrgSnap.docs.forEach(d => condDocMap.set(d.id, d));
+    }
+  }
+
+  for (const cDoc of condDocMap.values()) {
+    const cData = cDoc.data();
+    if (cData.uid) {
+      await db.collection('users').doc(cData.uid).delete().catch(() => {});
+      stats.conductorUsers++;
+    }
+    await cDoc.ref.delete().catch(() => {});
+    stats.conductors++;
+  }
+
+  // 6. Delete all Buses
+  for (const bDoc of busDocMap.values()) {
+    await bDoc.ref.delete().catch(() => {});
+    stats.buses++;
+  }
+
+  // 7. Delete all Routes
+  for (const rDoc of routeDocMap.values()) {
+    await rDoc.ref.delete().catch(() => {});
+    stats.routes++;
+  }
+
+  // 8. Delete all Organizations
+  for (const oDoc of orgSnap.docs) {
+    await oDoc.ref.delete().catch(() => {});
+    stats.organizations++;
+  }
+
+  // 9. Delete Applications for this vendor
+  const appSnap = await db.collection('applications').where('vendorId', '==', vendorId).get().catch(() => ({ docs: [] }));
+  for (const aDoc of appSnap.docs) {
+    await aDoc.ref.delete().catch(() => {});
+    stats.applications++;
+  }
+
+  // 10. Delete Passes for this vendor
+  const passSnap = await db.collection('passes').where('vendorId', '==', vendorId).get().catch(() => ({ docs: [] }));
+  for (const pDoc of passSnap.docs) {
+    await pDoc.ref.delete().catch(() => {});
+    stats.passes++;
+  }
+
+  // 11. Delete Boarding Records for this vendor
+  const bSnap = await db.collection('boardingRecords').where('vendorId', '==', vendorId).get().catch(() => ({ docs: [] }));
+  for (const bd of bSnap.docs) {
+    await bd.ref.delete().catch(() => {});
+    stats.boardingRecords++;
+  }
+
+  // 12. Delete Notifications for this vendor
+  const notifSnap = await db.collection('notifications').where('userId', '==', vendorId).get().catch(() => ({ docs: [] }));
+  for (const n of notifSnap.docs) {
+    await n.ref.delete().catch(() => {});
+    stats.notifications++;
+  }
+
+  // 13. Delete Vendor document in users
+  await db.collection('users').doc(vendorId).delete().catch(() => {});
+
+  return stats;
+}
+
+/**
+ * Permanently cascade-deletes a Student account and their associated records:
+ * - Passes
+ * - Applications
+ * - Notifications
+ * - Student record in users
+ */
+async function cascadeDeleteStudentData(studentId) {
+  if (!studentId) throw new Error("Student ID is required.");
+
+  const stats = { passes: 0, applications: 0, notifications: 0 };
+
+  const passSnap = await db.collection('passes').where('studentId', '==', studentId).get().catch(() => ({ docs: [] }));
+  for (const d of passSnap.docs) {
+    await d.ref.delete().catch(() => {});
+    stats.passes++;
+  }
+
+  const appSnap = await db.collection('applications').where('studentId', '==', studentId).get().catch(() => ({ docs: [] }));
+  for (const d of appSnap.docs) {
+    await d.ref.delete().catch(() => {});
+    stats.applications++;
+  }
+
+  const notifSnap = await db.collection('notifications').where('userId', '==', studentId).get().catch(() => ({ docs: [] }));
+  for (const d of notifSnap.docs) {
+    await d.ref.delete().catch(() => {});
+    stats.notifications++;
+  }
+
+  await db.collection('users').doc(studentId).delete().catch(() => {});
+  return stats;
+}
+
+/**
+ * Permanently cascade-deletes an Organization and its connected routes/buses
+ */
+async function cascadeDeleteOrgData(orgId, vendorId = null) {
+  if (!orgId) throw new Error("Organization ID is required.");
+
+  let routeQuery = db.collection('routes').where('organizationId', '==', orgId);
+  if (vendorId) routeQuery = routeQuery.where('vendorId', '==', vendorId);
+  const routeSnap = await routeQuery.get().catch(() => ({ docs: [] }));
+  for (const r of routeSnap.docs) {
+    await r.ref.delete().catch(() => {});
+  }
+
+  let busQuery = db.collection('buses').where('organizationId', '==', orgId);
+  if (vendorId) busQuery = busQuery.where('vendorId', '==', vendorId);
+  const busSnap = await busQuery.get().catch(() => ({ docs: [] }));
+  for (const b of busSnap.docs) {
+    await b.ref.update({
+      organizationId: '',
+      organizationName: 'Unassigned',
+      routeId: '',
+      routeName: 'Unassigned',
+      status: 'Inactive'
+    }).catch(() => {});
+  }
+
+  await db.collection('organizations').doc(orgId).delete();
+  return { routesDeleted: routeSnap.docs ? routeSnap.docs.length : 0 };
+}
+
+/**
+ * Permanently deletes a single transit Route and unassigns linked buses/staff
+ */
+async function cascadeDeleteRouteData(routeId) {
+  if (!routeId) throw new Error("Route ID is required.");
+
+  // Unassign buses
+  const busSnap = await db.collection('buses').where('routeId', '==', routeId).get().catch(() => ({ docs: [] }));
+  for (const b of busSnap.docs) {
+    await b.ref.update({
+      routeId: '',
+      routeName: 'Unassigned',
+      status: 'Inactive'
+    }).catch(() => {});
+  }
+
+  // Unassign conductors
+  const condSnap = await db.collection('conductors').where('routeId', '==', routeId).get().catch(() => ({ docs: [] }));
+  for (const c of condSnap.docs) {
+    await c.ref.update({
+      routeId: '',
+      routeName: 'Unassigned'
+    }).catch(() => {});
+  }
+
+  await db.collection('routes').doc(routeId).delete();
+  return { busesUnassigned: busSnap.docs.length, conductorsUnassigned: condSnap.docs.length };
+}
+
+/**
+ * Permanently deletes a single Bus and its live tracking record
+ */
+async function cascadeDeleteBusData(busId) {
+  if (!busId) throw new Error("Bus ID is required.");
+
+  await db.collection('liveBusLocations').doc(busId).delete().catch(() => {});
+
+  // Unassign any conductors assigned to this bus
+  const condSnap = await db.collection('conductors').where('busId', '==', busId).get().catch(() => ({ docs: [] }));
+  for (const c of condSnap.docs) {
+    await c.ref.update({
+      busId: 'Unassigned',
+      busNumber: 'Unassigned',
+      registrationNumber: ''
+    }).catch(() => {});
+  }
+
+  await db.collection('buses').doc(busId).delete();
+}
+
+/**
+ * Scans all collections for orphaned transit records (colleges/organizations, routes, buses, conductors)
+ * that belong to deleted vendor accounts or have missing/broken vendor references.
+ */
+async function scanForOrphanedTransitData() {
+  const [vendorsSnap, orgsSnap, routesSnap, busesSnap, condsSnap] = await Promise.all([
+    db.collection('users').where('role', '==', 'vendor').get().catch(() => ({ docs: [] })),
+    db.collection('organizations').get().catch(() => ({ docs: [] })),
+    db.collection('routes').get().catch(() => ({ docs: [] })),
+    db.collection('buses').get().catch(() => ({ docs: [] })),
+    db.collection('conductors').get().catch(() => ({ docs: [] }))
+  ]);
+
+  const validVendorIds = new Set(vendorsSnap.docs.map(d => d.id));
+
+  const orphanedOrgs = [];
+  const orphanedOrgIds = new Set();
+  orgsSnap.docs.forEach(doc => {
+    const data = doc.data();
+    if (!data.vendorId || !validVendorIds.has(data.vendorId)) {
+      orphanedOrgs.push({ id: doc.id, ...data });
+      orphanedOrgIds.add(doc.id);
+    }
+  });
+
+  const orphanedRoutes = [];
+  const orphanedRouteIds = new Set();
+  routesSnap.docs.forEach(doc => {
+    const data = doc.data();
+    const vendorMissing = !data.vendorId || !validVendorIds.has(data.vendorId);
+    const orgMissing = data.organizationId && orphanedOrgIds.has(data.organizationId);
+    if (vendorMissing || orgMissing) {
+      orphanedRoutes.push({ id: doc.id, ...data });
+      orphanedRouteIds.add(doc.id);
+    }
+  });
+
+  const orphanedBuses = [];
+  busesSnap.docs.forEach(doc => {
+    const data = doc.data();
+    const vendorMissing = !data.vendorId || !validVendorIds.has(data.vendorId);
+    const orgMissing = data.organizationId && orphanedOrgIds.has(data.organizationId);
+    const routeMissing = data.routeId && orphanedRouteIds.has(data.routeId);
+    if (vendorMissing || orgMissing || routeMissing) {
+      orphanedBuses.push({ id: doc.id, ...data });
+    }
+  });
+
+  const orphanedConductors = [];
+  condsSnap.docs.forEach(doc => {
+    const data = doc.data();
+    if (!data.vendorId || !validVendorIds.has(data.vendorId)) {
+      orphanedConductors.push({ id: doc.id, ...data });
+    }
+  });
+
+  return {
+    validVendorIds,
+    orphanedOrgs,
+    orphanedRoutes,
+    orphanedBuses,
+    orphanedConductors,
+    totalOrphans: orphanedOrgs.length + orphanedRoutes.length + orphanedBuses.length + orphanedConductors.length
+  };
+}
+
+/**
+ * Permanently purges all orphaned transit data (colleges, routes, buses, conductors)
+ * that have no active or existing vendor in the database.
+ */
+async function purgeAllOrphanedTransitData() {
+  const scan = await scanForOrphanedTransitData();
+
+  for (const b of scan.orphanedBuses) {
+    await db.collection('liveBusLocations').doc(b.id).delete().catch(() => {});
+    await db.collection('buses').doc(b.id).delete().catch(() => {});
+  }
+
+  for (const c of scan.orphanedConductors) {
+    if (c.uid) {
+      await db.collection('users').doc(c.uid).delete().catch(() => {});
+    }
+    await db.collection('conductors').doc(c.id).delete().catch(() => {});
+  }
+
+  for (const r of scan.orphanedRoutes) {
+    await db.collection('routes').doc(r.id).delete().catch(() => {});
+  }
+
+  for (const o of scan.orphanedOrgs) {
+    await db.collection('organizations').doc(o.id).delete().catch(() => {});
+  }
+
+  return {
+    purgedOrgs: scan.orphanedOrgs.length,
+    purgedRoutes: scan.orphanedRoutes.length,
+    purgedBuses: scan.orphanedBuses.length,
+    purgedConductors: scan.orphanedConductors.length,
+    totalPurged: scan.totalOrphans
+  };
+}
+

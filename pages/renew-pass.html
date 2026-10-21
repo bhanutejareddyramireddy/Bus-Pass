@@ -311,16 +311,46 @@
 
       previousPass = { id: snap.docs[0].id, ...snap.docs[0].data() };
 
+      // Verify that the route, organization, and owning vendor still exist and are active
+      let vendorIsActive = false;
+      if (previousPass.vendorId) {
+        try {
+          const vDoc = await db.collection('users').doc(previousPass.vendorId).get();
+          if (vDoc.exists && vDoc.data().role === 'vendor' && vDoc.data().status !== 'Suspended') {
+            vendorIsActive = true;
+          }
+        } catch (e) {
+          console.warn("Could not verify vendor status:", e);
+        }
+      }
+
       // Fetch route info for stop fee
       if (previousPass.routeId) {
         const routeSnap = await db.collection('routes').doc(previousPass.routeId).get();
-        if (routeSnap.exists) currentRoute = routeSnap.data();
+        if (routeSnap.exists && routeSnap.data().status === 'Active') {
+          currentRoute = routeSnap.data();
+        }
       }
 
       // Fetch org info for UPI ID
       if (previousPass.organizationId) {
         const orgSnap = await db.collection('organizations').doc(previousPass.organizationId).get();
-        if (orgSnap.exists) currentOrg = orgSnap.data();
+        if (orgSnap.exists && orgSnap.data().status === 'Active') {
+          currentOrg = orgSnap.data();
+        }
+      }
+
+      // If the vendor was deleted or transit service was discontinued
+      if (!vendorIsActive || !currentRoute || !currentOrg) {
+        stateContainer.innerHTML = `
+          <div class="state-container">
+            <div class="state-icon" style="color: var(--warning);"><i class="fas fa-exclamation-triangle"></i></div>
+            <h4 class="state-title">Transit Service No Longer Active</h4>
+            <p class="state-desc">The bus operator or route associated with your previous pass (${escapeHtml(previousPass.routeName || 'Pass')}) is no longer available in the network. Please choose an active partner institution and submit a new application.</p>
+            <a href="apply-pass.html" class="btn btn-primary" style="margin-top: 1rem;"><i class="fas fa-plus"></i> Apply for New Pass</a>
+          </div>
+        `;
+        return;
       }
 
       // Populate form
@@ -517,6 +547,11 @@
         setTimeout(() => {
           window.location.href = 'my-applications.html';
         }, 1000);
+      } catch (err) {
+        console.error("Renewal submit error:", err);
+        showToast("Failed to submit renewal: " + err.message, "danger");
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Renewal Application';
       }
     });
   </script>

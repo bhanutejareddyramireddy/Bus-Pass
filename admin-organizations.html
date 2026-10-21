@@ -42,7 +42,10 @@
             <h1><i class="fas fa-university text-primary"></i> Partner Institutions & Colleges</h1>
             <p>Platform-wide directory of educational institutions, universities, and corporate client organizations.</p>
           </div>
-          <div class="admin-header-actions">
+          <div class="admin-header-actions" style="display: flex; gap: 0.5rem; align-items: center;">
+            <button class="admin-btn admin-btn-danger" id="purge-orphans-btn" style="display: none;" onclick="purgeOrphanedOrganizations()">
+              <i class="fas fa-broom"></i> Purge All Orphaned Colleges &amp; Routes
+            </button>
             <button class="admin-btn admin-btn-secondary" onclick="loadOrgsData()">
               <i class="fas fa-sync-alt" id="refresh-icon"></i> Refresh List
             </button>
@@ -68,6 +71,9 @@
             <div class="admin-stat-val" id="mini-commuters-count" style="font-size: 1.6rem; color: #F59E0B;">0</div>
           </div>
         </div>
+
+        <!-- Orphaned Institutions Alert Banner -->
+        <div id="orphaned-orgs-banner-wrap"></div>
 
         <!-- Filter / Search Box -->
         <div class="admin-card" style="margin-bottom: 1.5rem; padding: 1.25rem;">
@@ -146,7 +152,10 @@
       <div class="admin-modal-body" id="org-inspect-body">
         <!-- Injected dynamically -->
       </div>
-      <div class="admin-modal-footer">
+      <div class="admin-modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" id="modal-delete-org-btn" class="admin-btn admin-btn-danger">
+          <i class="fas fa-trash-alt"></i> Delete Institution &amp; Routes
+        </button>
         <button type="button" class="admin-btn admin-btn-secondary" onclick="closeModal('org-inspect-modal')">Close</button>
       </div>
     </div>
@@ -197,7 +206,6 @@
           vendorsMap[v.id] = v;
           vendorOptions += `<option value="${v.id}">${escapeHtml(name)}</option>`;
         });
-        vendorSelect.innerHTML = vendorOptions;
 
         // Map routes to orgs
         routesByOrg = {};
@@ -231,6 +239,39 @@
           if (org.vendorId) vendorIdsWithOrgs.add(org.vendorId);
         });
 
+        // Detect orphaned organizations (institutions whose vendor was deleted)
+        const orphanedOrgs = allOrgs.filter(o => !o.vendorId || !vendorsMap[o.vendorId]);
+        if (orphanedOrgs.length > 0) {
+          vendorOptions += `<option value="orphaned" style="color: #DC2626; font-weight: bold;">⚠️ Orphaned Colleges (${orphanedOrgs.length})</option>`;
+        }
+        vendorSelect.innerHTML = vendorOptions;
+
+        // Display banner and purge button if orphans exist
+        const bannerWrap = document.getElementById('orphaned-orgs-banner-wrap');
+        const purgeBtn = document.getElementById('purge-orphans-btn');
+        if (orphanedOrgs.length > 0) {
+          if (bannerWrap) {
+            bannerWrap.innerHTML = `
+              <div class="admin-alert" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; background: #FEF2F2; border: 1px solid #F87171; border-radius: 8px; padding: 1rem 1.25rem; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; color: #991B1B;">
+                  <i class="fas fa-exclamation-triangle" style="font-size: 1.35rem;"></i>
+                  <div>
+                    <div style="font-weight: 700; font-size: 0.95rem;">${orphanedOrgs.length} Orphaned Institution(s) Detected</div>
+                    <div style="font-size: 0.82rem; color: #7F1D1D;">These colleges/schools were created by vendor accounts that have been deleted. Their routes and data are still in the database.</div>
+                  </div>
+                </div>
+                <button class="admin-btn admin-btn-danger" onclick="purgeOrphanedOrganizations()" style="white-space: nowrap;">
+                  <i class="fas fa-broom"></i> Purge All Orphaned Colleges &amp; Routes
+                </button>
+              </div>
+            `;
+          }
+          if (purgeBtn) purgeBtn.style.display = 'inline-flex';
+        } else {
+          if (bannerWrap) bannerWrap.innerHTML = '';
+          if (purgeBtn) purgeBtn.style.display = 'none';
+        }
+
         document.getElementById('mini-total-orgs').textContent = allOrgs.length;
         document.getElementById('mini-vendor-count').textContent = vendorIdsWithOrgs.size;
         document.getElementById('mini-routes-count').textContent = totalAffiliatedRoutes;
@@ -251,7 +292,11 @@
       const sortBy = document.getElementById('sort-select').value;
 
       filteredOrgs = allOrgs.filter(org => {
-        if (vendorFilter !== 'all' && org.vendorId !== vendorFilter) return false;
+        if (vendorFilter === 'orphaned') {
+          if (org.vendorId && vendorsMap[org.vendorId]) return false;
+        } else if (vendorFilter !== 'all' && org.vendorId !== vendorFilter) {
+          return false;
+        }
 
         if (query) {
           const name = (org.name || '').toLowerCase();
@@ -312,8 +357,9 @@
       const paginated = paginateTable(filteredOrgs, currentPage, PAGE_SIZE);
 
       tbody.innerHTML = paginated.items.map(org => {
+        const isOrphaned = !org.vendorId || !vendorsMap[org.vendorId];
         const vendor = vendorsMap[org.vendorId];
-        const vendorName = vendor ? (vendor.businessName || vendor.name || vendor.email) : 'Direct / Unassigned';
+        const vendorName = vendor ? (vendor.businessName || vendor.name || vendor.email) : 'Deleted Vendor';
         const routes = (routesByOrg[org.id] || routesByOrg[org.name] || []);
         
         // Students lookup by ID or name
@@ -321,7 +367,7 @@
         const students = studentsByOrg[orgNameLower] || studentsByOrg[org.id] || [];
 
         return `
-          <tr>
+          <tr style="${isOrphaned ? 'background: #FFFBFB;' : ''}">
             <td>
               <div style="font-weight: 600; color: var(--admin-text-main); font-size: 0.95rem;">
                 ${escapeHtml(org.name || 'Unnamed Institution')}
@@ -333,6 +379,13 @@
                 <i class="fas fa-building" style="font-size: 0.75rem; color: var(--admin-primary); margin-right: 4px;"></i>
                 ${escapeHtml(vendorName)}
               </div>
+              ${isOrphaned ? `
+                <div style="margin-top: 3px;">
+                  <span class="admin-badge admin-badge-danger" style="font-size: 0.7rem; padding: 2px 6px;">
+                    <i class="fas fa-exclamation-triangle"></i> Deleted Vendor (Orphaned)
+                  </span>
+                </div>
+              ` : ''}
             </td>
             <td>
               <div style="font-size: 0.85rem; color: var(--admin-text-muted);">
@@ -354,9 +407,14 @@
               <div style="font-size: 0.85rem;">${formatDate(org.createdAt)}</div>
             </td>
             <td style="text-align: right;">
-              <button class="admin-btn admin-btn-sm admin-btn-secondary" onclick="inspectOrg('${org.id}')">
-                <i class="fas fa-eye"></i> Details
-              </button>
+              <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
+                <button class="admin-btn admin-btn-sm admin-btn-secondary" onclick="inspectOrg('${org.id}')" title="Inspect Institution">
+                  <i class="fas fa-eye"></i> Details
+                </button>
+                <button class="admin-btn admin-btn-sm admin-btn-danger" onclick="promptDeleteOrg('${org.id}', '${escapeHtml(org.name || 'Institution')}')" title="Permanently Delete Institution &amp; Routes">
+                  <i class="fas fa-trash-alt"></i> Delete
+                </button>
+              </div>
             </td>
           </tr>
         `;
@@ -372,8 +430,9 @@
       const org = allOrgs.find(o => o.id === orgId);
       if (!org) return;
 
+      const isOrphaned = !org.vendorId || !vendorsMap[org.vendorId];
       const vendor = vendorsMap[org.vendorId];
-      const vendorName = vendor ? (vendor.businessName || vendor.name || vendor.email) : 'Direct / Unassigned';
+      const vendorName = vendor ? (vendor.businessName || vendor.name || vendor.email) : 'Deleted Vendor (Orphaned)';
       const routes = (routesByOrg[org.id] || routesByOrg[org.name] || []);
       const orgNameLower = (org.name || '').toLowerCase();
       const students = studentsByOrg[orgNameLower] || studentsByOrg[org.id] || [];
@@ -389,6 +448,7 @@
             <div style="font-size: 0.85rem; color: var(--admin-text-muted);">
               ID: <code>${org.id}</code> &bull; Created: ${formatDate(org.createdAt)}
             </div>
+            ${isOrphaned ? '<div style="margin-top: 4px;"><span class="admin-badge admin-badge-danger"><i class="fas fa-exclamation-triangle"></i> Vendor Account Deleted</span></div>' : ''}
           </div>
         </div>
 
@@ -473,7 +533,74 @@
         `}
       `;
 
+      // Wire up modal delete button
+      const delBtn = document.getElementById('modal-delete-org-btn');
+      if (delBtn) {
+        delBtn.onclick = () => {
+          closeModal('org-inspect-modal');
+          promptDeleteOrg(org.id, org.name || 'Institution');
+        };
+      }
+
       openModal('org-inspect-modal');
+    }
+
+    // Permanently Delete Single Organization and all of its connected routes
+    function promptDeleteOrg(orgId, orgName) {
+      const cleanName = orgName || 'Selected Institution';
+      const routesCount = (routesByOrg[orgId] || []).length;
+      adminConfirmModal(
+        'Delete Partner Institution',
+        `Are you sure you want to permanently delete "<strong>${escapeHtml(cleanName)}</strong>"?<br><br>
+        <div style="background:#FEF2F2; border:1px solid #FCA5A5; border-radius:6px; padding:0.75rem; color:#991B1B; font-size:0.85rem; line-height:1.4;">
+          <strong><i class="fas fa-exclamation-triangle"></i> CASCADE WARNING:</strong><br>
+          This will permanently delete this college and <strong>all ${routesCount} affiliated transit route(s)</strong>. Buses assigned to this institution will be unassigned.
+        </div>`,
+        'Delete Institution & Routes',
+        async (reason) => {
+          try {
+            await cascadeDeleteOrgData(orgId);
+            await logAdminAction(
+              'ORGANIZATION_DELETED',
+              'organization',
+              orgId,
+              cleanName,
+              { routesDeleted: routesCount },
+              reason || 'Institution and linked routes deleted by Super Admin'
+            );
+            showToast(`Institution "${cleanName}" and affiliated routes successfully deleted.`, "success");
+            loadOrgsData();
+          } catch (err) {
+            console.error("Delete org error:", err);
+            throw new Error("Failed to delete institution: " + err.message);
+          }
+        },
+        true
+      );
+    }
+
+    // Purge All Orphaned Colleges and their routes
+    function purgeOrphanedOrganizations() {
+      adminConfirmModal(
+        'Purge All Orphaned Colleges & Routes',
+        `Are you sure you want to permanently purge all colleges and routes whose vendor account has been deleted?<br><br>
+        <div style="background:#FFFBEB; border:1px solid #FCD34D; border-radius:6px; padding:0.75rem; color:#92400E; font-size:0.85rem; line-height:1.4;">
+          <strong><i class="fas fa-broom"></i> COMPLETE ORPHAN PURGE:</strong><br>
+          This will scan all collections and permanently purge any institutions, routes, buses, and staff that belong to deleted vendor accounts.
+        </div>`,
+        'Purge All Orphaned Records',
+        async () => {
+          try {
+            const result = await purgeAllOrphanedTransitData();
+            showToast(`Successfully purged ${result.purgedOrgs} orphaned colleges, ${result.purgedRoutes} routes, and ${result.purgedBuses} buses!`, "success");
+            loadOrgsData();
+          } catch (err) {
+            console.error("Purge error:", err);
+            throw new Error("Failed to purge orphaned records: " + err.message);
+          }
+        },
+        true
+      );
     }
   </script>
 </body>
