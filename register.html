@@ -69,39 +69,55 @@
       <form id="student-register-form" class="split-auth-form">
         <div class="form-group">
           <label class="form-label" for="name">Full Legal Name <span class="required" style="color:var(--danger)">*</span></label>
-          <input type="text" id="name" class="form-control" placeholder="e.g. Rahul Sharma" required autocomplete="name" pattern="[a-zA-Z\s]+" title="Name must contain only letters and spaces (no numbers or special characters)" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')">
+          <input type="text" id="name" class="form-control" placeholder="e.g. Rahul Sharma" required autocomplete="name" pattern="[a-zA-Z\s]+" title="Name must contain only letters and spaces (no numbers or special characters)" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, ''); validateNameField();">
+          <div class="form-field-error" id="name-error">
+            <i class="fas fa-exclamation-circle" style="margin-top: 2px;"></i>
+            <span id="name-error-text">Name must contain only letters and spaces.</span>
+          </div>
         </div>
 
         <div class="form-grid">
           <div class="form-group">
-            <label class="form-label" for="email">Email Address</label>
+            <label class="form-label" for="email">Email Address <span class="required" style="color:var(--danger)">*</span></label>
             <input type="email" id="email" class="form-control" placeholder="rahul@example.com" required autocomplete="email">
           </div>
 
           <div class="form-group">
             <label class="form-label" for="phone">Mobile Number (10 Digits) <span class="required" style="color:var(--danger)">*</span></label>
-            <input type="tel" id="phone" class="form-control" placeholder="e.g. 9876543210" required autocomplete="tel" pattern="[0-9]{10}" maxlength="10" minlength="10" inputmode="numeric" title="Please enter exact 10-digit mobile number" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
+            <input type="tel" id="phone" class="form-control" placeholder="e.g. 9876543210" required autocomplete="tel" pattern="[6-9][0-9]{9}" maxlength="10" minlength="10" inputmode="numeric" title="Please enter a 10-digit mobile number starting with 6, 7, 8, or 9" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10); validatePhoneField();">
+            <div class="form-field-error" id="phone-error">
+              <i class="fas fa-exclamation-circle" style="margin-top: 2px;"></i>
+              <span id="phone-error-text">Mobile number must be exactly 10 digits and start with 6, 7, 8, or 9.</span>
+            </div>
           </div>
         </div>
 
         <div class="form-grid">
           <div class="form-group">
-            <label class="form-label" for="password">Password</label>
+            <label class="form-label" for="password">Password <span class="required" style="color:var(--danger)">*</span></label>
             <div class="split-input-password">
-              <input type="password" id="password" class="form-control" placeholder="Min. 6 chars" minlength="6" required autocomplete="new-password">
+              <input type="password" id="password" class="form-control" placeholder="Min. 8 chars (e.g. Pass@123)" minlength="8" required autocomplete="new-password" oninput="validatePasswordField();">
               <button type="button" id="toggle-password-btn" class="split-eye-btn" title="Toggle password visibility">
                 <i class="fas fa-eye" id="toggle-password-icon"></i>
               </button>
             </div>
+            <div class="form-field-error" id="password-error">
+              <i class="fas fa-exclamation-circle" style="margin-top: 2px;"></i>
+              <span id="password-error-text">Password must be at least 8 characters with uppercase, lowercase, number, and special character.</span>
+            </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="confirm-password">Confirm Password</label>
+            <label class="form-label" for="confirm-password">Confirm Password <span class="required" style="color:var(--danger)">*</span></label>
             <div class="split-input-password">
-              <input type="password" id="confirm-password" class="form-control" placeholder="Re-enter password" minlength="6" required autocomplete="new-password">
+              <input type="password" id="confirm-password" class="form-control" placeholder="Re-enter password" minlength="8" required autocomplete="new-password" oninput="validateConfirmPasswordField();">
               <button type="button" id="toggle-confirm-password-btn" class="split-eye-btn" title="Toggle confirm password visibility">
                 <i class="fas fa-eye" id="toggle-confirm-password-icon"></i>
               </button>
+            </div>
+            <div class="form-field-error" id="confirm-password-error">
+              <i class="fas fa-exclamation-circle" style="margin-top: 2px;"></i>
+              <span id="confirm-password-error-text">Passwords do not match.</span>
             </div>
           </div>
         </div>
@@ -179,6 +195,120 @@
     setupPasswordToggle('toggle-password-btn', 'password', 'toggle-password-icon');
     setupPasswordToggle('toggle-confirm-password-btn', 'confirm-password', 'toggle-confirm-password-icon');
 
+    function showError(inputId, errorId, message) {
+      const input = document.getElementById(inputId);
+      const errorEl = document.getElementById(errorId);
+      if (input) input.classList.add('has-error');
+      if (errorEl) {
+        const errorText = errorEl.querySelector('span');
+        if (errorText && message) errorText.textContent = message;
+        errorEl.classList.add('visible');
+      }
+    }
+
+    function clearError(inputId, errorId) {
+      const input = document.getElementById(inputId);
+      const errorEl = document.getElementById(errorId);
+      if (input) input.classList.remove('has-error');
+      if (errorEl) errorEl.classList.remove('visible');
+    }
+
+    function validateNameField(forceShow = false) {
+      const input = document.getElementById('name');
+      const val = (input.value || '').trim();
+      if (!val) {
+        if (forceShow) {
+          showError('name', 'name-error', 'Full Legal Name is required (letters and spaces only).');
+        } else {
+          clearError('name', 'name-error');
+        }
+        return false;
+      }
+      if (!/^[A-Za-z\s]+$/.test(val)) {
+        showError('name', 'name-error', 'Name must contain only letters and spaces.');
+        return false;
+      }
+      clearError('name', 'name-error');
+      return true;
+    }
+
+    function validatePhoneField(forceShow = false) {
+      const input = document.getElementById('phone');
+      const val = (input.value || '').trim().replace(/[^0-9]/g, '');
+      if (!val) {
+        if (forceShow) {
+          showError('phone', 'phone-error', 'Mobile number is required (10 digits starting with 6, 7, 8, or 9).');
+        } else {
+          clearError('phone', 'phone-error');
+        }
+        return false;
+      }
+      if (!/^[6-9][0-9]{9}$/.test(val)) {
+        showError('phone', 'phone-error', 'Mobile number must be exactly 10 digits and start with 6, 7, 8, or 9.');
+        return false;
+      }
+      clearError('phone', 'phone-error');
+      return true;
+    }
+
+    function isComplexPassword(pwd) {
+      if (!pwd || pwd.length < 8) return false;
+      const hasUpper = /[A-Z]/.test(pwd);
+      const hasLower = /[a-z]/.test(pwd);
+      const hasDigit = /[0-9]/.test(pwd);
+      const hasSpecial = /[^A-Za-z0-9\s]/.test(pwd);
+      return hasUpper && hasLower && hasDigit && hasSpecial;
+    }
+
+    function validatePasswordField(forceShow = false) {
+      const input = document.getElementById('password');
+      const val = input.value;
+      if (!val) {
+        if (forceShow) {
+          showError('password', 'password-error', 'Password must be at least 8 characters with uppercase, lowercase, number, and special character.');
+        } else {
+          clearError('password', 'password-error');
+        }
+        return false;
+      }
+      if (!isComplexPassword(val)) {
+        showError('password', 'password-error', 'Password must be at least 8 characters with at least one uppercase letter, one lowercase letter, one number, and one special character.');
+        return false;
+      }
+      clearError('password', 'password-error');
+
+      const confirmInput = document.getElementById('confirm-password');
+      if (confirmInput.value) {
+        validateConfirmPasswordField(false);
+      }
+      return true;
+    }
+
+    function validateConfirmPasswordField(forceShow = false) {
+      const passVal = document.getElementById('password').value;
+      const confirmInput = document.getElementById('confirm-password');
+      const val = confirmInput.value;
+      if (!val) {
+        if (forceShow) {
+          showError('confirm-password', 'confirm-password-error', 'Please confirm your password.');
+        } else {
+          clearError('confirm-password', 'confirm-password-error');
+        }
+        return false;
+      }
+      if (val !== passVal) {
+        showError('confirm-password', 'confirm-password-error', 'Passwords do not match.');
+        return false;
+      }
+      clearError('confirm-password', 'confirm-password-error');
+      return true;
+    }
+
+    document.getElementById('name').addEventListener('blur', () => validateNameField(true));
+    document.getElementById('phone').addEventListener('blur', () => validatePhoneField(true));
+    document.getElementById('password').addEventListener('blur', () => validatePasswordField(true));
+    document.getElementById('confirm-password').addEventListener('blur', () => validateConfirmPasswordField(true));
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const rawName = document.getElementById('name').value;
@@ -189,20 +319,16 @@
       const password = document.getElementById('password').value;
       const confirmPassword = document.getElementById('confirm-password').value;
 
-      if (!cleanName || !/^[A-Za-z\s]+$/.test(cleanName)) {
-        showToast("Full Legal Name must contain only letters and spaces (no numbers or special characters).", "warning");
-        document.getElementById('name').focus();
-        return;
-      }
+      const isNameValid = validateNameField(true);
+      const isPhoneValid = validatePhoneField(true);
+      const isPasswordValid = validatePasswordField(true);
+      const isConfirmValid = validateConfirmPasswordField(true);
 
-      if (cleanPhone.length !== 10) {
-        showToast("Mobile number must be exactly 10 digits.", "warning");
-        document.getElementById('phone').focus();
-        return;
-      }
-
-      if (password !== confirmPassword) {
-        showToast("Passwords do not match.", "warning");
+      if (!isNameValid || !isPhoneValid || !isPasswordValid || !isConfirmValid) {
+        if (!isNameValid) document.getElementById('name').focus();
+        else if (!isPhoneValid) document.getElementById('phone').focus();
+        else if (!isPasswordValid) document.getElementById('password').focus();
+        else if (!isConfirmValid) document.getElementById('confirm-password').focus();
         return;
       }
 

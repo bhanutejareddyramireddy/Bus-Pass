@@ -137,6 +137,16 @@ window.addEventListener('storage', function (e) {
   }
 });
 
+// Password complexity validator (min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char)
+function isValidPassword(pwd) {
+  if (!pwd || typeof pwd !== 'string' || pwd.length < 8) return false;
+  const hasUpper = /[A-Z]/.test(pwd);
+  const hasLower = /[a-z]/.test(pwd);
+  const hasDigit = /[0-9]/.test(pwd);
+  const hasSpecial = /[^A-Za-z0-9\s]/.test(pwd);
+  return hasUpper && hasLower && hasDigit && hasSpecial;
+}
+
 // Vendor Registration
 async function registerVendor(name, email, password, phone, businessName = '') {
   try {
@@ -146,8 +156,12 @@ async function registerVendor(name, email, password, phone, businessName = '') {
     }
 
     const cleanPhone = (phone || '').toString().trim().replace(/[^0-9]/g, '');
-    if (cleanPhone.length !== 10) {
-      throw new Error("Mobile number must be exactly 10 digits.");
+    if (!/^[6-9][0-9]{9}$/.test(cleanPhone)) {
+      throw new Error("Mobile number must be exactly 10 digits and start with 6, 7, 8, or 9.");
+    }
+
+    if (!isValidPassword(password)) {
+      throw new Error("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
     }
 
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
@@ -241,8 +255,12 @@ async function registerStudent(name, email, password, phone) {
     }
 
     const cleanPhone = (phone || '').toString().trim().replace(/[^0-9]/g, '');
-    if (cleanPhone.length !== 10) {
-      throw new Error("Mobile number must be exactly 10 digits.");
+    if (!/^[6-9][0-9]{9}$/.test(cleanPhone)) {
+      throw new Error("Mobile number must be exactly 10 digits and start with 6, 7, 8, or 9.");
+    }
+
+    if (!isValidPassword(password)) {
+      throw new Error("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
     }
 
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
@@ -566,8 +584,8 @@ async function loginConductor(conductorId, password) {
  */
 async function createConductorAccount(conductorData, password) {
   const cleanPhone = (conductorData.phone || '').toString().trim().replace(/[^0-9]/g, '');
-  if (conductorData.phone && cleanPhone.length !== 10) {
-    throw new Error("Conductor mobile number must be exactly 10 digits.");
+  if (conductorData.phone && !/^[6-9][0-9]{9}$/.test(cleanPhone)) {
+    throw new Error("Conductor mobile number must be exactly 10 digits and start with 6, 7, 8, or 9.");
   }
   conductorData.phone = cleanPhone;
 

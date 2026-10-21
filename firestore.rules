@@ -28,7 +28,7 @@ service cloud.firestore {
         isSuperAdmin() || (
           (request.auth.uid == userId || request.resource.data.role == 'conductor' || request.resource.data.vendorId == request.auth.uid) &&
           request.resource.data.role != 'superadmin' &&
-          (!('phone' in request.resource.data) || request.resource.data.phone.matches('^[0-9]{10}$')) &&
+          (!('phone' in request.resource.data) || request.resource.data.phone.matches('^[6-9][0-9]{9}$')) &&
           (!('name' in request.resource.data) || request.resource.data.name.matches('^[a-zA-Z ]+$'))
         )
       );
@@ -36,7 +36,7 @@ service cloud.firestore {
         isSuperAdmin() || (
           (request.auth.uid == userId || resource.data.vendorId == request.auth.uid) &&
           (request.resource.data.role == resource.data.role) &&
-          (!('phone' in request.resource.data) || request.resource.data.phone.matches('^[0-9]{10}$')) &&
+          (!('phone' in request.resource.data) || request.resource.data.phone.matches('^[6-9][0-9]{9}$')) &&
           (!('name' in request.resource.data) || request.resource.data.name.matches('^[a-zA-Z ]+$'))
         )
       );
