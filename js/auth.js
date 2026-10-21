@@ -211,6 +211,12 @@ async function loginVendor(email, password) {
 
     establishUserSession('vendor', uid);
 
+    // Sync verified status to Firestore database
+    await db.collection('users').doc(uid).update({
+      emailVerified: true,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(e => console.warn("Failed to sync emailVerified:", e));
+
     const userDoc = await db.collection('users').doc(uid).get();
 
     if (!userDoc.exists || userDoc.data().role !== 'vendor') {
@@ -298,6 +304,12 @@ async function loginStudent(email, password) {
     }
 
     establishUserSession('student', uid);
+
+    // Sync verified status to Firestore database
+    await db.collection('users').doc(uid).update({
+      emailVerified: true,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(e => console.warn("Failed to sync emailVerified:", e));
 
     const userDoc = await db.collection('users').doc(uid).get();
 
@@ -871,6 +883,11 @@ function requireAuth(expectedRole, onReady) {
         const targetLogin = userData.role === 'vendor' ? 'vendor-login.html?unverified=true' : 'login.html?unverified=true';
         window.location.replace(resolveAppPath(targetLogin));
         return;
+      } else if (user.emailVerified && userData.emailVerified !== true) {
+        db.collection('users').doc(user.uid).update({
+          emailVerified: true,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(() => {});
       }
 
       // Check role enforcement

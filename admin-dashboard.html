@@ -433,10 +433,10 @@
 
         usersSnap.forEach(d => {
           const data = d.data();
-          if (data.role === 'vendor') {
+          if (data.role === 'vendor' && data.emailVerified === true) {
             vendorCount++;
             vendorsList.push({ id: d.id, ...data });
-          } else if (data.role === 'student') {
+          } else if (data.role === 'student' && data.emailVerified === true) {
             studentCount++;
           }
         });

@@ -198,7 +198,10 @@
 
         allStudents = [];
         usersSnap.forEach(doc => {
-          allStudents.push({ id: doc.id, ...doc.data() });
+          const s = { id: doc.id, ...doc.data() };
+          // Only show verified commuter accounts
+          if (s.emailVerified !== true) return;
+          allStudents.push(s);
         });
 
         allOrgs = [];

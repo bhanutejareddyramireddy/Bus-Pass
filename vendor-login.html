@@ -284,6 +284,12 @@
       try {
         const userDoc = await db.collection('users').doc(user.uid).get();
         if (userDoc.exists && userDoc.data().role === 'vendor') {
+          if (userDoc.data().emailVerified !== true) {
+            await db.collection('users').doc(user.uid).update({
+              emailVerified: true,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).catch(() => {});
+          }
           window.location.replace('vendor-dashboard.html');
         }
       } catch(e) {}

@@ -305,6 +305,9 @@
 
         usersSnap.forEach(d => {
           const v = { id: d.id, ...d.data() };
+          // Only show verified vendor accounts
+          if (v.emailVerified !== true) return;
+
           allVendors.push(v);
           if (v.status === 'Suspended') suspendedCount++;
           else activeCount++;

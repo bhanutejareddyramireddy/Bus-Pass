@@ -218,7 +218,10 @@
 
           <div class="form-group">
             <label class="form-label" for="org-name">Organization Name <span class="required">*</span></label>
-            <input type="text" id="org-name" class="form-control" placeholder="e.g. ABC College of Engineering" required>
+            <input type="text" id="org-name" class="form-control" placeholder="e.g. ABC College of Engineering" required oninput="checkOrgNameLive(this)">
+            <div id="org-name-exists-warning" style="display:none; color: #dc2626; font-size: 0.8rem; margin-top: 4px; font-weight: 600;">
+              <i class="fas fa-exclamation-circle"></i> An organization with this name already exists. Please choose a different name.
+            </div>
           </div>
 
           <div class="form-grid">
@@ -414,9 +417,29 @@
       }).join('');
     }
 
+    function checkOrgNameLive(input) {
+      const val = (input.value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+      const currentId = document.getElementById('org-doc-id').value;
+      const warning = document.getElementById('org-name-exists-warning');
+      const exists = organizationsList.some(o => 
+        (currentId ? o.id !== currentId : true) && 
+        (o.name || '').trim().toLowerCase().replace(/\s+/g, ' ') === val
+      );
+      if (val && exists) {
+        input.style.borderColor = '#dc2626';
+        if (warning) warning.style.display = 'block';
+      } else {
+        input.style.borderColor = '';
+        if (warning) warning.style.display = 'none';
+      }
+    }
+
     function openCreateOrgModal() {
       document.getElementById('org-doc-id').value = '';
       document.getElementById('org-form').reset();
+      document.getElementById('org-name').style.borderColor = '';
+      const warning = document.getElementById('org-name-exists-warning');
+      if (warning) warning.style.display = 'none';
       document.getElementById('org-modal-title').textContent = 'Create New Organization';
       document.getElementById('save-org-btn').innerHTML = '<i class="fas fa-plus-circle"></i> <span>Create Organization</span>';
       openModal('org-modal');
@@ -427,7 +450,12 @@
       if (!org) return;
 
       document.getElementById('org-doc-id').value = org.id;
-      document.getElementById('org-name').value = org.name || '';
+      const nameInput = document.getElementById('org-name');
+      nameInput.value = org.name || '';
+      nameInput.style.borderColor = '';
+      const warning = document.getElementById('org-name-exists-warning');
+      if (warning) warning.style.display = 'none';
+
       document.getElementById('org-type').value = org.type || 'College';
       document.getElementById('org-location').value = org.location || '';
       document.getElementById('org-address').value = org.address || '';
@@ -445,10 +473,49 @@
       e.preventDefault();
       const docId = document.getElementById('org-doc-id').value;
       const saveBtn = document.getElementById('save-org-btn');
+      const orgName = document.getElementById('org-name').value.trim();
+
+      if (!orgName) {
+        showToast("Please enter an organization name.", "warning");
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Checking & Saving...';
+
+      // Duplicate Check across all organizations (case-insensitive)
+      const normalizedNewName = orgName.toLowerCase().replace(/\s+/g, ' ');
+      try {
+        const existingQuery = await db.collection('organizations').get().catch(() => ({ docs: [] }));
+        const duplicateDoc = existingQuery.docs.find(d => {
+          if (docId && d.id === docId) return false;
+          const existingName = (d.data().name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+          return existingName === normalizedNewName;
+        });
+
+        if (duplicateDoc) {
+          const dupOrgName = duplicateDoc.data().name || orgName;
+          showToast(`An organization with the name "${dupOrgName}" already exists! Please use a different organization name.`, "warning", "Organization Already Exists");
+          const nameInput = document.getElementById('org-name');
+          if (nameInput) {
+            nameInput.style.borderColor = '#dc2626';
+            nameInput.focus();
+          }
+          const warning = document.getElementById('org-name-exists-warning');
+          if (warning) warning.style.display = 'block';
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = docId 
+            ? '<i class="fas fa-save"></i> <span>Update Organization</span>' 
+            : '<i class="fas fa-plus-circle"></i> <span>Create Organization</span>';
+          return;
+        }
+      } catch (checkErr) {
+        console.warn("Could not check duplicate org name:", checkErr);
+      }
 
       const orgData = {
         vendorId: currentVendorId,
-        name: document.getElementById('org-name').value.trim(),
+        name: orgName,
         type: document.getElementById('org-type').value,
         location: document.getElementById('org-location').value.trim(),
         address: document.getElementById('org-address').value.trim(),
@@ -457,9 +524,6 @@
         description: document.getElementById('org-desc').value.trim(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
-
-      saveBtn.disabled = true;
-      saveBtn.innerHTML = '<span class="spinner spinner-sm spinner-white"></span> Saving...';
 
       try {
         if (docId) {

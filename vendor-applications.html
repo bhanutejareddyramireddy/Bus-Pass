@@ -278,15 +278,23 @@
           </div>
         </div>
 
-        <!-- Bus Assignment for Approved Pass -->
-        <div class="form-group" style="background: #EEF2FF; padding: 1rem; border-radius: var(--radius-sm); border: 1px solid #C7D2FE;">
-          <label class="form-label" for="assign-bus-select" style="color: var(--primary-dark);">
-            <i class="fas fa-bus"></i> Assign Fleet Bus for this Pass <span class="required">*</span>
-          </label>
-          <select id="assign-bus-select" class="form-control">
-            <option value="">Select bus for student route...</option>
-          </select>
-          <div class="form-text">Choose the bus assigned to this route so conductors on that bus can validate this pass.</div>
+        <!-- Automatically Assigned Fleet Bus for Approved Pass -->
+        <div class="form-group" style="background: #F0FDF4; padding: 0.9rem 1.1rem; border-radius: var(--radius-sm); border: 1px solid #BBF7D0;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div style="width: 38px; height: 38px; border-radius: 8px; background: #DCFCE7; color: #16A34A; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                <i class="fas fa-bus"></i>
+              </div>
+              <div>
+                <div style="font-size: 0.72rem; text-transform: uppercase; color: #15803D; font-weight: 700; letter-spacing: 0.04em;">Assigned Transit Bus</div>
+                <div style="font-weight: 700; color: #14532D; font-size: 0.92rem;" id="auto-bus-display">Auto-resolving assigned bus...</div>
+              </div>
+            </div>
+            <span class="badge badge-success" style="font-size: 0.76rem; font-weight: 700;">
+              <i class="fas fa-check-circle"></i> Auto-Assigned
+            </span>
+          </div>
+          <input type="hidden" id="assign-bus-select">
         </div>
 
         <!-- Optional remarks / reason -->
@@ -602,21 +610,33 @@
         proofBox.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">No payment screenshot uploaded</span>`;
       }
 
-      // Populate Bus Select for this route
-      const busSelect = document.getElementById('assign-bus-select');
-      busSelect.innerHTML = '<option value="">Select bus for student route...</option>';
-      const candidateBuses = busesCache.filter(b => b.routeId === selectedApp.routeId && b.status === 'Active');
-      
-      if (candidateBuses.length > 0) {
-        candidateBuses.forEach(b => {
-          busSelect.innerHTML += `<option value="${b.id}">${b.busNumber} (${b.registrationNumber}) - Driver: ${b.driverName || 'Staff'}</option>`;
-        });
+      // Automatically assign the bus for this route/pass
+      let autoAssignedBus = null;
+      if (selectedApp.busId) {
+        autoAssignedBus = busesCache.find(b => b.id === selectedApp.busId && b.status === 'Active');
+      }
+      if (!autoAssignedBus && selectedApp.routeId) {
+        autoAssignedBus = busesCache.find(b => b.routeId === selectedApp.routeId && b.status === 'Active');
+      }
+      if (!autoAssignedBus && selectedApp.organizationId) {
+        autoAssignedBus = busesCache.find(b => b.organizationId === selectedApp.organizationId && b.status === 'Active');
+      }
+      if (!autoAssignedBus) {
+        autoAssignedBus = busesCache.find(b => b.status === 'Active') || null;
+      }
+
+      const busSelectInput = document.getElementById('assign-bus-select');
+      const autoBusDisplay = document.getElementById('auto-bus-display');
+      if (autoAssignedBus) {
+        busSelectInput.value = autoAssignedBus.id;
+        if (autoBusDisplay) {
+          autoBusDisplay.textContent = `${autoAssignedBus.busNumber} (${autoAssignedBus.registrationNumber || 'Fleet'}) - Driver: ${autoAssignedBus.driverName || 'Staff'}`;
+        }
       } else {
-        // Fallback: list all active buses of this organization
-        const orgBuses = busesCache.filter(b => b.organizationId === selectedApp.organizationId && b.status === 'Active');
-        orgBuses.forEach(b => {
-          busSelect.innerHTML += `<option value="${b.id}">${b.busNumber} (${b.registrationNumber}) [Other Route]</option>`;
-        });
+        busSelectInput.value = selectedApp.busId || 'BUS-01';
+        if (autoBusDisplay) {
+          autoBusDisplay.textContent = `Route Transit Bus (${selectedApp.routeName || 'General Route'}) - Auto Assigned`;
+        }
       }
 
       document.getElementById('review-remarks').value = selectedApp.remarks || '';
@@ -651,13 +671,17 @@
     async function approveCurrentApplication() {
       if (!selectedApp) return;
 
-      const busId = document.getElementById('assign-bus-select').value;
-      if (!busId) {
-        showToast("Please assign a fleet bus before issuing the pass.", "warning");
-        return;
+      let busId = document.getElementById('assign-bus-select').value;
+      let assignedBus = busesCache.find(b => b.id === busId);
+      if (!assignedBus) {
+        assignedBus = busesCache.find(b => b.routeId === selectedApp.routeId && b.status === 'Active')
+          || busesCache.find(b => b.organizationId === selectedApp.organizationId && b.status === 'Active')
+          || busesCache.find(b => b.status === 'Active')
+          || null;
+        if (assignedBus) busId = assignedBus.id;
+        else busId = selectedApp.busId || 'BUS-01';
       }
 
-      const assignedBus = busesCache.find(b => b.id === busId);
       const approveBtn = document.getElementById('approve-pass-btn');
 
       approveBtn.disabled = true;
