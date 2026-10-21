@@ -108,9 +108,32 @@
                 <i class="fas fa-eye" id="toggle-password-icon"></i>
               </button>
             </div>
+            <div class="password-criteria-list" id="password-criteria">
+              <div class="criteria-item" id="crit-length">
+                <svg class="criteria-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.75"/>
+                  <path d="M6.5 10.2L8.8 12.5L13.5 7.8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>At least 8 characters</span>
+              </div>
+              <div class="criteria-item" id="crit-mix">
+                <svg class="criteria-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.75"/>
+                  <path d="M6.5 10.2L8.8 12.5L13.5 7.8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Include a mix of letters, numbers and symbols</span>
+              </div>
+              <div class="criteria-item" id="crit-upper">
+                <svg class="criteria-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.75"/>
+                  <path d="M6.5 10.2L8.8 12.5L13.5 7.8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Include an uppercase letter</span>
+              </div>
+            </div>
             <div class="form-field-error" id="password-error">
               <i class="fas fa-exclamation-circle" style="margin-top: 2px;"></i>
-              <span id="password-error-text">Password must be at least 8 characters with uppercase, lowercase, number, and special character.</span>
+              <span id="password-error-text">Password must satisfy all requirements above.</span>
             </div>
           </div>
 
@@ -121,6 +144,15 @@
               <button type="button" id="toggle-confirm-password-btn" class="split-eye-btn" title="Toggle confirm password visibility">
                 <i class="fas fa-eye" id="toggle-confirm-password-icon"></i>
               </button>
+            </div>
+            <div class="password-criteria-list" id="confirm-criteria">
+              <div class="criteria-item" id="crit-confirm">
+                <svg class="criteria-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.75"/>
+                  <path d="M6.5 10.2L8.8 12.5L13.5 7.8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Passwords match</span>
+              </div>
             </div>
             <div class="form-field-error" id="confirm-password-error">
               <i class="fas fa-exclamation-circle" style="margin-top: 2px;"></i>
@@ -269,32 +301,62 @@
 
     function validatePasswordField(forceShow = false) {
       const input = document.getElementById('password');
-      const val = input.value;
+      const val = input.value || '';
+
+      const isLength = val.length >= 8;
+      const isUpper = /[A-Z]/.test(val);
+      const hasLower = /[a-z]/.test(val);
+      const hasDigit = /[0-9]/.test(val);
+      const hasSpecial = /[^A-Za-z0-9\s]/.test(val);
+      const isMix = hasLower && hasDigit && hasSpecial;
+
+      const critLength = document.getElementById('crit-length');
+      const critMix = document.getElementById('crit-mix');
+      const critUpper = document.getElementById('crit-upper');
+
+      if (critLength) critLength.classList.toggle('satisfied', isLength);
+      if (critMix) critMix.classList.toggle('satisfied', isMix);
+      if (critUpper) critUpper.classList.toggle('satisfied', isUpper);
+
+      const allSatisfied = isLength && isUpper && isMix;
+
       if (!val) {
         if (forceShow) {
-          showError('password', 'password-error', 'Password must be at least 8 characters with uppercase, lowercase, number, and special character.');
+          showError('password', 'password-error', 'Admin password is required.');
         } else {
           clearError('password', 'password-error');
         }
         return false;
       }
-      if (!isComplexPassword(val)) {
-        showError('password', 'password-error', 'Password must be at least 8 characters with at least one uppercase letter, one lowercase letter, one number, and one special character.');
+
+      if (!allSatisfied) {
+        if (forceShow) {
+          showError('password', 'password-error', 'Password must satisfy all requirements above.');
+        } else {
+          clearError('password', 'password-error');
+        }
         return false;
       }
+
       clearError('password', 'password-error');
 
       const confirmInput = document.getElementById('confirm-password');
-      if (confirmInput.value) {
+      if (confirmInput && confirmInput.value) {
         validateConfirmPasswordField(false);
       }
       return true;
     }
 
     function validateConfirmPasswordField(forceShow = false) {
-      const passVal = document.getElementById('password').value;
+      const passVal = document.getElementById('password').value || '';
       const confirmInput = document.getElementById('confirm-password');
-      const val = confirmInput.value;
+      const val = confirmInput.value || '';
+
+      const critConfirm = document.getElementById('crit-confirm');
+      const isMatch = val.length > 0 && val === passVal;
+
+      if (critConfirm) critConfirm.classList.toggle('satisfied', isMatch);
+
       if (!val) {
         if (forceShow) {
           showError('confirm-password', 'confirm-password-error', 'Please confirm your password.');
@@ -303,10 +365,12 @@
         }
         return false;
       }
-      if (val !== passVal) {
+
+      if (!isMatch) {
         showError('confirm-password', 'confirm-password-error', 'Passwords do not match.');
         return false;
       }
+
       clearError('confirm-password', 'confirm-password-error');
       return true;
     }

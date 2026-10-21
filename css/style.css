@@ -2321,6 +2321,58 @@ textarea.form-control {
   box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
 }
 
+/* Password Criteria Checklist (Live validation feedback) */
+.password-criteria-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+  padding: 0.1rem 0;
+}
+
+.criteria-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: #475569;
+  line-height: 1.35;
+  transition: color 0.2s ease;
+  user-select: none;
+}
+
+.criteria-item .criteria-icon {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  color: #8EA0B4;
+  transition: color 0.2s ease, transform 0.15s ease;
+}
+
+.criteria-item .criteria-icon circle,
+.criteria-item .criteria-icon path {
+  transition: all 0.2s ease;
+}
+
+.criteria-item.satisfied {
+  color: #15803D;
+  font-weight: 500;
+}
+
+.criteria-item.satisfied .criteria-icon {
+  color: #16A34A;
+}
+
+.criteria-item.satisfied .criteria-icon circle {
+  fill: #16A34A;
+  stroke: #16A34A;
+}
+
+.criteria-item.satisfied .criteria-icon path {
+  stroke: #FFFFFF;
+  stroke-width: 2.2;
+}
+
 .split-form-row {
   display: flex;
   align-items: center;
